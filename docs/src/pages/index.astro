@@ -1,0 +1,18 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const posts = (await getCollection('blog')).sort((a, b) => a.id.localeCompare(b.id));
+---
+<Base title="Inicio">
+  <h1>Aprendiendo a hacer un plataformas con C++20 y SDL3</h1>
+  <p>Un post por hito. Cada uno explica qué se hizo, por qué, y enseña el código real.</p>
+  <ul>
+    {posts.map((p) => (
+      <li>
+        <span class="epic">{p.data.epic}</span><br />
+        <a href={`${import.meta.env.BASE_URL}blog/${p.id}/`}>{p.data.title}</a> — {p.data.summary}
+      </li>
+    ))}
+  </ul>
+</Base>

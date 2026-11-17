@@ -1,0 +1,85 @@
+// Composition root: the only place that knows every layer and wires them together.
+#include <SDL3/SDL.h>
+
+#include <exception>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "application/game_session.h"
+#include "domain/time/fixed_timestep.h"
+#include "infrastructure/assets/tiled_map_loader.h"
+#include "infrastructure/input/keyboard_input_mapper.h"
+#include "infrastructure/sdl/window.h"
+#include "presentation/game_renderer.h"
+
+namespace {
+
+constexpr int kLogicalWidth = 320;
+constexpr int kLogicalHeight = 240;
+constexpr int kWindowScale = 3;
+constexpr std::uint64_t kStepNs = 1'000'000'000ULL / 60;  // 60 simulation steps per second
+
+constexpr float kSpawnX = 40.0F;
+constexpr float kSpawnY = 60.0F;  // in mid-air, so the first thing you see is the fall
+
+// The build copies `assets/` next to the executable.
+std::string assetPath(const std::string& relative) {
+    const char* base = SDL_GetBasePath();
+    return std::string(base != nullptr ? base : "") + "assets/" + relative;
+}
+
+// Reacts to what happened in the game. Today it only logs; later this is the
+// place to play sounds or spawn effects, without touching the game logic.
+void report(const application::GameEvent& event) {
+    if (const auto* changed = std::get_if<application::RoomChanged>(&event)) {
+        std::cout << "[event] room " << changed->from << " -> " << changed->to << '\n';
+    } else if (const auto* coin = std::get_if<application::CoinCollected>(&event)) {
+        std::cout << "[event] coin collected in " << coin->room << " (" << coin->total_collected
+                  << " so far)" << std::endl;
+    }
+}
+
+domain::RoomGraph loadWorld() {
+    std::vector<domain::Room> rooms;
+    for (const char* name : {"room_01", "room_02", "room_03", "room_04"}) {
+        rooms.push_back(infrastructure::loadTiledRoom(assetPath(std::string("tiled/") + name + ".tmj")));
+    }
+    return domain::RoomGraph(std::move(rooms));
+}
+
+}  // namespace
+
+int main() {
+    try {
+        infrastructure::Window window("platformer", kLogicalWidth, kLogicalHeight, kWindowScale);
+        infrastructure::KeyboardInputMapper input_mapper;
+        domain::FixedTimestep timestep(kStepNs);
+        application::GameSession session(loadWorld(), "room_01", kSpawnX, kSpawnY);
+
+        std::uint64_t previous_ns = SDL_GetTicksNS();
+
+        while (!input_mapper.quitRequested()) {
+            input_mapper.poll();
+            const domain::InputState input = input_mapper.state();
+
+            const std::uint64_t now_ns = SDL_GetTicksNS();
+            const int steps = timestep.advance(now_ns - previous_ns);
+            previous_ns = now_ns;
+
+            for (int i = 0; i < steps; ++i) {
+                for (const application::GameEvent& event : session.update(input)) {
+                    report(event);
+                }
+            }
+
+            presentation::drawGame(window.renderer(), session);
+        }
+    } catch (const std::exception& error) {
+        std::cerr << "Fatal error: " << error.what() << '\n';
+        return 1;
+    }
+    return 0;
+}
