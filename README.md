@@ -68,6 +68,25 @@ Rooms are Tiled maps (`game/assets/tiled/*.tmj`, JSON, CSV layer data):
   behind that edge. No property means a wall. The id is the file name.
 - **Objects** of class `coin` (rectangles): collectible coins.
 
+## Level tools
+
+Built with the game (`build/level_check`, `build/level_from_text`, `build/level_to_text`). They link the
+same `domain` library as the game, so they always use the real physics.
+
+```bash
+# Prove that every room and coin can be reached (also runs as a CTest test)
+./build/level_check game/assets/tiled room_01
+
+# Draw a level as text, then turn it into a Tiled map the game loads
+./build/level_from_text game/levels/example.txt game/assets/tiled/room_05.tmj
+
+# And the reverse: print an existing map as text
+./build/level_to_text game/assets/tiled/room_02.tmj room_02.txt
+```
+
+Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `C` coin; header lines
+`north/south/east/west: room_id`).
+
 ## Third-party code
 
 - [nlohmann/json](https://github.com/nlohmann/json) (MIT), in `game/third_party/nlohmann`

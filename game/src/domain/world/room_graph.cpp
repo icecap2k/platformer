@@ -31,6 +31,15 @@ const Room& RoomGraph::room(const RoomId& id) const {
     return rooms_.at(id);
 }
 
+std::vector<RoomId> RoomGraph::ids() const {
+    std::vector<RoomId> result;
+    result.reserve(rooms_.size());
+    for (const auto& [id, room] : rooms_) {
+        result.push_back(id);
+    }
+    return result;
+}
+
 int RoomGraph::totalCoins() const {
     int total = 0;
     for (const auto& [id, room] : rooms_) {

@@ -62,6 +62,22 @@ add_library(presentation STATIC
 target_link_libraries(presentation PUBLIC application presentation_animation infrastructure SDL3::SDL3)
 target_compile_options(presentation PRIVATE ${WARNINGS})
 
+# --- Level tools: reuse the real game physics to check and build levels. ---
+# They depend only on the domain and the asset loader (no SDL).
+add_library(level_tools STATIC
+    tools/level_tools/reachability.cpp
+    tools/level_tools/text_level.cpp)
+target_include_directories(level_tools PUBLIC tools)
+target_include_directories(level_tools SYSTEM PRIVATE third_party)
+target_link_libraries(level_tools PUBLIC domain)
+target_compile_options(level_tools PRIVATE ${WARNINGS})
+
+foreach(tool level_check level_from_text level_to_text)
+    add_executable(${tool} tools/${tool}.cpp)
+    target_link_libraries(${tool} PRIVATE level_tools infrastructure_assets)
+    target_compile_options(${tool} PRIVATE ${WARNINGS})
+endforeach()
+
 # --- Executable: composition root. ---
 add_executable(platformer src/main.cpp)
 target_link_libraries(platformer PRIVATE presentation)  # everything else comes transitively
@@ -95,10 +111,16 @@ if(PLATFORMER_BUILD_TESTS)
         tests/animation_test.cpp
         tests/decoration_test.cpp
         tests/game_session_test.cpp
-        tests/tiled_map_loader_test.cpp)
+        tests/tiled_map_loader_test.cpp
+        tests/level_tools_test.cpp)
     target_link_libraries(tests PRIVATE application infrastructure_assets presentation_animation
-                          domain doctest::doctest)
+                          level_tools domain doctest::doctest)
     target_compile_definitions(tests PRIVATE
-        PLATFORMER_ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
+        PLATFORMER_ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets"
+        PLATFORMER_LEVELS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/levels")
     add_test(NAME tests COMMAND tests)
+
+    # Proves that every shipped room and coin can be reached with the real physics.
+    add_test(NAME shipped_levels_reachable
+             COMMAND level_check ${CMAKE_CURRENT_SOURCE_DIR}/assets/tiled room_01)
 endif()

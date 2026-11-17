@@ -21,6 +21,9 @@ public:
 
     std::size_t size() const { return rooms_.size(); }
 
+    // Ids of every room, sorted alphabetically.
+    std::vector<RoomId> ids() const;
+
     // Number of coins in the whole world (collected or not).
     int totalCoins() const;
 

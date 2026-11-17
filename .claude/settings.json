@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "agent",
+            "if": "Bash(git push*)",
+            "model": "claude-sonnet-5-5",
+            "timeout": 180,
+            "statusMessage": "Reviewing the changes before pushing...",
+            "prompt": "You are an independent code reviewer with NO prior context about this project or the conversation. A `git push` is about to run in this repository (hook input JSON: $ARGUMENTS). Review ONLY the commits that would be pushed. This is a read-only review: do not modify, stage, commit or push anything, and do not run builds that write outside a temporary directory.\n\n1. Work out what will be pushed. Run `git status -sb` and `git log --oneline -n 10`. Then pick the base for the diff, in this order: the upstream (`git diff @{u}...HEAD`), else `git diff origin/main...HEAD`, else (nothing on the remote yet) `git diff 4b825dc642cb6eb9a060e54bf8d69288fbee4904 HEAD`. If the diff is empty, answer ok.\n2. Read the changed files that matter (not generated or vendored code under game/third_party).\n3. Look for REAL problems only: bugs and wrong logic, crashes or undefined behaviour in C++, broken CMake or build, tests that are wrong or would fail, layering violations (the `domain` and `application` libraries must never include SDL), secrets or credentials (tokens, keys, passwords), absolute paths of a personal machine, and files that should not be committed (build/, node_modules/, dist/, .DS_Store).\n4. Do NOT block for style, naming, missing comments, small refactors or subjective preferences.\n\nAnswer with ok=true if you found no blocking problem. Answer ok=false only for real problems, and in `reason` list each one in a short line with the file and line and why it matters (written in Spanish, because the user reads Spanish). Keep the reason under 15 lines."
+          }
+        ]
+      }
+    ]
+  }
+}

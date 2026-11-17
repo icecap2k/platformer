@@ -1,0 +1,91 @@
+// level_check: proves that every room and every coin of a world can be reached.
+//
+//   level_check <folder with .tmj files> [start_room] [spawn_x spawn_y]
+//
+// Exit code: 0 = everything reachable, 1 = something is not, 2 = bad input.
+#include <algorithm>
+#include <filesystem>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "infrastructure/assets/tiled_map_loader.h"
+#include "level_tools/reachability.h"
+
+namespace {
+
+void printUsage() {
+    std::cerr << "usage: level_check <folder with .tmj files> [start_room] [spawn_x spawn_y]\n"
+                 "  start_room defaults to room_01, spawn to 40 60 (the game's values)\n";
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    if (argc != 2 && argc != 3 && argc != 5) {
+        printUsage();
+        return 2;
+    }
+
+    try {
+        const std::filesystem::path folder = argv[1];
+        std::vector<std::filesystem::path> files;
+        for (const auto& entry : std::filesystem::directory_iterator(folder)) {
+            if (entry.path().extension() == ".tmj") {
+                files.push_back(entry.path());
+            }
+        }
+        std::sort(files.begin(), files.end());
+        if (files.empty()) {
+            std::cerr << "no .tmj files in " << folder << '\n';
+            return 2;
+        }
+
+        std::vector<domain::Room> rooms;
+        for (const auto& file : files) {
+            rooms.push_back(infrastructure::loadTiledRoom(file.string()));
+        }
+        const domain::RoomGraph world(std::move(rooms));
+
+        level_tools::ReachabilityOptions options;
+        options.start_room = argc >= 3 ? argv[2] : "room_01";
+        if (argc == 5) {
+            options.spawn_x = std::stof(argv[3]);
+            options.spawn_y = std::stof(argv[4]);
+        }
+
+        const level_tools::ReachabilityReport report = level_tools::analyzeReachability(world, options);
+
+        std::cout << "Loaded " << world.size() << " rooms from " << folder.string() << '\n'
+                  << "Start: " << options.start_room << " at (" << options.spawn_x << ", "
+                  << options.spawn_y << ")\n"
+                  << "Explored " << report.states_explored << " states"
+                  << (report.truncated ? " (STOPPED EARLY: search limit reached)" : "") << "\n\n";
+
+        std::cout << "Rooms:\n";
+        for (const auto& [id, reachable] : report.room_reachable) {
+            std::cout << "  " << id << "  " << (reachable ? "reachable" : "UNREACHABLE")
+                      << (report.room_standable.at(id) ? ", can stand" : "") << '\n';
+        }
+
+        std::cout << "\nCoins:\n";
+        if (report.coins.empty()) {
+            std::cout << "  (none)\n";
+        }
+        for (const level_tools::CoinStatus& coin : report.coins) {
+            std::cout << "  " << coin.room << " #" << coin.index << " at (" << coin.coin.x << ", "
+                      << coin.coin.y << ")  " << (coin.touchable ? "OK" : "CANNOT BE TOUCHED")
+                      << '\n';
+        }
+
+        if (report.allOk() && !report.truncated) {
+            std::cout << "\nResult: OK\n";
+            return 0;
+        }
+        std::cout << "\nResult: FAILED\n";
+        return 1;
+    } catch (const std::exception& error) {
+        std::cerr << "error: " << error.what() << '\n';
+        return 2;
+    }
+}
