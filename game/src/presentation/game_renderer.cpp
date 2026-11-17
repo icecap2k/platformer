@@ -3,17 +3,13 @@
 #include <string>
 
 #include "presentation/animation.h"
+#include "presentation/autotile.h"
 #include "presentation/decoration.h"
+#include "presentation/drip.h"
 
 namespace presentation {
 
 namespace {
-
-// Positions inside the tileset (tiled/tiles.png), 8x8 each.
-constexpr int kTileDirt = 0;
-constexpr int kTileBrick = 1;
-constexpr int kTileGrass = 2;
-constexpr int kTileMossyBrick = 3;
 
 // Sprite sheet (sprites/sprites.png). The player drawing is bigger than its
 // 8x16 collision box because the thick outline sticks out of it.
@@ -26,10 +22,6 @@ constexpr float kCoinSize = 8.0F;
 
 constexpr float kDecorSize = 8.0F;
 
-constexpr Uint8 kOutlineR = 28;
-constexpr Uint8 kOutlineG = 20;
-constexpr Uint8 kOutlineB = 32;
-
 // A cell outside the map counts as solid, so no outline is drawn along the
 // edges of the screen (the world continues into the next room there).
 bool solidOrOutside(const domain::TileMap& map, int column, int row) {
@@ -37,29 +29,33 @@ bool solidOrOutside(const domain::TileMap& map, int column, int row) {
     return outside || map.isSolid(column, row);
 }
 
-// Tiles get vegetation (grass, moss) on top when nothing solid is above them.
-int tileSheetIndex(const domain::TileMap& map, int column, int row) {
-    const bool exposed_top = !solidOrOutside(map, column, row - 1);
-    if (map.tileAt(column, row) == 1) {
-        return exposed_top ? kTileGrass : kTileDirt;
-    }
-    return exposed_top ? kTileMossyBrick : kTileBrick;
+// Which part of the rock sheet (sprites/rocks.png) to draw for the tile at
+// (column, row): the column depends on which sides touch open air, the row on
+// the material and a position-based texture variant.
+SDL_FRect rockSource(const domain::TileMap& map, int column, int row, float size) {
+    const int mask = exposureMask(!solidOrOutside(map, column, row - 1),
+                                  !solidOrOutside(map, column, row + 1),
+                                  !solidOrOutside(map, column + 1, row),
+                                  !solidOrOutside(map, column - 1, row));
+    const int sheet_row = rockSheetRow(map.tileAt(column, row), column, row);
+    return SDL_FRect{static_cast<float>(mask) * size, static_cast<float>(sheet_row) * size, size, size};
 }
 
 }  // namespace
 
 GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir)
     : renderer_(renderer),
-      tiles_(renderer, assets_dir + "tiled/tiles.png"),
+      rocks_(renderer, assets_dir + "sprites/rocks.png"),
       sprites_(renderer, assets_dir + "sprites/sprites.png"),
-      decor_(renderer, assets_dir + "sprites/decor.png") {}
+      decor_(renderer, assets_dir + "sprites/decor.png"),
+      cave_(renderer, assets_dir + "background/cave.png") {}
 
 void GameRenderer::draw(const application::GameSession& session) {
     const std::uint64_t time_ms = SDL_GetTicks();
 
-    drawBackground();
+    drawCave();
     drawTiles(session.map());
-    drawScenery(session.map());
+    drawScenery(session.map(), time_ms);
     drawCoins(session, time_ms);
     drawPlayer(session.player(), time_ms);
     drawHud(session, time_ms);
@@ -67,19 +63,13 @@ void GameRenderer::draw(const application::GameSession& session) {
     SDL_RenderPresent(renderer_);
 }
 
-void GameRenderer::drawBackground() const {
-    // A simple vertical gradient built from horizontal bands.
-    constexpr int kBands = 30;
-    for (int band = 0; band < kBands; ++band) {
-        const float t = static_cast<float>(band) / static_cast<float>(kBands - 1);
-        SDL_SetRenderDrawColor(renderer_, static_cast<Uint8>(20.0F + 30.0F * t),
-                               static_cast<Uint8>(24.0F + 40.0F * t),
-                               static_cast<Uint8>(48.0F + 70.0F * t), 255);
-        const SDL_FRect rect{0.0F, static_cast<float>(band * 8), 320.0F, 8.0F};
-        SDL_RenderFillRect(renderer_, &rect);
-    }
+// The cave behind the level: one still picture of the whole screen.
+void GameRenderer::drawCave() const {
+    cave_.draw(renderer_, SDL_FRect{0.0F, 0.0F, 320.0F, 240.0F}, SDL_FRect{0.0F, 0.0F, 320.0F, 240.0F});
 }
 
+// The outline is part of the rock art (it follows the pointed tips), so there is
+// nothing to draw besides the tile itself.
 void GameRenderer::drawTiles(const domain::TileMap& map) const {
     const float size = static_cast<float>(map.tileSize());
     for (int row = 0; row < map.height(); ++row) {
@@ -87,39 +77,16 @@ void GameRenderer::drawTiles(const domain::TileMap& map) const {
             if (!map.isSolid(column, row)) {
                 continue;
             }
-            const SDL_FRect source{static_cast<float>(tileSheetIndex(map, column, row)) * size,
-                                   0.0F, size, size};
             const SDL_FRect destination{static_cast<float>(column) * size,
                                         static_cast<float>(row) * size, size, size};
-            tiles_.draw(renderer_, source, destination);
-
-            // Thick dark outline along every edge that touches open air.
-            SDL_SetRenderDrawColor(renderer_, kOutlineR, kOutlineG, kOutlineB, 255);
-            const float x = destination.x;
-            const float y = destination.y;
-            if (!solidOrOutside(map, column, row - 1)) {
-                const SDL_FRect edge{x, y, size, 1.0F};
-                SDL_RenderFillRect(renderer_, &edge);
-            }
-            if (!solidOrOutside(map, column, row + 1)) {
-                const SDL_FRect edge{x, y + size - 1.0F, size, 1.0F};
-                SDL_RenderFillRect(renderer_, &edge);
-            }
-            if (!solidOrOutside(map, column - 1, row)) {
-                const SDL_FRect edge{x, y, 1.0F, size};
-                SDL_RenderFillRect(renderer_, &edge);
-            }
-            if (!solidOrOutside(map, column + 1, row)) {
-                const SDL_FRect edge{x + size - 1.0F, y, 1.0F, size};
-                SDL_RenderFillRect(renderer_, &edge);
-            }
+            rocks_.draw(renderer_, rockSource(map, column, row, size), destination);
         }
     }
 }
 
 // Vegetation growing out of the tiles: it sticks out of the solid area, on
 // top of tiles and hanging below them.
-void GameRenderer::drawScenery(const domain::TileMap& map) const {
+void GameRenderer::drawScenery(const domain::TileMap& map, std::uint64_t time_ms) const {
     const float size = static_cast<float>(map.tileSize());
     for (int row = 0; row < map.height(); ++row) {
         for (int column = 0; column < map.width(); ++column) {
@@ -141,10 +108,46 @@ void GameRenderer::drawScenery(const domain::TileMap& map) const {
                 if (frame != kNoDecoration) {
                     decor_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kDecorSize, 0.0F, kDecorSize, kDecorSize},
                                 SDL_FRect{x, y + size - 1.0F, kDecorSize, kDecorSize});
+                    if (frame == kDecorStalactite) {
+                        drawDrip(map, column, row, time_ms);
+                    }
                 }
             }
         }
     }
+}
+
+// The water drop of the stalactite hanging from the tile at (column, row): it
+// forms at the tip, falls until it meets the first solid tile below (or the
+// bottom of the screen) and splashes there. Only decoration: nothing in the
+// game reacts to it.
+void GameRenderer::drawDrip(const domain::TileMap& map, int column, int row,
+                            std::uint64_t time_ms) const {
+    constexpr float kDropTopInSprite = 5.0F;  // where the drop starts, inside the stalactite frame
+    constexpr float kDropHeight = 2.0F;
+
+    const float size = static_cast<float>(map.tileSize());
+    int ground_row = row + 1;
+    while (ground_row < map.height() && !map.isSolid(column, ground_row)) {
+        ++ground_row;
+    }
+    const float ground_y = static_cast<float>(ground_row) * size;
+    const float sprite_y = static_cast<float>(row) * size + size - 1.0F;
+    const float fall_distance = ground_y - (sprite_y + kDropTopInSprite + kDropHeight);
+
+    const Drip drip = dripAt(column, row, fall_distance, time_ms);
+    if (drip.phase == DripPhase::None) {
+        return;
+    }
+    const float x = static_cast<float>(column) * size;
+    const SDL_FRect source{static_cast<float>(drip.frame) * kDecorSize, 0.0F, kDecorSize, kDecorSize};
+    float y = sprite_y;  // forming: right under the stalactite's tip
+    if (drip.phase == DripPhase::Falling) {
+        y += drip.fall_offset;
+    } else if (drip.phase == DripPhase::Splash) {
+        y = ground_y - kDecorSize;  // the splash frames end in their bottom row
+    }
+    decor_.draw(renderer_, source, SDL_FRect{x, y, kDecorSize, kDecorSize});
 }
 
 void GameRenderer::drawCoins(const application::GameSession& session, std::uint64_t time_ms) const {

@@ -99,6 +99,46 @@ python3 game/tools/art/make_player_sprites.py
 python3 game/tools/art/make_player_sprites.py --preview preview.png   # enlarged, does not touch the sheet
 ```
 
+## Rock tiles
+
+Solid tiles are cave rock, drawn by `game/tools/art/make_rock_tiles.py` into `game/assets/sprites/rocks.png`
+(and the 4 palette tiles Tiled shows, `game/assets/tiled/tiles.png`). Each tile is chosen by which of its
+four sides touch open air (`presentation/autotile.h`): platform ends become pointed tips that taper
+underneath, tops are lit and undersides are jagged. The outline is part of the art, and collision is
+still a full tile. Tile id 1 is darker bedrock; any other id is lighter rock.
+
+```bash
+python3 game/tools/art/make_rock_tiles.py
+python3 game/tools/art/make_rock_tiles.py --preview preview.png   # a sample level, enlarged
+```
+
+## Cave scenery
+
+The small things growing on the rocks (glowing mushrooms, crystals, pebbles) and hanging from them
+(a stalactite, glowing roots) are `game/assets/sprites/decor.png`, drawn by
+`game/tools/art/make_cave_decor.py`. Which one appears where is a hash of the tile position, so a room
+always looks the same.
+
+Stalactites drip: a drop forms at the tip, falls until the first solid tile below and splashes
+(`presentation/drip.h`). It is only decoration, a function of the tile position and the clock: every
+stalactite has its own rhythm (a drop every 5-12 s, some cycles skipped), so they never drip together.
+
+```bash
+python3 game/tools/art/make_cave_decor.py
+python3 game/tools/art/make_cave_decor.py --preview preview.png   # enlarged, does not write the sheet
+```
+
+## Cave background
+
+The still cave behind the level is `game/assets/background/cave.png` (320x240), drawn by
+`game/tools/art/make_cave_background.py`. It is painted in three layers (far, middle, near) that
+are saved as one composite.
+
+```bash
+python3 game/tools/art/make_cave_background.py
+python3 game/tools/art/make_cave_background.py --preview preview.png   # does not write the image
+```
+
 ## Third-party code
 
 - [nlohmann/json](https://github.com/nlohmann/json) (MIT), in `game/third_party/nlohmann`

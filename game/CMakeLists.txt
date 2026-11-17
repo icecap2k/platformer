@@ -53,7 +53,9 @@ target_compile_options(infrastructure PRIVATE ${WARNINGS})
 # the tests can use them.
 add_library(presentation_animation STATIC
     src/presentation/animation.cpp
-    src/presentation/decoration.cpp)
+    src/presentation/decoration.cpp
+    src/presentation/autotile.cpp
+    src/presentation/drip.cpp)
 target_link_libraries(presentation_animation PUBLIC domain)
 target_compile_options(presentation_animation PRIVATE ${WARNINGS})
 
@@ -84,11 +86,14 @@ target_link_libraries(platformer PRIVATE presentation)  # everything else comes 
 target_compile_options(platformer PRIVATE ${WARNINGS})
 
 # Copy the assets next to the executable so it finds them regardless of the
-# directory it is launched from.
-add_custom_command(TARGET platformer POST_BUILD
+# directory it is launched from. A custom target (not POST_BUILD of the
+# executable) so that changing only an image or a map is picked up on the next
+# build, without needing to recompile any code.
+add_custom_target(copy_assets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/assets
             $<TARGET_FILE_DIR:platformer>/assets)
+add_dependencies(platformer copy_assets)
 
 # --- Tests: never link SDL. ---
 if(PLATFORMER_BUILD_TESTS)
@@ -110,6 +115,8 @@ if(PLATFORMER_BUILD_TESTS)
         tests/coin_test.cpp
         tests/animation_test.cpp
         tests/decoration_test.cpp
+        tests/autotile_test.cpp
+        tests/drip_test.cpp
         tests/game_session_test.cpp
         tests/tiled_map_loader_test.cpp
         tests/level_tools_test.cpp)
