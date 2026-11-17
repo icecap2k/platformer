@@ -12,7 +12,7 @@ The development diary is a Spanish blog in [`docs/`](docs/): one post per epic.
 | Action | Keys |
 |---|---|
 | Move | Arrow keys or `A` / `D` |
-| Jump | `Space`, `Up` or `W` |
+| Jump | `Space`, `Up` or `W` (hold for a full jump, tap for a hop; press again to re-jump) |
 | Quit | `Esc` |
 
 ## Build and run

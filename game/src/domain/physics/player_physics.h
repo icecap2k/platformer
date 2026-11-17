@@ -12,6 +12,13 @@ inline constexpr float kGravity = 0.2F;
 inline constexpr float kJumpSpeed = 5.0F;
 inline constexpr float kMaxFallSpeed = 6.0F;
 
+// Jump feel.
+// Coyote time: after walking off a ledge you can still jump for this many steps.
+inline constexpr int kCoyoteSteps = 6;
+// Variable height: releasing the button while rising caps the upward speed at
+// this value, so a tap gives a short hop and holding gives the full jump.
+inline constexpr float kJumpCutSpeed = 2.0F;
+
 // Advances the player by exactly one fixed simulation step, colliding with
 // the solid tiles of `map`.
 //
@@ -19,6 +26,10 @@ inline constexpr float kMaxFallSpeed = 6.0F;
 // once makes it ambiguous which face of a tile was hit; separating the axes
 // makes "landing", "bumping the head" and "hitting a wall" trivial to tell
 // apart.
+//
+// Jump rules: a jump needs a fresh press (holding the button does not make
+// the player bounce), is allowed up to kCoyoteSteps after leaving the ground,
+// and is cut short if the button is released while rising.
 //
 // Speeds must stay below one tile per step, otherwise the player could skip
 // over a thin tile ("tunnelling").

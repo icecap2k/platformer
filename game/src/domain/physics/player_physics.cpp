@@ -88,10 +88,25 @@ void stepPlayer(Player& player, const InputState& input, const TileMap& map) {
     player.velocity_x = static_cast<float>(input.horizontalAxis()) * kRunSpeed;
     moveHorizontally(player, map);
 
-    // Jump: only allowed while standing on something.
-    if (input.jump && player.on_ground) {
-        player.velocity_y = -kJumpSpeed;
+    // Coyote time: standing refills the grace period, being in the air spends it.
+    if (player.on_ground) {
+        player.coyote_steps = kCoyoteSteps;
+    } else if (player.coyote_steps > 0) {
+        --player.coyote_steps;
     }
+
+    // Jump: needs a fresh press (not held since last step) and ground, or the
+    // grace period after leaving it.
+    if (input.jump && !player.jump_held && player.coyote_steps > 0) {
+        player.velocity_y = -kJumpSpeed;
+        player.coyote_steps = 0;  // spent: no double jump
+    }
+
+    // Variable height: letting go while rising cuts the jump short.
+    if (!input.jump && player.velocity_y < -kJumpCutSpeed) {
+        player.velocity_y = -kJumpCutSpeed;
+    }
+    player.jump_held = input.jump;
 
     // Gravity, with a terminal velocity so falls stay controllable.
     player.velocity_y = std::min(player.velocity_y + kGravity, kMaxFallSpeed);

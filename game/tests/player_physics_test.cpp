@@ -115,7 +115,7 @@ TEST_CASE("player physics on flat ground") {
 
         float highest = player.y;
         for (int i = 0; i < 200; ++i) {
-            stepPlayer(player, none, map);
+            stepPlayer(player, jump, map);  // button held: full-height jump
             highest = std::min(highest, player.y);
         }
 
@@ -135,6 +135,86 @@ TEST_CASE("player physics on flat ground") {
 
         // Only gravity acted on it: no upward kick.
         CHECK(player.velocity_y == doctest::Approx(kGravity));
+    }
+
+    SUBCASE("releasing the button early gives a shorter jump") {
+        Player player = standingAt(100.0F, kFloorTop);
+        const float floor_y = player.y;
+        InputState jump;
+        jump.jump = true;
+        stepPlayer(player, jump, map);
+
+        float highest = player.y;
+        for (int i = 0; i < 200; ++i) {
+            stepPlayer(player, none, map);  // released right after the first step
+            highest = std::min(highest, player.y);
+        }
+
+        const float height = floor_y - highest;
+        CHECK(height > 0.0F);
+        CHECK(height < 20.0F);  // far below the 62.5 px full jump
+    }
+
+    SUBCASE("holding the button does not bounce: a new press is needed") {
+        Player player = standingAt(100.0F, kFloorTop);
+        InputState jump;
+        jump.jump = true;
+
+        int takeoffs = 0;
+        bool was_grounded = true;
+        for (int i = 0; i < 300; ++i) {
+            stepPlayer(player, jump, map);
+            if (was_grounded && !player.on_ground) {
+                ++takeoffs;
+            }
+            was_grounded = player.on_ground;
+        }
+        CHECK(takeoffs == 1);
+
+        // Release for a step, press again: the second jump works.
+        stepPlayer(player, none, map);
+        stepPlayer(player, jump, map);
+        CHECK(player.velocity_y < 0.0F);
+    }
+
+    SUBCASE("coyote time: a jump is still possible just after leaving a ledge") {
+        Player player;
+        player.x = 100.0F;
+        player.y = 50.0F;
+        player.on_ground = true;  // was standing on the previous step
+        player.coyote_steps = kCoyoteSteps;
+        player.on_ground = false;  // ...and has just walked off
+        InputState jump;
+        jump.jump = true;
+
+        stepPlayer(player, jump, map);
+        CHECK(player.velocity_y < 0.0F);  // jumped in mid-air
+    }
+
+    SUBCASE("coyote time runs out") {
+        Player player;
+        player.x = 100.0F;
+        player.y = 50.0F;
+        player.coyote_steps = kCoyoteSteps;
+        for (int i = 0; i < kCoyoteSteps; ++i) {
+            stepPlayer(player, none, map);
+        }
+        InputState jump;
+        jump.jump = true;
+        const float vy_before = player.velocity_y;
+        stepPlayer(player, jump, map);
+        CHECK(player.velocity_y == doctest::Approx(vy_before + kGravity));  // only gravity
+    }
+
+    SUBCASE("no double jump with coyote time") {
+        Player player = standingAt(100.0F, kFloorTop);
+        InputState jump;
+        jump.jump = true;
+        stepPlayer(player, jump, map);  // takes off
+        stepPlayer(player, none, map);  // release
+        const float vy = player.velocity_y;
+        stepPlayer(player, jump, map);  // press again in the air
+        CHECK(player.velocity_y == doctest::Approx(vy + kGravity));
     }
 }
 
@@ -214,7 +294,7 @@ TEST_CASE("player physics against tiles") {
 
         float highest = player.y;
         for (int i = 0; i < 100; ++i) {
-            stepPlayer(player, none, map);
+            stepPlayer(player, jump, map);
             highest = std::min(highest, player.y);
         }
 
@@ -236,7 +316,7 @@ TEST_CASE("player physics against tiles") {
 
         float highest = player.y;
         for (int i = 0; i < 100; ++i) {
-            stepPlayer(player, none, map);
+            stepPlayer(player, jump, map);
             highest = std::min(highest, player.y);
         }
 
