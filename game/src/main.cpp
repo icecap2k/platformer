@@ -56,6 +56,7 @@ int main() {
     try {
         infrastructure::Window window("platformer", kLogicalWidth, kLogicalHeight, kWindowScale);
         infrastructure::KeyboardInputMapper input_mapper;
+        presentation::GameRenderer renderer(window.renderer(), assetPath(""));
         domain::FixedTimestep timestep(kStepNs);
         application::GameSession session(loadWorld(), "room_01", kSpawnX, kSpawnY);
 
@@ -75,7 +76,7 @@ int main() {
                 }
             }
 
-            presentation::drawGame(window.renderer(), session);
+            renderer.draw(session);
         }
     } catch (const std::exception& error) {
         std::cerr << "Fatal error: " << error.what() << '\n';

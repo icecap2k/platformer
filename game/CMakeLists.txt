@@ -43,18 +43,28 @@ find_package(SDL3 REQUIRED)
 
 add_library(infrastructure STATIC
     src/infrastructure/sdl/window.cpp
+    src/infrastructure/sdl/texture.cpp
     src/infrastructure/input/keyboard_input_mapper.cpp)
+target_include_directories(infrastructure SYSTEM PRIVATE third_party)
 target_link_libraries(infrastructure PUBLIC domain infrastructure_assets SDL3::SDL3)
 target_compile_options(infrastructure PRIVATE ${WARNINGS})
 
+# Animation rules are pure logic (no SDL), so they get their own library and
+# the tests can use them.
+add_library(presentation_animation STATIC
+    src/presentation/animation.cpp
+    src/presentation/decoration.cpp)
+target_link_libraries(presentation_animation PUBLIC domain)
+target_compile_options(presentation_animation PRIVATE ${WARNINGS})
+
 add_library(presentation STATIC
     src/presentation/game_renderer.cpp)
-target_link_libraries(presentation PUBLIC application SDL3::SDL3)
+target_link_libraries(presentation PUBLIC application presentation_animation infrastructure SDL3::SDL3)
 target_compile_options(presentation PRIVATE ${WARNINGS})
 
 # --- Executable: composition root. ---
 add_executable(platformer src/main.cpp)
-target_link_libraries(platformer PRIVATE infrastructure presentation application)  # domain comes transitively
+target_link_libraries(platformer PRIVATE presentation)  # everything else comes transitively
 target_compile_options(platformer PRIVATE ${WARNINGS})
 
 # Copy the assets next to the executable so it finds them regardless of the
@@ -82,9 +92,12 @@ if(PLATFORMER_BUILD_TESTS)
         tests/player_physics_test.cpp
         tests/room_transition_test.cpp
         tests/coin_test.cpp
+        tests/animation_test.cpp
+        tests/decoration_test.cpp
         tests/game_session_test.cpp
         tests/tiled_map_loader_test.cpp)
-    target_link_libraries(tests PRIVATE application infrastructure_assets domain doctest::doctest)
+    target_link_libraries(tests PRIVATE application infrastructure_assets presentation_animation
+                          domain doctest::doctest)
     target_compile_definitions(tests PRIVATE
         PLATFORMER_ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
     add_test(NAME tests COMMAND tests)

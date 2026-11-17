@@ -1263,12 +1263,12 @@
    "firstgid": 1,
    "name": "tiles",
    "image": "tiles.png",
-   "imagewidth": 16,
+   "imagewidth": 32,
    "imageheight": 8,
    "tilewidth": 8,
    "tileheight": 8,
-   "tilecount": 2,
-   "columns": 2,
+   "tilecount": 4,
+   "columns": 4,
    "margin": 0,
    "spacing": 0
   }
