@@ -177,33 +177,35 @@ TEST_CASE("player physics on flat ground") {
         CHECK(player.velocity_y < 0.0F);
     }
 
-    SUBCASE("coyote time: a jump is still possible just after leaving a ledge") {
-        Player player;
-        player.x = 100.0F;
-        player.y = 50.0F;
-        player.on_ground = true;  // was standing on the previous step
-        player.coyote_steps = kCoyoteSteps;
-        player.on_ground = false;  // ...and has just walked off
-        InputState jump;
-        jump.jump = true;
-
-        stepPlayer(player, jump, map);
-        CHECK(player.velocity_y < 0.0F);  // jumped in mid-air
-    }
-
-    SUBCASE("coyote time runs out") {
-        Player player;
-        player.x = 100.0F;
-        player.y = 50.0F;
-        player.coyote_steps = kCoyoteSteps;
-        for (int i = 0; i < kCoyoteSteps; ++i) {
-            stepPlayer(player, none, map);
+    SUBCASE("coyote time lasts exactly kCoyoteSteps airborne steps after a real ledge") {
+        // Platform edge at x = 144. Walk off it, wait `idle` steps, then press jump.
+        std::vector<std::pair<int, int>> platform;
+        for (int column = 10; column <= 17; ++column) {
+            platform.emplace_back(column, 20);
         }
-        InputState jump;
-        jump.jump = true;
-        const float vy_before = player.velocity_y;
-        stepPlayer(player, jump, map);
-        CHECK(player.velocity_y == doctest::Approx(vy_before + kGravity));  // only gravity
+        const TileMap ledge_map = makeMap(platform);
+
+        const auto jumpsAfterIdleSteps = [&](int idle) {
+            Player walker = standingAt(130.0F, 160.0F);
+            InputState right;
+            right.right = true;
+            for (int i = 0; i < 100 && (walker.on_ground || i == 0); ++i) {
+                stepPlayer(walker, right, ledge_map);
+            }
+            REQUIRE_FALSE(walker.on_ground);  // it has really left the platform
+            for (int i = 0; i < idle; ++i) {
+                stepPlayer(walker, none, ledge_map);
+            }
+            InputState jump;
+            jump.jump = true;
+            const float vy_before = walker.velocity_y;
+            stepPlayer(walker, jump, ledge_map);
+            return walker.velocity_y < vy_before;  // kicked upwards
+        };
+
+        CHECK(jumpsAfterIdleSteps(0));
+        CHECK(jumpsAfterIdleSteps(kCoyoteSteps - 1));  // last airborne step that still jumps
+        CHECK_FALSE(jumpsAfterIdleSteps(kCoyoteSteps));
     }
 
     SUBCASE("no double jump with coyote time") {

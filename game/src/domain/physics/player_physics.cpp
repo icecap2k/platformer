@@ -88,11 +88,11 @@ void stepPlayer(Player& player, const InputState& input, const TileMap& map) {
     player.velocity_x = static_cast<float>(input.horizontalAxis()) * kRunSpeed;
     moveHorizontally(player, map);
 
-    // Coyote time: standing refills the grace period, being in the air spends it.
+    // Coyote time: standing refills the grace period; each airborne step that
+    // does not jump spends one (after the jump check, so the window is exactly
+    // kCoyoteSteps airborne steps long).
     if (player.on_ground) {
         player.coyote_steps = kCoyoteSteps;
-    } else if (player.coyote_steps > 0) {
-        --player.coyote_steps;
     }
 
     // Jump: needs a fresh press (not held since last step) and ground, or the
@@ -100,6 +100,8 @@ void stepPlayer(Player& player, const InputState& input, const TileMap& map) {
     if (input.jump && !player.jump_held && player.coyote_steps > 0) {
         player.velocity_y = -kJumpSpeed;
         player.coyote_steps = 0;  // spent: no double jump
+    } else if (!player.on_ground && player.coyote_steps > 0) {
+        --player.coyote_steps;
     }
 
     // Variable height: letting go while rising cuts the jump short.

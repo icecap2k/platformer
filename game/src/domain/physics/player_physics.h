@@ -13,7 +13,8 @@ inline constexpr float kJumpSpeed = 5.0F;
 inline constexpr float kMaxFallSpeed = 6.0F;
 
 // Jump feel.
-// Coyote time: after walking off a ledge you can still jump for this many steps.
+// Coyote time: after walking off a ledge you can still start a jump during this
+// many airborne steps.
 inline constexpr int kCoyoteSteps = 6;
 // Variable height: releasing the button while rising caps the upward speed at
 // this value, so a tap gives a short hop and holding gives the full jump.

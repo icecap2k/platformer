@@ -17,7 +17,7 @@ if (!input.jump && player.velocity_y < -kJumpCutSpeed) {
 }
 ```
 
-Un toque da un saltito; mantenerlo da el salto completo (62,5 px, igual que antes).
+Un toque da un saltito; mantenerlo da el salto completo (unos 60 px con la integración discreta; la fórmula continua `v²/2g` da 62,5), igual que antes.
 
 ## 2. Coyote time
 
@@ -26,11 +26,12 @@ Es la cortesía de dejarte saltar **unos pasos después de pisar el borde**. El 
 Se guarda un contador en `Player`:
 
 ```cpp
-if (player.on_ground)            player.coyote_steps = kCoyoteSteps;  // 6 pasos = 0,1 s
+if (player.on_ground) player.coyote_steps = kCoyoteSteps;  // 6 pasos = 0,1 s
+// ...se comprueba el salto, y si no se salta en el aire:
 else if (player.coyote_steps > 0) --player.coyote_steps;
 ```
 
-Y el salto pregunta por el contador en lugar de por `on_ground`. Al saltar se pone a 0, para que no se pueda encadenar un segundo salto en el aire.
+Y el salto pregunta por el contador en lugar de por `on_ground`. El contador se gasta **después** de comprobar el salto, así que la ventana es de exactamente 6 pasos en el aire (la primera versión gastaba uno antes y daba solo 5: lo cazó una revisión externa y ahora hay un test de frontera con un borde real). Al saltar se pone a 0, para que no se pueda encadenar un segundo salto en el aire.
 
 ## 3. Hay que volver a pulsar
 
@@ -55,7 +56,7 @@ Casos nuevos en `player_physics_test`:
 
 - Soltar pronto da un salto claramente más corto.
 - Mantener pulsado solo despega una vez; soltar y pulsar de nuevo salta.
-- Coyote time: se puede saltar justo tras salir de un borde, y deja de poderse cuando el contador se agota.
+- Coyote time, con una plataforma de verdad: se puede saltar hasta el último paso de la ventana y no el siguiente.
 - No hay doble salto aprovechando el coyote.
 
 Los tests antiguos de altura máxima y de techos ahora **mantienen el botón** mientras suben: es el comportamiento que antes se daba por supuesto y que el nuevo salto hace explícito.

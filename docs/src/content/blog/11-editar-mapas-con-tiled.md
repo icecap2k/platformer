@@ -21,11 +21,11 @@ El cargador (`infrastructure/assets/tiled_map_loader.cpp`) es deliberadamente si
 
 | Regla | Por qué |
 |---|---|
-| Tamaño de tile **8×8** y mapa de **40×30** | Resolución lógica del juego. Otros tamaños no se han probado. |
+| Tiles **cuadrados** y mapa **no infinito**; usa **8×8** y **40×30** | El cargador solo exige lo primero. El 8×8 y el 40×30 son la convención del juego (resolución lógica); otros tamaños no se han probado. |
 | Se usa **la primera capa de tiles** | Una sola capa decide qué es sólido. Si añades otra encima, se ignora. |
-| La capa debe estar en **CSV** | El cargador no descomprime. Tiled lo guarda así si en *Propiedades del mapa → Codificación de capas de tiles* eliges `CSV`. |
+| La capa debe estar en **CSV** | El cargador no descomprime ni decodifica base64. Tiled lo guarda así si en *Propiedades del mapa → Codificación de capas de tiles* eliges `CSV`. |
 | Cualquier tile **distinto de 0 es sólido** | `isSolid` es el único sitio que decide esto. El 1 es suelo y el 2 ladrillo; se dibujan distinto, pero chocan igual. |
-| Las monedas son **objetos rectángulo de clase `coin`** | Van en una capa de objetos, no de tiles. Su posición es la esquina superior izquierda. |
+| Las monedas son **objetos de clase `coin`**; usa **rectángulos** | Van en una capa de objetos, no de tiles. El cargador solo mira la clase, pero la posición se interpreta como esquina superior izquierda: un objeto-tile (cuyo origen está abajo) quedaría desplazado. |
 | Las salas vecinas son **propiedades del mapa** de tipo texto: `north`, `south`, `east`, `west` | El valor es el nombre del fichero sin extensión (`room_02`). Sin propiedad, ese borde es un muro. |
 
 Dos detalles de Tiled que despistan:
@@ -41,7 +41,7 @@ Dos detalles de Tiled que despistan:
 4. Crea una capa de objetos y, con la herramienta *Insertar rectángulo*, coloca cada moneda. En el panel de propiedades pon **Clase = `coin`** y tamaño 8×8.
 5. En *Propiedades del mapa* añade, por ejemplo, `west = room_04` (tipo *string*).
 6. **Vuelve atrás**: abre `room_04` y añade `east = room_05`. Los enlaces tienen que ser recíprocos, y hay un test que lo comprueba.
-7. Añade `"room_05"` a la lista de `loadWorld()` en `main.cpp` (y a la de los tests de niveles reales).
+7. Añade `"room_05"` a la lista de `loadWorld()` en `main.cpp` y a las listas de salas de los tests de niveles reales (`tiled_map_loader_test`, `game_session_test`, `level_tools_test`), incluidos los recuentos de monedas.
 
 ## Comprobar que se puede ganar
 
@@ -62,10 +62,10 @@ Como adelantábamos: elige **una fuente de verdad por sala**. Una forma cómoda 
 
 | Síntoma | Causa probable |
 |---|---|
-| `Tile layer data must be uncompressed` | La capa se guardó con compresión: cambia la codificación a CSV y guarda otra vez. |
+| `Tile layer data must be uncompressed` | La capa no está en CSV (comprimida o en base64): cambia la codificación a CSV y guarda otra vez. |
 | `Tiled map has no tile layer` | Solo hay capas de objetos. |
 | Cruzas el borde y no pasa nada | Falta la propiedad (`east`, `west`…), o está en la capa y no en el mapa. |
-| La moneda no aparece | La clase no es exactamente `coin`, o el objeto no es un rectángulo. |
+| La moneda no aparece o sale desplazada | La clase no es exactamente `coin`, o el objeto no es un rectángulo (un objeto-tile tiene el origen abajo). |
 | Los tests de enlaces fallan | La sala nueva apunta a otra que no apunta de vuelta. |
 
 ## Siguiente
