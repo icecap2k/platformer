@@ -163,7 +163,13 @@ void GameRenderer::drawCoins(const application::GameSession& session, std::uint6
 
 void GameRenderer::drawPlayer(const domain::Player& player, std::uint64_t time_ms) {
     facing_left_ = facesLeft(player, facing_left_);
-    const PlayerPose pose = playerPose(player, time_ms);
+    if (player.on_ground && !was_on_ground_) {
+        landed_at_ms_ = time_ms;
+        has_landed_ = true;
+    }
+    was_on_ground_ = player.on_ground;
+    const std::uint64_t since_landing = has_landed_ ? time_ms - landed_at_ms_ : kNotLanding;
+    const PlayerPose pose = playerPose(player, time_ms, since_landing);
 
     const SDL_FRect source{static_cast<float>(static_cast<int>(pose)) * kPlayerSpriteWidth, 0.0F,
                            kPlayerSpriteWidth, kPlayerSpriteHeight};

@@ -87,6 +87,18 @@ same `domain` library as the game, so they always use the real physics.
 Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin; header lines
 `north/south/east/west: room_id`).
 
+## Player art
+
+The player frames (14: idle, run, rise, apex, fall, land) are drawn in code by
+`game/tools/art/make_player_sprites.py` (Python, standard library only). Edit the
+frame definitions and run it to regenerate `game/assets/sprites/sprites.png`; the
+coin frames in the same sheet are preserved.
+
+```bash
+python3 game/tools/art/make_player_sprites.py
+python3 game/tools/art/make_player_sprites.py --preview preview.png   # enlarged, does not touch the sheet
+```
+
 ## Third-party code
 
 - [nlohmann/json](https://github.com/nlohmann/json) (MIT), in `game/third_party/nlohmann`

@@ -33,6 +33,9 @@ private:
     infrastructure::Texture sprites_;
     infrastructure::Texture decor_;
     bool facing_left_ = false;
+    bool was_on_ground_ = true;
+    std::uint64_t landed_at_ms_ = 0;
+    bool has_landed_ = false;
 };
 
 }  // namespace presentation
