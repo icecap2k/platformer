@@ -6,13 +6,26 @@
 
 namespace presentation {
 
-// Which drawing of the player to show. The order matches the frames in
-// assets/sprites/sprites.png (left to right).
-enum class PlayerPose { Idle = 0, Walk1 = 1, Walk2 = 2, Jump = 3 };
+// Which drawing of the player to show. The value is the column of the frame in
+// assets/sprites/sprites.png (left to right); the sheet is drawn by
+// tools/art/make_player_sprites.py.
+enum class PlayerPose {
+    Idle0 = 0, Idle1, Idle2, Idle3,                  // breathing, hood tip swaying
+    Run0 = 4, Run1, Run2, Run3, Run4, Run5,          // run cycle
+    Rise = 10, Apex = 11, Fall = 12,                 // in the air
+    Land = 13,                                       // squashed, just after landing
+};
 
-// Chooses the pose from what the player is doing. `time_ms` drives the walk
-// cycle. Pure logic: no SDL, so it is unit tested.
-PlayerPose playerPose(const domain::Player& player, std::uint64_t time_ms);
+inline constexpr int kPlayerFrameCount = 14;
+
+// `ms_since_landing` value meaning "has not just landed".
+inline constexpr std::uint64_t kNotLanding = ~std::uint64_t{0};
+
+// Chooses the pose from what the player is doing. `time_ms` drives the idle and
+// run cycles; `ms_since_landing` shows the squashed pose for a moment after
+// touching the ground. Pure logic: no SDL, so it is unit tested.
+PlayerPose playerPose(const domain::Player& player, std::uint64_t time_ms,
+                      std::uint64_t ms_since_landing = kNotLanding);
 
 // Should the sprite be mirrored? The player keeps looking where it last moved
 // while standing still, hence the `was_facing_left` input.

@@ -8,11 +8,13 @@ namespace presentation {
 
 inline constexpr int kNoDecoration = -1;
 
-// Frames in assets/sprites/decor.png (8x8 each, left to right).
-inline constexpr int kDecorFirstStanding = 0;  // tufts, flowers, mushroom, bush
+// Frames in assets/sprites/decor.png (8x8 each, left to right), drawn by
+// tools/art/make_cave_decor.py.
+inline constexpr int kDecorFirstStanding = 0;  // glowing mushrooms, crystals, pebbles
 inline constexpr int kDecorLastStanding = 5;
-inline constexpr int kDecorFirstHanging = 6;  // vines
+inline constexpr int kDecorFirstHanging = 6;  // stalactite with a drip, glowing roots
 inline constexpr int kDecorLastHanging = 7;
+inline constexpr int kDecorStalactite = 6;  // the hanging frame that drips (drop frames: see drip.h, 8-12)
 
 // What grows on top of the solid tile at (column, row), or kNoDecoration.
 int standingDecoration(int column, int row);

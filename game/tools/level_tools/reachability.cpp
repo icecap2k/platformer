@@ -22,14 +22,23 @@ struct State {
 };
 
 // Packs a state into one integer. The player's position and speed are
-// rounded (0.5 px, 0.1 px, 0.1 px/step), which makes the state space finite.
+// rounded (0.5 px, 0.1 px, 0.1 px/step) and the jump state is included, which makes the state space finite.
 // The offsets keep every field non-negative so fields cannot overlap.
 std::uint64_t keyOf(const State& state) {
     const auto x = static_cast<std::uint64_t>(std::llround(state.player.x * 2.0F) + 8192);
     const auto y = static_cast<std::uint64_t>(std::llround(state.player.y * 10.0F) + 8192);
     const auto vy = static_cast<std::uint64_t>(std::llround(state.player.velocity_y * 10.0F) + 256);
-    return (static_cast<std::uint64_t>(state.room) << 44) | (x << 28) | (y << 12) | (vy << 1) |
-           (state.player.on_ground ? 1U : 0U);
+    // Jump state, reduced to what can still change the future (fewer distinct
+    // states = a much smaller search): on the ground the grace period is always
+    // full, and without it (airborne, no coyote time left) holding the button
+    // no longer matters.
+    const bool grounded = state.player.on_ground;
+    const int coyote_steps = grounded ? domain::kCoyoteSteps : state.player.coyote_steps;
+    const bool held = (grounded || coyote_steps > 0) && state.player.jump_held;
+    const auto coyote = static_cast<std::uint64_t>(coyote_steps);  // 0..kCoyoteSteps (3 bits)
+    const std::uint64_t flags = (coyote << 2) | (held ? 2U : 0U) |
+                                (state.player.on_ground ? 1U : 0U);
+    return (static_cast<std::uint64_t>(state.room) << 48) | (x << 32) | (y << 16) | (vy << 5) | flags;
 }
 
 std::vector<domain::InputState> allInputs() {
