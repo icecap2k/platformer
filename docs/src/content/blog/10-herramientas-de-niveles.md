@@ -110,6 +110,7 @@ east: room_02
 | `.` | vacío |
 | `#` | suelo (tile 1) |
 | `B` | ladrillo (tile 2) |
+| `3`, `4` | tiles 3 y 4 del tileset (sólidos, se dibujan como ladrillo); existen para que mapas de Tiled que los usen se conviertan sin pérdida |
 | `C` | moneda, sobre un tile vacío |
 
 Encima de la línea `---` va la cabecera: `north`, `south`, `east`, `west` con el id de la sala vecina, y `tile_size` opcional. Las líneas que empiezan por `#` en la cabecera son comentarios (en la cuadrícula, `#` es suelo, así que ahí no hay comentarios).

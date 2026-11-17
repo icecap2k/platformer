@@ -127,6 +127,12 @@ TextLevel parseTextLevel(const std::string& text) {
                 case 'B':
                     tile = kTileBrick;
                     break;
+                case '3':
+                    tile = kTileThree;
+                    break;
+                case '4':
+                    tile = kTileFour;
+                    break;
                 case 'C': {
                     const float size = static_cast<float>(level.tile_size);
                     level.coins.push_back(domain::Coin{static_cast<float>(column) * size,
@@ -136,7 +142,7 @@ TextLevel parseTextLevel(const std::string& text) {
                 default:
                     failAt(line_number, std::string("unknown character '") +
                                             cells[static_cast<std::size_t>(column)] +
-                                            "' (use . # B C)");
+                                            "' (use . # B 3 4 C)");
             }
             level.tiles[static_cast<std::size_t>(row * level.width + column)] = tile;
         }
@@ -240,6 +246,12 @@ std::string toText(const domain::Room& room) {
                     break;
                 case kTileBrick:
                     symbol = 'B';
+                    break;
+                case kTileThree:
+                    symbol = '3';
+                    break;
+                case kTileFour:
+                    symbol = '4';
                     break;
                 default:
                     throw std::runtime_error("tile id " + std::to_string(map.tileAt(column, row)) +

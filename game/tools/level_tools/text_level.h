@@ -22,9 +22,12 @@ namespace level_tools {
 // neighbouring room; `tile_size` = pixels per tile (default 8).
 // Grid (below it), one character per tile:
 //   .  empty        #  ground (tile 1)        B  brick (tile 2)
+//   3  tile 3 of the tileset    4  tile 4 of the tileset (both solid, drawn as brick)
 //   C  coin on an empty tile
 inline constexpr int kTileGround = 1;
 inline constexpr int kTileBrick = 2;
+inline constexpr int kTileThree = 3;  // other solid tiles of the tileset, kept so Tiled maps
+inline constexpr int kTileFour = 4;   // that use them still convert without loss
 
 struct TextLevel {
     int tile_size = 8;

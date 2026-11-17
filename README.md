@@ -84,7 +84,7 @@ same `domain` library as the game, so they always use the real physics.
 ./build/level_to_text game/assets/tiled/room_02.tmj room_02.txt
 ```
 
-Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `C` coin; header lines
+Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin; header lines
 `north/south/east/west: room_id`).
 
 ## Third-party code

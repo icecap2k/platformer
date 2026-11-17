@@ -192,6 +192,11 @@ TEST_CASE("parseTextLevel") {
         CHECK(room.coins().size() == 1);
     }
 
+    SUBCASE("reads the extra tileset tiles 3 and 4") {
+        const TextLevel level = parseTextLevel("---\n.34#\n");
+        CHECK(level.tiles == std::vector<int>{0, kTileThree, kTileFour, kTileGround});
+    }
+
     SUBCASE("errors mention the line") {
         CHECK_THROWS_WITH_AS(parseTextLevel("---\n..\n.\n"), doctest::Contains("line 3"),
                              std::runtime_error);
@@ -243,6 +248,12 @@ TEST_CASE("text <-> Tiled round trips") {
         REQUIRE(again.coins.size() == 1);
         CHECK(again.coins[0].x == level.coins[0].x);
         CHECK(again.coins[0].y == level.coins[0].y);
+    }
+
+    SUBCASE("toText round-trips the extra tileset tiles 3 and 4") {
+        const Room room("r", domain::TileMap(4, 1, 8, {kTileGround, kTileThree, kTileFour, kTileBrick}));
+        const TextLevel again = parseTextLevel(toText(room));
+        CHECK(again.tiles == std::vector<int>{kTileGround, kTileThree, kTileFour, kTileBrick});
     }
 
     SUBCASE("toText rejects tiles it cannot draw and coins buried in solids") {
