@@ -524,3 +524,126 @@ TEST_CASE("GameSession healing fruits") {
         CHECK(session.player().health == domain::kMaxHealth);
     }
 }
+
+namespace {
+
+template <class Event>
+int countOfType(const std::vector<application::GameEvent>& events) {
+    int count = 0;
+    for (const auto& event : events) {
+        count += std::holds_alternative<Event>(event) ? 1 : 0;
+    }
+    return count;
+}
+
+// Runs `steps` steps and gathers every event, in order.
+std::vector<application::GameEvent> collect(GameSession& session, const InputState& input, int steps) {
+    std::vector<application::GameEvent> all;
+    for (int i = 0; i < steps; ++i) {
+        const auto events = session.update(input);
+        all.insert(all.end(), events.begin(), events.end());
+    }
+    return all;
+}
+
+}  // namespace
+
+TEST_CASE("GameSession announces jumps and landings") {
+    GameSession session(makePlusWorld(), "center", 100.0F, test_maps::kFloorTop - 16.0F);  // on the floor
+    CHECK(countOfType<application::PlayerLanded>(collect(session, InputState{}, 30)) == 0);  // standing: nothing
+
+    SUBCASE("a jump is announced once, and not again while the button stays held") {
+        InputState jump;
+        jump.jump = true;
+        const auto events = collect(session, jump, 40);  // holds the button through the whole jump
+        CHECK(countOfType<application::PlayerJumped>(events) == 1);
+    }
+
+    SUBCASE("coming back down is a landing, with the speed of the fall") {
+        InputState jump;
+        jump.jump = true;
+        auto events = collect(session, jump, 1);
+        const auto later = collect(session, InputState{}, 120);
+        events.insert(events.end(), later.begin(), later.end());
+
+        REQUIRE(countOfType<application::PlayerLanded>(events) == 1);
+        for (const auto& event : events) {
+            if (const auto* landed = std::get_if<application::PlayerLanded>(&event)) {
+                CHECK(landed->impact_speed >= 1.5F);
+            }
+        }
+    }
+
+    SUBCASE("walking on flat ground announces neither jumps nor landings") {
+        InputState right;
+        right.right = true;
+        const auto events = collect(session, right, 60);
+        CHECK(countOfType<application::PlayerJumped>(events) == 0);
+        CHECK(countOfType<application::PlayerLanded>(events) == 0);
+    }
+
+    SUBCASE("the first fall from the spawn point in mid-air is a landing") {
+        GameSession falling(makePlusWorld(), "center", 100.0F, 60.0F);
+        CHECK(countOfType<application::PlayerLanded>(collect(falling, InputState{}, 120)) == 1);
+    }
+}
+
+TEST_CASE("GameSession announces the start of a slide") {
+    std::vector<Room> rooms;
+    for (const char* name : {"room_01", "room_02", "room_03", "room_04"}) {
+        rooms.push_back(infrastructure::loadTiledRoom(std::string(PLATFORMER_ASSETS_DIR) + "/tiled/" + name + ".tmj"));
+    }
+    GameSession session(RoomGraph(std::move(rooms)), "room_01", 244.0F, 100.0F);  // above the top of the ramp (clear of the platform over it)
+    collect(session, InputState{}, 120);                                          // it lands on the ramp
+    REQUIRE(session.player().on_ground);
+
+    SUBCASE("down on the ramp starts a slide, announced once") {
+        InputState down;
+        down.down = true;
+        const auto events = collect(session, down, 10);
+        CHECK(countOfType<application::SlideStarted>(events) == 1);
+    }
+
+    SUBCASE("walking on the ramp does not") {
+        InputState left;
+        left.left = true;
+        CHECK(countOfType<application::SlideStarted>(collect(session, left, 10)) == 0);
+    }
+}
+
+TEST_CASE("GameSession announces the stages of a stalactite trap") {
+    GameSession session(makeTrapWorld(), "only", 96.0F, test_maps::kFloorTop - 16.0F);  // right under it
+
+    SUBCASE("warning, then it comes loose, then it shatters, in that order, once each") {
+        const auto events = collect(session, InputState{}, 300);
+        REQUIRE(countOfType<application::StalactiteWarned>(events) == 1);
+        REQUIRE(countOfType<application::StalactiteFell>(events) == 1);
+        REQUIRE(countOfType<application::StalactiteShattered>(events) == 1);
+
+        int warned_at = -1;
+        int fell_at = -1;
+        int shattered_at = -1;
+        for (std::size_t i = 0; i < events.size(); ++i) {
+            if (std::holds_alternative<application::StalactiteWarned>(events[i])) warned_at = static_cast<int>(i);
+            if (std::holds_alternative<application::StalactiteFell>(events[i])) fell_at = static_cast<int>(i);
+            if (std::holds_alternative<application::StalactiteShattered>(events[i])) shattered_at = static_cast<int>(i);
+        }
+        CHECK(warned_at < fell_at);
+        CHECK(fell_at < shattered_at);
+    }
+
+    SUBCASE("it shatters on the floor too when the player has walked away") {
+        InputState right;
+        right.right = true;
+        const auto events = collect(session, right, 300);
+        CHECK(countOfType<application::StalactiteWarned>(events) == 1);
+        CHECK(countOfType<application::StalactiteShattered>(events) == 1);
+        CHECK(countOfType<application::PlayerHurt>(events) == 0);
+    }
+
+    SUBCASE("nothing is announced while nobody is under it") {
+        GameSession far_away(makeTrapWorld(), "only", 10.0F, test_maps::kFloorTop - 16.0F);
+        const auto events = collect(far_away, InputState{}, 200);
+        CHECK(countOfType<application::StalactiteWarned>(events) == 0);
+    }
+}

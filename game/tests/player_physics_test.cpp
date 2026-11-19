@@ -91,6 +91,27 @@ TEST_CASE("player physics on flat ground") {
         CHECK(player.x > map.pixelWidth());
     }
 
+    SUBCASE("stepPlayer reports the step on which a jump starts") {
+        Player player = standingAt(100.0F, kFloorTop);
+        InputState jump;
+        jump.jump = true;
+
+        CHECK(stepPlayer(player, jump, map).jumped);       // the kick
+        CHECK_FALSE(stepPlayer(player, jump, map).jumped);  // holding the button, already in the air
+        CHECK_FALSE(stepPlayer(player, none, map).jumped);
+
+        Player standing = standingAt(100.0F, kFloorTop);
+        CHECK_FALSE(stepPlayer(standing, none, map).jumped);  // no button, no jump
+    }
+
+    SUBCASE("holding the button on the ground is not a new jump") {
+        Player player = standingAt(100.0F, kFloorTop);
+        player.jump_held = true;  // it was already held on the previous step
+        InputState jump;
+        jump.jump = true;
+        CHECK_FALSE(stepPlayer(player, jump, map).jumped);
+    }
+
     SUBCASE("jumping leaves the floor and comes back down") {
         Player player = standingAt(100.0F, kFloorTop);
         const float floor_y = player.y;

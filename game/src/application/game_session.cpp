@@ -11,6 +11,12 @@
 
 namespace application {
 
+namespace {
+// A fall must be at least this fast (pixels per step) to count as a landing worth announcing:
+// it ignores the tiny drops of walking over steps and ramps.
+constexpr float kLandingSoundSpeed = 1.5F;
+}  // namespace
+
 GameSession::GameSession(domain::RoomGraph world, const domain::RoomId& start_room, float spawn_x,
                          float spawn_y)
     : world_(std::move(world)),
@@ -54,13 +60,21 @@ void GameSession::updateStalactites(std::vector<GameEvent>& events) {
         if (state.phase == domain::StalactitePhase::Gone) {
             continue;
         }
+        const domain::StalactitePhase before = state.phase;
         if (domain::stepStalactite(stalactite, state, room.map(), player_)) {
             events.push_back(StalactiteFell{room.id(), index});
+        }
+        if (before == domain::StalactitePhase::Idle && state.phase == domain::StalactitePhase::Shaking) {
+            events.push_back(StalactiteWarned{room.id(), index});
+        }
+        if (before == domain::StalactitePhase::Falling && state.phase == domain::StalactitePhase::Gone) {
+            events.push_back(StalactiteShattered{room.id(), index});  // on the floor or a ledge
         }
         const domain::AABB box = domain::currentBounds(stalactite, state);
         if (state.phase == domain::StalactitePhase::Falling && domain::canBeHurt(player_) &&
             player_.bounds().overlaps(box)) {
             state.phase = domain::StalactitePhase::Gone;  // it shatters on the player
+            events.push_back(StalactiteShattered{room.id(), index});
             if (hurtPlayer(events, box)) {
                 return;  // the game restarted: this room is no longer the current one
             }
@@ -72,8 +86,22 @@ std::vector<GameEvent> GameSession::update(const domain::InputState& input) {
     std::vector<GameEvent> events;
     const domain::Room& room = currentRoom();
 
-    domain::stepPlayer(player_, input, room.map());
+    const bool was_on_ground = player_.on_ground;
+    const float speed_before = player_.velocity_y;
+    const int slide_before = player_.slide_steps;
+
+    const domain::StepResult step = domain::stepPlayer(player_, input, room.map());
     domain::confineToMap(player_, room.map(), domain::openEdgesOf(room));
+
+    if (step.jumped) {
+        events.push_back(PlayerJumped{});
+    }
+    if (!was_on_ground && player_.on_ground && speed_before >= kLandingSoundSpeed) {
+        events.push_back(PlayerLanded{speed_before});
+    }
+    if (slide_before == 0 && player_.slide_steps > 0) {
+        events.push_back(SlideStarted{});
+    }
 
     // Closed edges were just turned into walls, so only an open edge (which
     // always has a neighbour) can be crossed here.

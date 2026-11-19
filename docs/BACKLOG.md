@@ -31,13 +31,21 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 34 | **Frutas que curan** (baya luminosa, 1 corazón, se come aunque la salud esté llena): `Fruit`, `PickupCollection` y detección de contacto compartidas con las monedas, evento `FruitEaten`, clase `fruit` de Tiled y símbolo `F`; `level_check` las comprueba; colocadas en `room_02` y `room_04`; ADR-0012 y post 16 |
 
+## Hecho (E11 · Sonido)
+
+| # | Tarea |
+|---|---|
+| 35 | **Sonido por eventos**: 10 efectos sintetizados (`make_sounds.py`), `soundFor` (puro) y `AudioPlayer` (SDL, mudo si no hay audio), tecla `M`, eventos nuevos (`PlayerJumped`, `PlayerLanded`, `SlideStarted`, `StalactiteWarned`, `StalactiteShattered`); ADR-0013 y post 17 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
 |---|---|---|---|---|
 | 8 | ~~Frutas que curan~~ — hecho en E10 (ver arriba). Pendiente: un `Collectible` genérico con tipo cuando haya un tercer tipo de recogible | P3 | S | — |
 | 9 | **Enemigos** básicos (patrulla; reutilizan `applyDamage` y `PlayerHurt`; decidir si se pueden pisar) | P1 | L | — |
-| 10 | **Sonido**: `AudioPlayer` en infraestructura que reacciona a los eventos (moneda, daño, salto, gota, estalactita) | P1 | M | — (los eventos ya existen) |
+| 10 | ~~Sonido~~ — hecho en E11 (ver arriba). **Pendiente: escuchar y afinar los sonidos de oído** (no se pudo hacer al construirlos) | P1 | S | — |
+| 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
+| 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |
 | 11 | **Pantalla de título, pausa y Game Over** (estado por encima de `GameSession`) | P1 | M | — |
 | 12 | **Checkpoints / reaparecer en la sala**: suavizar el reinicio total si resulta frustrante | P1 | M | — |
 | 13 | **Rendimiento de `level_check`**: ya tarda ~40-65 s (61 s con la rampa) y crece con cada sala y cada estado nuevo; poda/ordenación o etiqueta de test lento | P1 | S | — |

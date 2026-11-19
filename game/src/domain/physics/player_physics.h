@@ -50,6 +50,11 @@ inline constexpr float kSlopeSnap = 8.0F;
 
 inline constexpr float kCrouchSpeed = 0.75F;  // half of the run
 
+// What stepPlayer reports about the step it just did, for the game to announce.
+struct StepResult {
+    bool jumped = false;  // the player started a jump on this step
+};
+
 // Advances the player by exactly one fixed simulation step, colliding with
 // the solid tiles of `map`.
 //
@@ -67,6 +72,6 @@ inline constexpr float kCrouchSpeed = 0.75F;  // half of the run
 //
 // Speeds must stay below one tile per step, otherwise the player could skip
 // over a thin tile ("tunnelling").
-void stepPlayer(Player& player, const InputState& input, const TileMap& map);
+StepResult stepPlayer(Player& player, const InputState& input, const TileMap& map);
 
 }  // namespace domain

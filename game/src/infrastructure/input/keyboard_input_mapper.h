@@ -20,8 +20,13 @@ public:
     // part of InputState.
     bool quitRequested() const { return quit_requested_; }
 
+    // True once each time the mute key (M) is pressed. Muting is an application
+    // concern, like quitting, so it is not part of InputState.
+    bool takeMuteToggle();
+
 private:
     bool quit_requested_ = false;
+    bool mute_toggled_ = false;
 };
 
 }  // namespace infrastructure
