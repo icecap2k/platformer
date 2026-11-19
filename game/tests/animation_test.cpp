@@ -216,3 +216,15 @@ TEST_CASE("coinFrame cycles through four frames") {
     CHECK(presentation::coinFrame(420) == 3);
     CHECK(presentation::coinFrame(560) == 0);
 }
+
+TEST_CASE("a squashed enemy is solid for most of its time and blinks at the end") {
+    CHECK(presentation::isVisibleWhileFading(60));
+    CHECK(presentation::isVisibleWhileFading(21));
+    bool shown = false;
+    bool hidden = false;
+    for (int left = 20; left >= 1; --left) {
+        (presentation::isVisibleWhileFading(left) ? shown : hidden) = true;
+    }
+    CHECK(shown);
+    CHECK(hidden);
+}

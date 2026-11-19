@@ -2,6 +2,7 @@
 
 #include "domain/enemies/enemy_contact.h"
 #include "domain/enemies/enemy_patrols.h"
+#include "domain/physics/player_physics.h"
 #include "test_maps.h"
 
 using namespace domain;
@@ -17,7 +18,7 @@ Enemy walkerAt(float x) {
 
 void walk(const Enemy& enemy, EnemyState& state, const TileMap& map, int steps) {
     for (int i = 0; i < steps; ++i) {
-        stepEnemy(enemy, state, map);
+        stepEnemy(enemy, state, map, {});
     }
 }
 
@@ -159,4 +160,64 @@ TEST_CASE("bounceOffEnemy sends the player up and into the air") {
     CHECK_FALSE(player.on_ground);
     CHECK(player.coyote_steps == 0);
     CHECK(player.slide_steps == 0);
+}
+
+TEST_CASE("an enemy turns around before walking onto spikes") {
+    const TileMap map = makeMap();
+    const Enemy enemy = walkerAt(100.0F);
+    // Spikes on the floor at x = 140..156 (they stand 5 px tall over the floor).
+    const std::vector<Hazard> spikes = {Hazard{AABB{140.0F, kFloorTop - 5.0F, 16.0F, 5.0F}}};
+    EnemyState state;
+    state.direction = 1;
+
+    for (int i = 0; i < 400; ++i) {
+        stepEnemy(enemy, state, map, spikes);
+    }
+    CHECK(currentBounds(enemy, state).right() <= 140.0F);  // never touches them
+    CHECK(state.direction == -1);
+}
+
+TEST_CASE("an enemy that starts on top of spikes still walks (it does not jitter in place)") {
+    const TileMap map = makeMap();
+    const Enemy enemy = walkerAt(100.0F);
+    const std::vector<Hazard> spikes = {Hazard{AABB{98.0F, kFloorTop - 5.0F, 16.0F, 5.0F}}};
+    EnemyState state;
+    state.direction = 1;
+
+    for (int i = 0; i < 100; ++i) {
+        stepEnemy(enemy, state, map, spikes);
+    }
+    CHECK(state.x_offset > 10.0F);
+}
+
+TEST_CASE("a defeated enemy counts the steps it has lain squashed, then is gone") {
+    const TileMap map = makeMap();
+    const Enemy enemy = walkerAt(100.0F);
+    EnemyState state;
+    state.alive = false;
+
+    CHECK(isSquashedBody(state));
+    walk(enemy, state, map, kSquashSteps - 1);
+    CHECK(isSquashedBody(state));
+    walk(enemy, state, map, 1000);
+    CHECK(state.dead_steps == kSquashSteps);  // it stops counting: no overflow after a very long time
+    state.dead_steps = kSquashSteps - 1;
+    walk(enemy, state, map, 1);
+    CHECK_FALSE(isSquashedBody(state));  // one second after, it disappears
+    CHECK(state.x_offset == 0.0F);
+
+    EnemyState alive;
+    CHECK_FALSE(isSquashedBody(alive));
+}
+
+TEST_CASE("isStomp at the fastest fall: the deepest penetration a step can produce still counts") {
+    const AABB enemy{100.0F, kFloorTop - 8.0F, 8.0F, 8.0F};
+    Player player;
+    player.x = 100.0F;
+    player.velocity_y = kMaxFallSpeed;
+
+    player.y = enemy.top() - player.height + kStompDepth;  // feet exactly kStompDepth below its top
+    CHECK(isStomp(player, enemy));
+    player.y += 0.5F;                                       // a little deeper: it is a side hit
+    CHECK_FALSE(isStomp(player, enemy));
 }

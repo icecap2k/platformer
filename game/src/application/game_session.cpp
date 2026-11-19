@@ -89,10 +89,10 @@ bool GameSession::updateEnemies(std::vector<GameEvent>& events) {
     for (std::size_t index = 0; index < room.enemies().size(); ++index) {
         const domain::Enemy& enemy = room.enemies()[index];
         domain::EnemyState& state = enemies_.state(room.id(), index);
+        domain::stepEnemy(enemy, state, room.map(), room.hazards());
         if (!state.alive) {
-            continue;
+            continue;  // it only counts the time it has been squashed
         }
-        domain::stepEnemy(enemy, state, room.map());
         const domain::AABB box = domain::currentBounds(enemy, state);
         if (!player_.bounds().overlaps(box) || player_.health <= 0) {
             continue;

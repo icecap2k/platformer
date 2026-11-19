@@ -1,5 +1,6 @@
 #include "domain/enemies/enemy_patrols.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace domain {
@@ -19,8 +20,10 @@ AABB currentBounds(const Enemy& enemy, const EnemyState& state) {
     return box;
 }
 
-void stepEnemy(const Enemy& enemy, EnemyState& state, const TileMap& map) {
+void stepEnemy(const Enemy& enemy, EnemyState& state, const TileMap& map,
+               const std::vector<Hazard>& hazards) {
     if (!state.alive) {
+        state.dead_steps = std::min(state.dead_steps + 1, kSquashSteps);
         return;
     }
     const AABB now = currentBounds(enemy, state);
@@ -41,6 +44,10 @@ void stepEnemy(const Enemy& enemy, EnemyState& state, const TileMap& map) {
                 break;
             }
         }
+    }
+    const AABB next_box{next_left, now.y, now.width, now.height};
+    for (const Hazard& hazard : hazards) {
+        blocked = blocked || (next_box.overlaps(hazard.bounds) && !now.overlaps(hazard.bounds));
     }
     // The foot that leads needs ground under it, or it would walk off.
     const int leading_column = state.direction > 0 ? last_column : first_column;

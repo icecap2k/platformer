@@ -124,8 +124,11 @@ The hazard sprites come from `game/tools/art/make_hazards.py`, the hearts and th
 
 A `walker` (a cave beetle) paces along the floor and turns around at walls, ramps and ledges. Land on it from above
 and it is defeated and you bounce (hold jump for a higher bounce); touch it any other way and it costs a heart like
-any other hit. They are session state (`EnemyPatrols`), come back after a total restart, and `level_check` does not
+any other hit. It also turns around before spikes, and a defeated one lies squashed for 1 s. They are session state (`EnemyPatrols`), come back after a total restart, and `level_check` does not
 model them (it reports how many there are). The sprite comes from `game/tools/art/make_enemies.py`.
+
+A few fireflies drift through every room (`presentation/firefly.h`): purely cosmetic, a pure function of the room
+and the clock, drawn from `game/tools/art/make_fireflies.py`.
 
 ## Sound
 

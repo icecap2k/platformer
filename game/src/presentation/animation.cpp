@@ -1,5 +1,7 @@
 #include "presentation/animation.h"
 
+#include "domain/enemies/enemy_patrols.h"
+
 namespace presentation {
 
 namespace {
@@ -71,6 +73,13 @@ int fruitBob(std::uint64_t time_ms) {
 
 int coinFrame(std::uint64_t time_ms) {
     return static_cast<int>((time_ms / kCoinFrameMs) % 4);
+}
+
+bool isVisibleWhileFading(int steps_left) {
+    if (steps_left > domain::kSquashBlinkSteps) {
+        return true;
+    }
+    return (steps_left / 3) % 2 == 0;
 }
 
 int enemyFrame(std::uint64_t time_ms) {

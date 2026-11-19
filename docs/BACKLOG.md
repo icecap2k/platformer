@@ -41,15 +41,16 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 
 | # | Tarea |
 |---|---|
-| 9 | **Enemigos que patrullan** (`walker`, un escarabajo): caminan por el suelo y dan la vuelta ante paredes, rampas y bordes; **se pisan** (rebote, y más alto si mantienes salto) y si no, dañan por `applyDamage`; estado `EnemyPatrols`, evento `EnemyStomped`, sonido `stomp`, clase `walker` de Tiled y símbolo `E`; uno en `room_03` y otro en `room_04`; `level_check` los cuenta pero no los modela; ADR-0014 y post 18 |
+| 9 | **Enemigos que patrullan** (`walker`, un escarabajo): caminan por el suelo y dan la vuelta ante paredes, rampas, bordes y **pinchos**; al pisarlos quedan **chafados 1 s** y desaparecen; **se pisan** (rebote, y más alto si mantienes salto) y si no, dañan por `applyDamage`; estado `EnemyPatrols`, evento `EnemyStomped`, sonido `stomp`, clase `walker` de Tiled y símbolo `E`; uno en `room_03` y otro en `room_04`; `level_check` los cuenta pero no los modela; ADR-0014 y post 18 |
+| 39 | **Luciérnagas** decorativas (3 por sala, función pura del reloj, ADR-0008): quietas 3 s, vuelan en curva 5 tiles de lado y 2 abajo, con desfases propios |
 
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
 |---|---|---|---|---|
 | 8 | ~~Frutas que curan~~ — hecho en E10 (ver arriba). Pendiente: un `Collectible` genérico con tipo cuando haya un tercer tipo de recogible | P3 | S | — |
-| 9 | ~~Enemigos básicos~~ — hecho en E12 (ver arriba). Pendiente: gravedad y rampas para enemigos, más tipos (voladores, perseguidores), animación al morir | P2 | M | — |
-| 38 | **Afinar de oído el sonido `stomp`** y el color del escarabajo (se ve oscuro sobre el fondo de la cueva) | P3 | S | — |
+| 9 | ~~Enemigos básicos~~ — hecho en E12 (ver arriba). Pendiente: gravedad y rampas para enemigos, más tipos (voladores, perseguidores), otros comportamientos | P2 | M | — |
+| 38 | **Afinar de oído el sonido `stomp`** y el color del escarabajo (ya contrasta, pero falta oírlo) | P3 | S | — |
 | 10 | ~~Sonido~~ — hecho en E11 (ver arriba). **Pendiente: escuchar y afinar los sonidos de oído** (no se pudo hacer al construirlos) | P1 | S | — |
 | 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
 | 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |

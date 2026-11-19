@@ -29,11 +29,19 @@ Pisar funciona incluso en plena invulnerabilidad, para que un golpe previo no te
 
 ## Qué se dejó fuera
 
-El enemigo está siempre pegado al suelo: **sin gravedad ni rampas**. Una rampa en su camino cuenta como pared. Tampoco hay animación al morir: desaparece. Está todo apuntado en el ADR-0014 y en el backlog.
+El enemigo está siempre pegado al suelo: **sin gravedad ni rampas**. Una rampa en su camino cuenta como pared. Está apuntado en el ADR-0014 y en el backlog.
+
+## Después de jugarlo
+
+Tras probarlo, el autor pidió tres cosas, ya hechas: que **no atraviese los pinchos** (se gira antes de pisarlos), que **contraste más** (paleta pálida y contorno lila claro) y que al morir **quede chafado 1 s** y desaparezca (un fotograma plano que parpadea al final).
+
+## Luciérnagas
+
+De regalo, unas luciérnagas decorativas siguiendo el ADR-0008: nada de estado, todo función de la sala y el reloj. Se quedan 3 s aleteando, giran y vuelan en curva 5 tiles de lado y 2 hacia abajo, esperan otros 3 s y regresan. Cada una tiene un desfase propio para que no arranquen todas a la vez, y solo se colocan donde la caja de vuelo está libre de suelo.
 
 ## Tests
 
-De 96 a **107 casos**: el patrullaje (velocidad, pared, borde, límite de sala, rampa, muerto), la regla de pisotón en sus cuatro variantes, la lectura de `walker` en Tiled y el símbolo `E` de ida y vuelta, el sonido, y la sesión: golpe de lado, pisotón con rebote, que un enemigo derrotado no vuelva a dañar y que el reinicio total lo resucite. Un test más comprueba que los enemigos de `room_03` y `room_04` **pisan suelo** y no flotan.
+De 96 a **119 casos**: el patrullaje (velocidad, pared, borde, límite de sala, rampa, muerto), la regla de pisotón en sus cuatro variantes, la lectura de `walker` en Tiled y el símbolo `E` de ida y vuelta, el sonido, y la sesión: golpe de lado, pisotón con rebote, que un enemigo derrotado no vuelva a dañar y que el reinicio total lo resucite. Un test más comprueba que los enemigos de `room_03` y `room_04` **pisan suelo** y no flotan.
 
 ## Verlo
 

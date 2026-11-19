@@ -712,6 +712,19 @@ TEST_CASE("GameSession enemies") {
         CHECK_FALSE(session.player().on_ground);
     }
 
+    SUBCASE("a defeated enemy stays squashed for one second and is then gone") {
+        GameSession session(makeEnemyWorld(), "only", 140.0F, test_maps::kFloorTop - 8.0F - 16.0F - 20.0F);
+        for (int step = 0; step < 60 && session.enemyPatrols().state("only", 0).alive; ++step) {
+            session.update(InputState{});
+        }
+        REQUIRE_FALSE(session.enemyPatrols().state("only", 0).alive);
+        CHECK(domain::isSquashedBody(session.enemyPatrols().state("only", 0)));
+        for (int step = 0; step < domain::kSquashSteps + 2; ++step) {
+            session.update(InputState{});
+        }
+        CHECK_FALSE(domain::isSquashedBody(session.enemyPatrols().state("only", 0)));
+    }
+
     SUBCASE("a defeated enemy no longer hurts, and is reported once") {
         GameSession session(makeEnemyWorld(), "only", 140.0F, test_maps::kFloorTop - 8.0F - 16.0F - 20.0F);
         std::vector<application::GameEvent> all;
