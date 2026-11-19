@@ -181,6 +181,59 @@ TEST_CASE("analyzeReachability treats hazards as deadly") {
     }
 }
 
+TEST_CASE("analyzeReachability with ramps") {
+    // A plateau 40 px up that can be walked onto by a ramp: a coin on it is reachable.
+    // Without the ramp (a 5-tile wall of the same height) it is still reachable by
+    // jumping (the jump is about 42 px), so use a plateau too high to jump onto (56 px).
+    auto level = [](int ramp_tiles) {
+        std::vector<int> tiles(static_cast<std::size_t>(test_maps::kWidth * test_maps::kHeight), 0);
+        auto set = [&](int column, int row, int id) { tiles[static_cast<std::size_t>(row * test_maps::kWidth + column)] = id; };
+        for (int row = test_maps::kFloorRow; row < test_maps::kHeight; ++row) {
+            for (int column = 0; column < test_maps::kWidth; ++column) set(column, row, 1);
+        }
+        const int base = 10;
+        for (int i = 0; i < ramp_tiles; ++i) {  // a ramp rising to the right, with filler below
+            const int ramp_row = test_maps::kFloorRow - 1 - i;
+            set(base + i, ramp_row, domain::kTileSlopeRight);
+            for (int row = ramp_row + 1; row < test_maps::kFloorRow; ++row) set(base + i, row, 2);
+        }
+        for (int column = base + ramp_tiles; column < base + ramp_tiles + 6; ++column) {
+            for (int row = test_maps::kFloorRow - ramp_tiles; row < test_maps::kFloorRow; ++row) set(column, row, 2);
+        }
+        std::vector<Room> rooms;
+        const float plateau_top = test_maps::kFloorTop - 8.0F * static_cast<float>(ramp_tiles);
+        rooms.emplace_back("a", domain::TileMap(test_maps::kWidth, test_maps::kHeight, 8, tiles),
+                           std::map<Side, domain::RoomId>{},
+                           std::vector<Coin>{Coin{(base + ramp_tiles + 3) * 8.0F, plateau_top - 8.0F}});
+        return RoomGraph(std::move(rooms));
+    };
+
+    SUBCASE("a plateau 56 px up (too high to jump onto) is reachable by walking up a ramp") {
+        const auto report = analyzeReachability(level(7), startAt("a"));
+        CHECK(report.coins[0].touchable);
+        CHECK_FALSE(report.truncated);
+    }
+
+    SUBCASE("the same plateau as a wall (no ramp) is not reachable") {
+        // Replace the ramp by solid blocks: nothing to walk up.
+        std::vector<int> tiles(static_cast<std::size_t>(test_maps::kWidth * test_maps::kHeight), 0);
+        for (int row = test_maps::kFloorRow; row < test_maps::kHeight; ++row) {
+            for (int column = 0; column < test_maps::kWidth; ++column) tiles[static_cast<std::size_t>(row * test_maps::kWidth + column)] = 1;
+        }
+        for (int column = 17; column < 23; ++column) {
+            for (int row = test_maps::kFloorRow - 7; row < test_maps::kFloorRow; ++row) {
+                tiles[static_cast<std::size_t>(row * test_maps::kWidth + column)] = 2;
+            }
+        }
+        std::vector<Room> rooms;
+        rooms.emplace_back("a", domain::TileMap(test_maps::kWidth, test_maps::kHeight, 8, tiles),
+                           std::map<Side, domain::RoomId>{},
+                           std::vector<Coin>{Coin{20 * 8.0F, test_maps::kFloorTop - 56.0F - 8.0F}});
+        const auto report = analyzeReachability(RoomGraph(std::move(rooms)), startAt("a"));
+        CHECK_FALSE(report.coins[0].touchable);
+    }
+}
+
 TEST_CASE("RoomGraph::ids is sorted") {
     std::vector<Room> rooms;
     rooms.emplace_back("b", test_maps::makeMap());
@@ -337,6 +390,26 @@ TEST_CASE("text <-> Tiled round trips") {
                        {domain::Hazard{domain::AABB{3.0F, 3.0F, 20.0F, 5.0F}}});
         CHECK_THROWS_WITH_AS(toText(odd), doctest::Contains("not a tile-aligned spike"),
                              std::runtime_error);
+    }
+
+    SUBCASE("ramps (/ and \\) are tiles 5 and 6 and survive every conversion") {
+        const TextLevel ramps = parseTextLevel("---\n...\\\n./BB\n####\n");
+        // row 0: '.', '.', '.', '\\'   row 1: '.', '/', 'B', 'B'
+        CHECK(ramps.tiles[3] == domain::kTileSlopeLeft);
+        CHECK(ramps.tiles[5] == domain::kTileSlopeRight);
+
+        const Room room = infrastructure::parseTiledRoom("r", toTiledJson(ramps));
+        CHECK(room.map().tileAt(1, 1) == domain::kTileSlopeRight);
+        CHECK(room.map().tileAt(3, 0) == domain::kTileSlopeLeft);
+        CHECK_FALSE(room.map().isSolid(1, 1));  // ramps are not solid blocks
+        CHECK(room.map().isGround(1, 1));
+
+        const TextLevel again = parseTextLevel(toText(room));
+        CHECK(again.tiles == ramps.tiles);
+    }
+
+    SUBCASE("the error for an unknown character lists the ramp symbols") {
+        CHECK_THROWS_WITH_AS(parseTextLevel("---\n.x\n"), doctest::Contains("/ \\"), std::runtime_error);
     }
 
     SUBCASE("toText round-trips the extra tileset tiles 3 and 4") {

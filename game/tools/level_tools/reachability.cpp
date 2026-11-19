@@ -23,7 +23,7 @@ struct State {
 };
 
 // Packs a state into one integer. The player's position and speed are
-// rounded (0.5 px, 0.1 px, 0.1 px/step) and the jump state is included, which makes the state space finite.
+// rounded (0.5 px, 0.1 px, 0.1 px/step) and the jump and slide state are included, which makes the state space finite.
 // The offsets keep every field non-negative so fields cannot overlap.
 std::uint64_t keyOf(const State& state) {
     const auto x = static_cast<std::uint64_t>(std::llround(state.player.x * 2.0F) + 8192);
@@ -37,11 +37,21 @@ std::uint64_t keyOf(const State& state) {
     const int coyote_steps = grounded ? domain::kCoyoteSteps : state.player.coyote_steps;
     const bool held = (grounded || coyote_steps > 0) && state.player.jump_held;
     const auto coyote = static_cast<std::uint64_t>(coyote_steps);  // 0..kCoyoteSteps (3 bits)
-    const std::uint64_t flags = (coyote << 2) | (held ? 2U : 0U) |
+    // Sliding down a ramp: the carried speed matters while it lasts (4 bits for
+    // 0..kSlideCarrySteps), and its direction only then.
+    const auto slide = static_cast<std::uint64_t>(state.player.slide_steps);  // 0..kSlideCarrySteps (4 bits)
+    const std::uint64_t slide_direction = (state.player.slide_steps > 0 && state.player.slide_direction > 0) ? 1U : 0U;
+    const std::uint64_t flags = (slide_direction << 9) | (slide << 5) | (coyote << 2) | (held ? 2U : 0U) |
                                 (state.player.on_ground ? 1U : 0U);
-    return (static_cast<std::uint64_t>(state.room) << 48) | (x << 32) | (y << 16) | (vy << 5) | flags;
+    // Layout, from the low bits: flags 10, vy 11, y 16, x 16, room 11.
+    return (static_cast<std::uint64_t>(state.room) << 53) | (x << 37) | (y << 21) | (vy << 10) | flags;
 }
 
+// The search never presses `down`, so it does not model crouching or sliding.
+// That can only under-estimate what the player can do (a smaller box and extra
+// speed would only help), so a route it finds is real; a level that REQUIRES a
+// crouch (a low passage) would be reported as unreachable until the search learns
+// to crouch. See ADR-0011.
 std::vector<domain::InputState> allInputs() {
     std::vector<domain::InputState> inputs;
     for (int direction : {-1, 0, 1}) {

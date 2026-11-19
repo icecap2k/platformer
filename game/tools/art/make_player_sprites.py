@@ -213,6 +213,30 @@ def frame(drop=0, tail=(), legs=((0, 0), (0, 0)), arms=("down", "down"), head_dr
 
 STANCE = ((-1, 0), (1, 0))  # feet slightly apart so the legs do not merge
 IDLE_TAIL = [(-1, 2), (-1, 3), (-1, 4), (-1, 5)]
+def crouch_frame(tail=((-1, 2), (-2, 2), (-2, 3))):
+    """Crouching: the collision box is half as tall (8 px), so the figure is squat: the
+    hood, a short body and the boots, with the hands resting on the knees. Its feet are
+    on the same row as in every other frame (the sprite is bottom aligned)."""
+    cell = Cell()
+    head_y = 8
+    draw_hood_tip(cell, head_y, list(tail))
+    cell.rect(2, 13, 2, 13, GREEN_DARK)           # back arm, resting on the knee
+    cell.put(2, 14, SKIN)
+    cell.rect(4, 13, 7, 13, GREEN_LIGHT)          # cowl
+    cell.rect(3, 14, 8, 14, GREEN_DARK)           # the hem, flared
+    cell.rect(4, 14, 7, 14, BELT)
+    cell.put(6, 14, BUCKLE)
+    for x0, x1 in ((3, 5), (6, 8)):               # two boots, wide apart
+        cell.rect(x0, 15, x1, 15, BOOT)
+        cell.rect(x0, 16, x1, 16, SOLE)
+    cell.put(3, 15, BOOT_LIGHT)
+    cell.put(8, 15, BOOT_LIGHT)
+    draw_head(cell, head_y)
+    cell.put(9, 13, GREEN)                        # front arm
+    cell.put(9, 14, SKIN)
+    return cell
+
+
 FRAMES = [
     # Idle: breathing (the head sinks one pixel) while the hood's tip sways.
     frame(0, IDLE_TAIL, legs=STANCE),
@@ -234,6 +258,10 @@ FRAMES = [
     frame(2, [(-1, 3), (-2, 4), (-2, 5)], legs=((-1, 0), (1, 0)), arms=("forward", "forward")),
     # Hurt: thrown back, arms flailing, the hood's tip flung up.
     frame(0, [(-1, 2), (-2, 1), (-2, 0), (-2, -1)], legs=((-1, 1), (2, 0)), arms=("up", "backward"), head_drop=1),
+    # Slide: crouched and leaning back, one leg stretched out in front, arms out for balance.
+    frame(2, [(-1, 4), (-2, 4), (-2, 5)], legs=((-1, 0), (3, 0)), arms=("backward", "forward"), head_drop=3),
+    # Crouch: half the height, the hitbox is 8 px tall.
+    crouch_frame(),
 ]
 
 # Heart icons for the HUD: 8x8, full then empty, in the row below the coins.

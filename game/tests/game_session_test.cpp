@@ -239,22 +239,16 @@ TEST_CASE("GameSession with the shipped rooms") {
     }
     GameSession session(RoomGraph(std::move(rooms)), "room_01", 40.0F, 60.0F);
 
-    SUBCASE("walking east (jumping) from the start room reaches room_02 standing on the floor") {
+    SUBCASE("walking east from the start room climbs the ramp and reaches room_02, no jumping needed") {
         run(session, InputState{}, 120);  // land first
         REQUIRE(session.player().on_ground);
 
-        // The way east climbs a staircase, so the player has to jump: hold the
-        // button through a full jump, release it for a few steps (a new press is
-        // needed), and repeat while walking right.
-        InputState input;
-        input.right = true;
-        for (int step = 0; step < 1200 && session.currentRoom().id() == "room_01"; ++step) {
-            input.jump = (step % 28) < 22;
-            session.update(input);
-        }
+        InputState right;
+        right.right = true;
+        runUntilLeaving(session, right, "room_01", 1200);
 
         CHECK(session.currentRoom().id() == "room_02");
-        run(session, InputState{}, 120);  // it may still be in the air from the last jump
+        run(session, InputState{}, 120);  // it arrives in the air, high up: let it fall
         CHECK(session.player().on_ground);
     }
 }

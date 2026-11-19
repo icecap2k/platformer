@@ -25,6 +25,8 @@ namespace level_tools {
 //   3  tile 3 of the tileset    4  tile 4 of the tileset (both solid, drawn as brick)
 //   C  coin on an empty tile    ^  spikes standing on an empty tile
 //   V  a stalactite trap hanging in an empty tile (put it under a ceiling)
+//   /  a 45 degree ramp rising to the right (tile 5)    \  rising to the left (tile 6)
+//      A ramp must stand on solid tiles: filler under it and on its high side.
 inline constexpr int kTileGround = 1;
 inline constexpr int kTileBrick = 2;
 inline constexpr int kTileThree = 3;  // other solid tiles of the tileset, kept so Tiled maps

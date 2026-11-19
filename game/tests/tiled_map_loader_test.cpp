@@ -220,6 +220,23 @@ TEST_CASE("the shipped rooms form a consistent world") {
         CHECK(graph.totalCoins() == 3);
     }
 
+    SUBCASE("room_01 climbs to its plateau by a 5 tile ramp that rests on solid ground") {
+        const auto& map = graph.room("room_01").map();
+        for (int i = 0; i < 5; ++i) {
+            const int column = 27 + i;
+            const int row = 26 - i;
+            INFO("ramp tile " << column << "," << row);
+            CHECK(map.shape(column, row) == domain::TileShape::SlopeRight);
+            CHECK(map.isSolid(column, row + 1));      // it stands on solid ground
+            if (i > 0) {
+                CHECK(map.isSolid(column, row + 1));  // with filler under it
+            }
+            CHECK(map.isSolid(column + 1, row));      // and a block at its high side
+        }
+        CHECK(map.isSolid(32, 22));                   // the plateau
+        CHECK_FALSE(map.isGround(32, 21));
+    }
+
     SUBCASE("hazards: spikes in rooms 01, 02 and 04, stalactite traps in 01 and 04") {
         CHECK_FALSE(graph.room("room_01").hazards().empty());
         CHECK_FALSE(graph.room("room_02").hazards().empty());

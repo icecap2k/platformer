@@ -11,14 +11,14 @@ Los PNG de `game/assets/sprites` y `background` **son salidas**: la fuente son s
 
 | Script | Genera |
 |---|---|
-| `make_player_sprites.py` | `sprites.png`: 15 fotogramas del jugador (celdas de 12×18), monedas conservadas de la hoja existente, corazones del HUD (fila y=26) |
-| `make_rock_tiles.py` | `rocks.png` (autotiles) y `tiled/tiles.png` (paleta de Tiled) |
+| `make_player_sprites.py` | `sprites.png`: 17 fotogramas del jugador (celdas de 12×18), monedas conservadas de la hoja existente, corazones del HUD (fila y=26) |
+| `make_rock_tiles.py` | `rocks.png` (autotiles y rampas) y `tiled/tiles.png` (paleta de Tiled, 6 tiles) |
 | `make_cave_background.py` | `background/cave.png` (320×240) |
 | `make_cave_decor.py` | `decor.png`: setas, cristales, guijarros, raíces, estalactita, y fotogramas de la gota |
 | `make_hazards.py` | `hazards.png`: pinchos y estalactita trampa |
 
 **Estilo:** contorno oscuro grueso `(28,20,32)`; paleta de cueva violeta/azulada.
-- **Jugador:** original, inspirado en la expresividad de *Celeste* (sin copiar sprites). Túnica verde oscura con **capucha que le tapa los ojos** (solo se ven nariz, boca y barbilla), cinturón, piernas desnudas finas y botas. La punta de la capucha sustituye al pelo y reacciona al movimiento. 15 fotogramas: 4 reposo, 6 carrera, subida, cima, caída, aterrizaje, golpe.
+- **Jugador:** original, inspirado en la expresividad de *Celeste* (sin copiar sprites). Túnica verde oscura con **capucha que le tapa los ojos** (solo se ven nariz, boca y barbilla), cinturón, piernas desnudas finas y botas. La punta de la capucha sustituye al pelo y reacciona al movimiento. 17 fotogramas: 4 reposo, 6 carrera, subida, cima, caída, aterrizaje, golpe, deslizamiento y agachado.
 - **Rocas (autotiles):** cada tile se elige según qué lados dan al aire (16 máscaras × 4 variantes × 2 materiales). Los extremos de plataforma acaban en **punta que se estrecha por debajo**, la cara superior queda plana e iluminada, la inferior irregular. **El contorno forma parte del dibujo**, no lo pinta el renderer. La colisión **no** se talla: sigue siendo un tile completo.
 - Cada ejecución del script de arte puede regenerar la hoja entera; el de jugador conserva las monedas leyéndolas de la hoja en disco.
 

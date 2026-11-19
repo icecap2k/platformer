@@ -20,6 +20,15 @@ inline constexpr int kExposureMasks = 16;
 inline constexpr int kRockVariants = 4;
 inline constexpr int kRockRows = 8;
 
+// Ramps (tile ids 5 and 6) have their own rows after the blocks, with a 2-bit
+// column: bit 0 = the south face is exposed, bit 1 = the face on the ramp's high
+// side is exposed (east for a ramp rising to the right, west for one rising to
+// the left).
+inline constexpr int kSlopeRowRight = 8;
+inline constexpr int kSlopeRowLeft = 9;
+inline constexpr int kSlopeMasks = 4;
+inline constexpr int kSheetRows = 10;
+
 // Which column of the sheet to use for a tile whose sides are exposed or not.
 int exposureMask(bool north, bool south, bool east, bool west);
 
@@ -27,5 +36,8 @@ int exposureMask(bool north, bool south, bool east, bool west);
 // rock (rows 4-7). The texture variant comes from a hash of the tile position,
 // so a room always looks the same and long walls do not visibly repeat.
 int rockSheetRow(int tile_id, int column, int row);
+
+// Which column of the ramp rows to use.
+int slopeMask(bool south_exposed, bool high_side_exposed);
 
 }  // namespace presentation

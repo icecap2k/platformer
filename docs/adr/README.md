@@ -19,6 +19,8 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0007](0007-arte-generado-por-scripts.md) | Arte generado por scripts, y estilo visual | Aceptada |
 | [0008](0008-efectos-visuales-puros.md) | Efectos visuales como funciones puras; paralaje descartado | Aceptada |
 | [0009](0009-convenciones-de-trabajo-y-pruebas.md) | Convenciones de trabajo, pruebas y git | Aceptada |
+| [0010](0010-rampas-de-45-y-deslizamiento.md) | Rampas de 45° y deslizamiento | Aceptada (el disparador, sustituido por 0011) |
+| [0011](0011-agacharse-y-deslizar-con-la-flecha-abajo.md) | Agacharse y deslizar con la flecha abajo | Aceptada |
 
 ## Plantilla
 

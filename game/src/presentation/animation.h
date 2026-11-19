@@ -15,9 +15,11 @@ enum class PlayerPose {
     Rise = 10, Apex = 11, Fall = 12,                 // in the air
     Land = 13,                                       // squashed, just after landing
     Hurt = 14,                                       // thrown back by a hit
+    Slide = 15,                                      // sliding down a ramp (and coasting after it)
+    Crouch = 16,                                     // crouching on the ground (the box is half as tall)
 };
 
-inline constexpr int kPlayerFrameCount = 15;
+inline constexpr int kPlayerFrameCount = 17;
 
 // `ms_since_landing` value meaning "has not just landed".
 inline constexpr std::uint64_t kNotLanding = ~std::uint64_t{0};

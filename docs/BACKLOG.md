@@ -15,6 +15,16 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 6 | Proyecto de Tiled con las clases de objeto (`coin`, `spikes`, `falling_stalactite`) — **sin verificar en Tiled** |
 | 7 | Post 13 y README |
 
+## Hecho (E9 · Rampas)
+
+| # | Tarea |
+|---|---|
+| 27 | Rampas de 45° de suelo (tiles 5 y 6, `isGround`, apoyo por el centro de los pies); la escalera de `room_01` pasa a ser una rampa de 5 tiles |
+| 28 | Deslizamiento al bajar andando (2,4 px/paso, impulso 12 pasos que decae), pose `Slide` (16 fotogramas) |
+| 29 | Símbolos `/` y `\` en el formato de texto; filas de rampa en `rocks.png`; paleta de Tiled con 6 tiles |
+| 30 | ADR-0010 y post 14 |
+| 32 | **Agacharse** (flecha abajo en suelo firme: hitbox a la mitad, 0,75 px/paso, no salta, solo se levanta con hueco encima) y **deslizar con la flecha abajo** sobre una rampa (corrige la primera versión, que deslizaba al caminar); ADR-0011 y post 15 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
@@ -24,7 +34,7 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 10 | **Sonido**: `AudioPlayer` en infraestructura que reacciona a los eventos (moneda, daño, salto, gota, estalactita) | P1 | M | — (los eventos ya existen) |
 | 11 | **Pantalla de título, pausa y Game Over** (estado por encima de `GameSession`) | P1 | M | — |
 | 12 | **Checkpoints / reaparecer en la sala**: suavizar el reinicio total si resulta frustrante | P1 | M | — |
-| 13 | **Rendimiento de `level_check`**: ya tarda ~40-65 s y crece con cada sala y cada estado nuevo; poda/ordenación o etiqueta de test lento | P1 | S | — |
+| 13 | **Rendimiento de `level_check`**: ya tarda ~40-65 s (61 s con la rampa) y crece con cada sala y cada estado nuevo; poda/ordenación o etiqueta de test lento | P1 | S | — |
 | 14 | **CI** en GitHub Actions (build + `ctest`) e instalar `gh` para abrir PRs desde la terminal | P1 | S | 13 |
 | 15 | **Verificar el proyecto de Tiled** abriendo `game/assets/tiled/platformer.tiled-project` y colocando un pincho a mano | P1 | S | — |
 | 16 | **Jump buffering** (la revisión externa lo sugirió junto al coyote time) y *screen shake* al recibir daño | P2 | S | — |
@@ -37,6 +47,8 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 23 | Reorganizar `domain/` por funcionalidad cuando lleguen los enemigos (`domain/enemies/`, …) | P2 | S | 9 |
 | 24 | Pulido de ventana: pantalla completa, escala configurable, pausa al perder el foco | P3 | S | — |
 | 25 | Remapeo de teclas y accesibilidad (daltonismo, reducir parpadeo) | P3 | S | 18 |
+| 33 | **Enseñar a `level_check` a agacharse y deslizarse** (hoy no pulsa abajo: un nivel que exija agacharse se daría por inalcanzable) | P2 | M | — |
+| 31 | Rampas: pinchos y enemigos sobre una rampa, rampas de techo y de otros ángulos, y el hundimiento de 4 px del pie delantero | P3 | M | 9 |
 | 26 | Actualizar los posts 10 y 12 del blog, que quedaron con detalles anteriores a los cambios de arte y de pinchos | P3 | S | — |
 
 ## Riesgos e ideas a vigilar
