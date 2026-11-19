@@ -9,16 +9,26 @@ namespace domain {
 // Tuning values, in pixels and pixels-per-step (one step = 1/60 s).
 inline constexpr float kRunSpeed = 1.5F;
 inline constexpr float kGravity = 0.2F;
-inline constexpr float kJumpSpeed = 5.0F;
+// Jump height is v^2 / (2 g): 4.2 gives about 44 px (it was 5.0 = 62 px; now 70% of that).
+inline constexpr float kJumpSpeed = 4.2F;
 inline constexpr float kMaxFallSpeed = 6.0F;
 
 // Jump feel.
 // Coyote time: after walking off a ledge you can still start a jump during this
 // many airborne steps.
-inline constexpr int kCoyoteSteps = 6;
+// (4 steps = about 0.07 s; it was 6.)
+inline constexpr int kCoyoteSteps = 4;
+// Being hurt: the player is thrown back at this speed (pixels per step) for a
+// few steps, with a small hop (kHurtHopSpeed, applied by rules/damage.h).
+// 0.6 px/step for kHurtSteps steps is about 8 px (it was 1.2 = 17 px).
+inline constexpr float kKnockbackSpeed = 0.6F;
+// Half the height of the first version (2.4 = 14 px): 1.7 gives about 7 px.
+inline constexpr float kHurtHopSpeed = 1.7F;
+
 // Variable height: releasing the button while rising caps the upward speed at
 // this value, so a tap gives a short hop and holding gives the full jump.
-inline constexpr float kJumpCutSpeed = 2.0F;
+// Scaled with the jump so a tap is still about the same fraction of a full jump.
+inline constexpr float kJumpCutSpeed = 1.7F;
 
 // Advances the player by exactly one fixed simulation step, colliding with
 // the solid tiles of `map`.
@@ -27,6 +37,9 @@ inline constexpr float kJumpCutSpeed = 2.0F;
 // once makes it ambiguous which face of a tile was hit; separating the axes
 // makes "landing", "bumping the head" and "hitting a wall" trivial to tell
 // apart.
+//
+// While `hurt_steps` is running the player ignores the input: it is carried
+// backwards by the hit. `invulnerable_steps` counts down every step.
 //
 // Jump rules: a jump needs a fresh press (holding the button does not make
 // the player bounce), is allowed up to kCoyoteSteps after leaving the ground,

@@ -133,6 +133,20 @@ TextLevel parseTextLevel(const std::string& text) {
                 case '4':
                     tile = kTileFour;
                     break;
+                case '^': {
+                    const float size = static_cast<float>(level.tile_size);
+                    const float inset = size * kSpikeInsetFraction;
+                    level.hazards.push_back(domain::Hazard{domain::AABB{
+                        static_cast<float>(column) * size, static_cast<float>(row) * size + inset,
+                        size, size - inset}});
+                    break;
+                }
+                case 'V': {
+                    const float size = static_cast<float>(level.tile_size);
+                    level.stalactites.push_back(domain::FallingStalactite{domain::AABB{
+                        static_cast<float>(column) * size, static_cast<float>(row) * size, size, size}});
+                    break;
+                }
                 case 'C': {
                     const float size = static_cast<float>(level.tile_size);
                     level.coins.push_back(domain::Coin{static_cast<float>(column) * size,
@@ -142,7 +156,7 @@ TextLevel parseTextLevel(const std::string& text) {
                 default:
                     failAt(line_number, std::string("unknown character '") +
                                             cells[static_cast<std::size_t>(column)] +
-                                            "' (use . # B 3 4 C)");
+                                            "' (use . # B 3 4 ^ V C)");
             }
             level.tiles[static_cast<std::size_t>(row * level.width + column)] = tile;
         }
@@ -152,7 +166,7 @@ TextLevel parseTextLevel(const std::string& text) {
 
 domain::Room toRoom(const domain::RoomId& id, const TextLevel& level) {
     return domain::Room(id, domain::TileMap(level.width, level.height, level.tile_size, level.tiles),
-                        level.neighbors, level.coins);
+                        level.neighbors, level.coins, level.hazards, level.stalactites);
 }
 
 std::string toTiledJson(const TextLevel& level) {
@@ -175,6 +189,32 @@ std::string toTiledJson(const TextLevel& level) {
                            {"y", coin.y},
                            {"width", coin.size},
                            {"height", coin.size},
+                           {"rotation", 0},
+                           {"visible", true}});
+    }
+
+    for (const domain::Hazard& hazard : level.hazards) {
+        objects.push_back({{"id", object_id++},
+                           {"name", "spikes"},
+                           {"type", ""},
+                           {"class", "spikes"},
+                           {"x", hazard.bounds.x},
+                           {"y", hazard.bounds.y},
+                           {"width", hazard.bounds.width},
+                           {"height", hazard.bounds.height},
+                           {"rotation", 0},
+                           {"visible", true}});
+    }
+
+    for (const domain::FallingStalactite& stalactite : level.stalactites) {
+        objects.push_back({{"id", object_id++},
+                           {"name", "stalactite"},
+                           {"type", ""},
+                           {"class", "falling_stalactite"},
+                           {"x", stalactite.bounds.x},
+                           {"y", stalactite.bounds.y},
+                           {"width", stalactite.bounds.width},
+                           {"height", stalactite.bounds.height},
                            {"rotation", 0},
                            {"visible", true}});
     }
@@ -260,6 +300,54 @@ std::string toText(const domain::Room& room) {
             }
             grid[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)] = symbol;
         }
+    }
+
+    for (const domain::Hazard& hazard : room.hazards()) {
+        const float size = static_cast<float>(map.tileSize());
+        const float inset = size * kSpikeInsetFraction;
+        const int column = static_cast<int>(std::lround(hazard.bounds.x / size));
+        const int row = static_cast<int>(std::lround((hazard.bounds.y - inset) / size));
+        const int cells = static_cast<int>(std::lround(hazard.bounds.width / size));  // a wide patch = several spikes
+        const bool is_tile_spike = cells >= 1 && column >= 0 && column + cells <= map.width() && row >= 0 &&
+                                   row < map.height() &&
+                                   hazard.bounds.x == static_cast<float>(column) * size &&
+                                   hazard.bounds.y == static_cast<float>(row) * size + inset &&
+                                   hazard.bounds.width == static_cast<float>(cells) * size &&
+                                   hazard.bounds.height == size - inset;
+        if (!is_tile_spike) {
+            throw std::runtime_error("a hazard at (" + std::to_string(hazard.bounds.x) + ", " +
+                                     std::to_string(hazard.bounds.y) +
+                                     ") is not a tile-aligned spike, so it has no text symbol");
+        }
+        for (int cell_column = column; cell_column < column + cells; ++cell_column) {
+            char& cell = grid[static_cast<std::size_t>(row)][static_cast<std::size_t>(cell_column)];
+            if (cell != '.') {
+                throw std::runtime_error("spikes at column " + std::to_string(cell_column) + ", row " +
+                                         std::to_string(row) + " sit on a solid tile");
+            }
+            cell = '^';
+        }
+    }
+
+    for (const domain::FallingStalactite& stalactite : room.stalactites()) {
+        const float size = static_cast<float>(map.tileSize());
+        const int column = static_cast<int>(std::lround(stalactite.bounds.x / size));
+        const int row = static_cast<int>(std::lround(stalactite.bounds.y / size));
+        const bool is_tile = column >= 0 && column < map.width() && row >= 0 && row < map.height() &&
+                             stalactite.bounds.x == static_cast<float>(column) * size &&
+                             stalactite.bounds.y == static_cast<float>(row) * size &&
+                             stalactite.bounds.width == size && stalactite.bounds.height == size;
+        if (!is_tile) {
+            throw std::runtime_error("a stalactite trap at (" + std::to_string(stalactite.bounds.x) + ", " +
+                                     std::to_string(stalactite.bounds.y) +
+                                     ") is not exactly one tile, so it has no text symbol");
+        }
+        char& cell = grid[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)];
+        if (cell != '.') {
+            throw std::runtime_error("a stalactite trap at column " + std::to_string(column) + ", row " +
+                                     std::to_string(row) + " sits on a solid tile or a spike");
+        }
+        cell = 'V';
     }
 
     for (const domain::Coin& coin : room.coins()) {

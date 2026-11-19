@@ -14,9 +14,10 @@ enum class PlayerPose {
     Run0 = 4, Run1, Run2, Run3, Run4, Run5,          // run cycle
     Rise = 10, Apex = 11, Fall = 12,                 // in the air
     Land = 13,                                       // squashed, just after landing
+    Hurt = 14,                                       // thrown back by a hit
 };
 
-inline constexpr int kPlayerFrameCount = 14;
+inline constexpr int kPlayerFrameCount = 15;
 
 // `ms_since_landing` value meaning "has not just landed".
 inline constexpr std::uint64_t kNotLanding = ~std::uint64_t{0};
@@ -27,8 +28,13 @@ inline constexpr std::uint64_t kNotLanding = ~std::uint64_t{0};
 PlayerPose playerPose(const domain::Player& player, std::uint64_t time_ms,
                       std::uint64_t ms_since_landing = kNotLanding);
 
+// While invulnerable after a hit the player blinks: this says whether the sprite
+// is shown on a given step. Always visible when not invulnerable.
+bool isVisibleWhileInvulnerable(int invulnerable_steps);
+
 // Should the sprite be mirrored? The player keeps looking where it last moved
-// while standing still, hence the `was_facing_left` input.
+// while standing still, hence the `was_facing_left` input. A player thrown back
+// by a hit keeps looking at what hit it.
 bool facesLeft(const domain::Player& player, bool was_facing_left);
 
 // Frame (0..3) of the spinning coin.

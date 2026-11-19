@@ -48,6 +48,8 @@
          "id":2,
          "name":"objects",
          "objects":[
+{"id":2,"name":"spikes","type":"","class":"spikes","x":160,"y":211,"width":24,"height":5,"rotation":0,"visible":true},
+{"id":3,"name":"stalactite","type":"","class":"falling_stalactite","x":104,"y":176,"width":8,"height":8,"rotation":0,"visible":true},
                 {
                  "height":8,
                  "id":1,
@@ -67,7 +69,7 @@
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":2,
+ "nextobjectid":4,
  "orientation":"orthogonal",
  "properties":[
         {

@@ -1,5 +1,6 @@
 #include "presentation/game_renderer.h"
 
+#include <algorithm>
 #include <string>
 
 #include "presentation/animation.h"
@@ -19,6 +20,8 @@ constexpr float kPlayerOffsetX = -2.0F;  // sprite origin relative to the collis
 constexpr float kPlayerOffsetY = -1.0F;
 constexpr float kCoinSheetY = 18.0F;  // coin frames sit below the player frames
 constexpr float kCoinSize = 8.0F;
+constexpr float kHeartSheetY = 26.0F;  // heart icons (full, then empty) sit below the coins
+constexpr float kHeartSize = 8.0F;
 
 constexpr float kDecorSize = 8.0F;
 
@@ -48,6 +51,7 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
       rocks_(renderer, assets_dir + "sprites/rocks.png"),
       sprites_(renderer, assets_dir + "sprites/sprites.png"),
       decor_(renderer, assets_dir + "sprites/decor.png"),
+      hazards_(renderer, assets_dir + "sprites/hazards.png"),
       cave_(renderer, assets_dir + "background/cave.png") {}
 
 void GameRenderer::draw(const application::GameSession& session) {
@@ -56,6 +60,7 @@ void GameRenderer::draw(const application::GameSession& session) {
     drawCave();
     drawTiles(session.map());
     drawScenery(session.map(), time_ms);
+    drawHazards(session);
     drawCoins(session, time_ms);
     drawPlayer(session.player(), time_ms);
     drawHud(session, time_ms);
@@ -150,6 +155,39 @@ void GameRenderer::drawDrip(const domain::TileMap& map, int column, int row,
     decor_.draw(renderer_, source, SDL_FRect{x, y, kDecorSize, kDecorSize});
 }
 
+// Spikes: the hazard's rectangle is the hitbox, and the 8x8 spike sprite is
+// repeated along it. The sprite is drawn one pixel lower than the rectangle's
+// bottom edge: its last row is a dark line that merges with the floor's top
+// outline, so the teeth look embedded in the floor.
+void GameRenderer::drawHazards(const application::GameSession& session) const {
+    constexpr float kSprite = 8.0F;
+    constexpr float kEmbed = 1.0F;  // how many pixels the sprite sinks into the floor
+    const domain::Room& room = session.currentRoom();
+    for (const domain::Hazard& hazard : room.hazards()) {
+        const domain::AABB& box = hazard.bounds;
+        for (float x = box.x; x < box.right(); x += kSprite) {
+            const float width = std::min(kSprite, box.right() - x);
+            hazards_.draw(renderer_, SDL_FRect{0.0F, 0.0F, width, kSprite},
+                          SDL_FRect{x, box.bottom() - kSprite + kEmbed, width, kSprite});
+        }
+    }
+
+    // Stalactite traps (frame 1 of the hazard sheet): they shake as a warning
+    // (a one pixel wobble) and then fall; once shattered they are gone.
+    for (std::size_t index = 0; index < room.stalactites().size(); ++index) {
+        const domain::StalactiteState& state = session.stalactiteTraps().state(room.id(), index);
+        if (state.phase == domain::StalactitePhase::Gone) {
+            continue;
+        }
+        const domain::AABB box = domain::currentBounds(room.stalactites()[index], state);
+        const float wobble = (state.phase == domain::StalactitePhase::Shaking)
+                                 ? ((state.shake_steps / 2) % 2 == 0 ? -1.0F : 1.0F)
+                                 : 0.0F;
+        hazards_.draw(renderer_, SDL_FRect{kSprite, 0.0F, kSprite, kSprite},
+                      SDL_FRect{box.x + wobble, box.y, kSprite, kSprite});
+    }
+}
+
 void GameRenderer::drawCoins(const application::GameSession& session, std::uint64_t time_ms) const {
     const domain::Room& room = session.currentRoom();
     const SDL_FRect source{static_cast<float>(coinFrame(time_ms)) * kCoinSize, kCoinSheetY,
@@ -179,6 +217,9 @@ void GameRenderer::drawPlayer(const domain::Player& player, std::uint64_t time_m
     const domain::AABB box = player.bounds();
     const SDL_FRect destination{box.x + kPlayerOffsetX, box.y + kPlayerOffsetY, kPlayerSpriteWidth,
                                 kPlayerSpriteHeight};
+    if (!isVisibleWhileInvulnerable(player.invulnerable_steps)) {
+        return;  // blinking after a hit
+    }
     sprites_.draw(renderer_, source, destination, facing_left_);
 }
 
@@ -191,6 +232,16 @@ void GameRenderer::drawHud(const application::GameSession& session, std::uint64_
                              std::to_string(session.totalCoins());
     SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
     SDL_RenderDebugText(renderer_, 18.0F, 5.0F, text.c_str());
+
+    // Hearts, top right: full ones, then empty ones for the hearts lost.
+    constexpr float kHeartGap = 1.0F;
+    const float first_heart_x = 320.0F - 6.0F - static_cast<float>(domain::kMaxHealth) * (kHeartSize + kHeartGap) + kHeartGap;
+    for (int heart = 0; heart < domain::kMaxHealth; ++heart) {
+        const float column = heart < session.player().health ? 0.0F : 1.0F;
+        sprites_.draw(renderer_, SDL_FRect{column * kHeartSize, kHeartSheetY, kHeartSize, kHeartSize},
+                      SDL_FRect{first_heart_x + static_cast<float>(heart) * (kHeartSize + kHeartGap), 5.0F,
+                                kHeartSize, kHeartSize});
+    }
 }
 
 }  // namespace presentation

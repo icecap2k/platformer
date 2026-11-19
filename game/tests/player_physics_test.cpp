@@ -119,8 +119,10 @@ TEST_CASE("player physics on flat ground") {
             highest = std::min(highest, player.y);
         }
 
-        // v^2 / (2g) = 62.5 px, give or take the discrete integration.
-        CHECK(floor_y - highest == doctest::Approx(62.5F).epsilon(0.1));
+        // v^2 / (2g) (about 44 px), give or take the discrete integration.
+        const float expected = kJumpSpeed * kJumpSpeed / (2.0F * kGravity);
+        CHECK(floor_y - highest == doctest::Approx(expected).epsilon(0.1));
+        CHECK(floor_y - highest < 48.0F);  // the jump was lowered to 70% of the original 62 px
     }
 
     SUBCASE("cannot jump while already in the air") {
@@ -152,7 +154,7 @@ TEST_CASE("player physics on flat ground") {
 
         const float height = floor_y - highest;
         CHECK(height > 0.0F);
-        CHECK(height < 20.0F);  // far below the 62.5 px full jump
+        CHECK(height < 12.0F);  // far below the full jump (about 44 px)
     }
 
     SUBCASE("holding the button does not bounce: a new press is needed") {
@@ -282,7 +284,7 @@ TEST_CASE("player physics against tiles") {
     }
 
     SUBCASE("bumping the head on a ceiling stops the rise") {
-        // Low ceiling: row 23 sits 24 px above the floor, jump would reach 62 px.
+        // Low ceiling: row 23 sits 24 px above the floor, a full jump would reach about 44 px.
         std::vector<std::pair<int, int>> ceiling;
         for (int column = 10; column <= 20; ++column) {
             ceiling.emplace_back(column, 23);

@@ -35,6 +35,22 @@ const std::string kSmallMap = R"({
   ]
 })";
 
+// Two spike rectangles (one uses the old "type" field), a coin, and an object
+// of another class that must be ignored.
+const std::string kSpikeMap = R"({
+  "width": 4, "height": 2, "tilewidth": 8, "tileheight": 8, "infinite": false,
+  "layers": [
+    { "type": "objectgroup", "name": "objects", "objects": [
+        { "id": 1, "class": "spikes", "x": 8, "y": 11, "width": 16, "height": 5 },
+        { "id": 2, "type": "spikes", "x": 0, "y": 13, "width": 8, "height": 3 },
+        { "id": 3, "class": "coin", "x": 24, "y": 0, "width": 8, "height": 8 },
+        { "id": 4, "class": "decoration", "x": 0, "y": 0, "width": 8, "height": 8 },
+        { "id": 5, "class": "falling_stalactite", "x": 16, "y": 0, "width": 8, "height": 8 }
+    ] },
+    { "type": "tilelayer", "name": "ground", "width": 4, "height": 2, "data": [0,0,0,0, 1,1,1,1] }
+  ]
+})";
+
 const std::string kShippedRooms[] = {"room_01", "room_02", "room_03", "room_04"};
 
 std::string roomPath(const std::string& name) {
@@ -126,6 +142,48 @@ TEST_CASE("loadTiledRoom") {
     }
 }
 
+TEST_CASE("parseTiledRoom reads spikes") {
+    SUBCASE("every object of class spikes becomes a hazard with the drawn rectangle") {
+        const auto room = parseTiledRoom("r", kSpikeMap);
+
+        REQUIRE(room.hazards().size() == 2);
+        CHECK(room.hazards()[0].bounds.x == 8.0F);
+        CHECK(room.hazards()[0].bounds.y == 11.0F);
+        CHECK(room.hazards()[0].bounds.width == 16.0F);
+        CHECK(room.hazards()[0].bounds.height == 5.0F);
+        CHECK(room.hazards()[1].bounds.y == 13.0F);
+        CHECK(room.coins().size() == 1);  // other objects keep working
+    }
+
+    SUBCASE("falling_stalactite objects become stalactite traps") {
+        const auto room = parseTiledRoom("r", kSpikeMap);
+
+        REQUIRE(room.stalactites().size() == 1);
+        CHECK(room.stalactites()[0].bounds.x == 16.0F);
+        CHECK(room.stalactites()[0].bounds.width == 8.0F);
+        CHECK(room.hazards().size() == 2);  // and they are not spikes
+    }
+
+    SUBCASE("a stalactite trap that is not a rectangle is rejected") {
+        std::string broken = kSpikeMap;
+        const std::string needle = "\"x\": 16, \"y\": 0, \"width\": 8";
+        broken.replace(broken.find(needle), needle.size(), "\"x\": 16, \"y\": 0, \"width\": 0");
+        CHECK_THROWS_WITH_AS(parseTiledRoom("r", broken), doctest::Contains("falling_stalactite"),
+                             std::runtime_error);
+    }
+
+    SUBCASE("a room without spikes has no hazards") {
+        CHECK(parseTiledRoom("r", kSmallMap).hazards().empty());
+    }
+
+    SUBCASE("spikes that are not a rectangle are rejected, naming the problem") {
+        std::string broken = kSpikeMap;
+        broken.replace(broken.find("\"width\": 16"), 11, "\"width\": 0");
+        CHECK_THROWS_WITH_AS(parseTiledRoom("r", broken), doctest::Contains("spikes"),
+                             std::runtime_error);
+    }
+}
+
 TEST_CASE("the shipped rooms form a consistent world") {
     std::vector<domain::Room> rooms;
     for (const std::string& name : kShippedRooms) {
@@ -160,6 +218,42 @@ TEST_CASE("the shipped rooms form a consistent world") {
         CHECK(graph.room("room_03").coins().size() == 1);
         CHECK(graph.room("room_04").coins().size() == 1);
         CHECK(graph.totalCoins() == 3);
+    }
+
+    SUBCASE("hazards: spikes in rooms 01, 02 and 04, stalactite traps in 01 and 04") {
+        CHECK_FALSE(graph.room("room_01").hazards().empty());
+        CHECK_FALSE(graph.room("room_02").hazards().empty());
+        CHECK(graph.room("room_03").hazards().empty());
+        CHECK_FALSE(graph.room("room_04").hazards().empty());
+        CHECK(graph.room("room_01").stalactites().size() == 1);
+        CHECK(graph.room("room_02").stalactites().empty());
+        CHECK(graph.room("room_03").stalactites().empty());
+        CHECK(graph.room("room_04").stalactites().size() == 1);
+    }
+
+    SUBCASE("hazards and stalactites are not buried in solid tiles, and traps hang from a ceiling") {
+        for (const std::string& name : kShippedRooms) {
+            const auto& room = graph.room(name);
+            const auto& map = room.map();
+            const int ts = map.tileSize();
+            for (const auto& hazard : room.hazards()) {
+                INFO(name << " hazard at " << hazard.bounds.x << "," << hazard.bounds.y);
+                for (int column = static_cast<int>(hazard.bounds.left()) / ts;
+                     column <= static_cast<int>(hazard.bounds.right() - 1) / ts; ++column) {
+                    for (int row = static_cast<int>(hazard.bounds.top()) / ts;
+                         row <= static_cast<int>(hazard.bounds.bottom() - 1) / ts; ++row) {
+                        CHECK_FALSE(map.isSolid(column, row));
+                    }
+                }
+            }
+            for (const auto& stalactite : room.stalactites()) {
+                INFO(name << " stalactite at " << stalactite.bounds.x << "," << stalactite.bounds.y);
+                const int column = static_cast<int>(stalactite.bounds.x) / ts;
+                const int row = static_cast<int>(stalactite.bounds.y) / ts;
+                CHECK_FALSE(map.isSolid(column, row));
+                CHECK(map.isSolid(column, row - 1));  // it hangs from something solid
+            }
+        }
     }
 
     SUBCASE("no coin is buried inside a solid tile") {

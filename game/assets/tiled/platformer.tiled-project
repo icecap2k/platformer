@@ -1,0 +1,45 @@
+{
+  "automappingRulesFile": "",
+  "commands": [],
+  "compatibilityVersion": 1100,
+  "extensionsPath": "extensions",
+  "folders": [
+    "."
+  ],
+  "properties": [],
+  "propertyTypes": [
+    {
+      "color": "#ffd700",
+      "drawFill": true,
+      "id": 1,
+      "members": [],
+      "name": "coin",
+      "type": "class",
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "color": "#c0c8e0",
+      "drawFill": true,
+      "id": 2,
+      "members": [],
+      "name": "spikes",
+      "type": "class",
+      "useAs": [
+        "object"
+      ]
+    },
+    {
+      "color": "#e0d0a0",
+      "drawFill": true,
+      "id": 3,
+      "members": [],
+      "name": "falling_stalactite",
+      "type": "class",
+      "useAs": [
+        "object"
+      ]
+    }
+  ]
+}

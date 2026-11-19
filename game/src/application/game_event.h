@@ -22,6 +22,20 @@ struct CoinCollected {
     int total_collected;  // including this one
 };
 
-using GameEvent = std::variant<RoomChanged, CoinCollected>;
+struct PlayerHurt {
+    domain::RoomId room;
+    int health_left;  // hearts left after this hit
+};
+
+// A stalactite trap came loose and starts to fall (after its warning shake).
+struct StalactiteFell {
+    domain::RoomId room;
+    std::size_t index;
+};
+
+// The player lost its last heart: everything starts over from the first room.
+struct GameRestarted {};
+
+using GameEvent = std::variant<RoomChanged, CoinCollected, PlayerHurt, StalactiteFell, GameRestarted>;
 
 }  // namespace application

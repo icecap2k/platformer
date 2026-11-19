@@ -59,7 +59,7 @@ TEST_CASE("analyzeReachability") {
     }
 
     SUBCASE("a coin within jumping height can be touched") {
-        // Floor top is y = 216. A jump rises about 62 px, so y = 170 is reachable.
+        // Floor top is y = 216. A jump rises about 42 px, so y = 170 is reachable.
         const auto report = analyzeReachability(oneRoom({Coin{100.0F, 170.0F}}), startAt("a"));
         CHECK(report.coins[0].touchable);
     }
@@ -141,6 +141,43 @@ TEST_CASE("analyzeReachability") {
         options.max_states = 50;
         const auto report = analyzeReachability(oneRoom({}), options);
         CHECK(report.truncated);
+    }
+}
+
+TEST_CASE("analyzeReachability treats hazards as deadly") {
+    using domain::AABB;
+    using domain::Hazard;
+
+    SUBCASE("a coin lying on spikes cannot be touched, the same coin on bare floor can") {
+        const Coin coin{100.0F, 211.0F, 5.0F};
+        std::vector<Room> safe;
+        safe.emplace_back("a", test_maps::makeMap(), std::map<Side, domain::RoomId>{}, std::vector<Coin>{coin});
+        CHECK(analyzeReachability(RoomGraph(std::move(safe)), startAt("a")).allOk());
+
+        std::vector<Room> spiked;
+        spiked.emplace_back("a", test_maps::makeMap(), std::map<Side, domain::RoomId>{},
+                            std::vector<Coin>{coin}, std::vector<Hazard>{Hazard{AABB{100.0F, 211.0F, 5.0F, 5.0F}}});
+        const auto report = analyzeReachability(RoomGraph(std::move(spiked)), startAt("a"));
+        CHECK_FALSE(report.coins[0].touchable);
+        CHECK_FALSE(report.allOk());
+    }
+
+    SUBCASE("low spikes on the floor can be jumped over") {
+        std::vector<Room> rooms;
+        rooms.emplace_back("a", test_maps::makeMap(), std::map<Side, domain::RoomId>{{Side::East, "b"}},
+                           std::vector<Coin>{}, std::vector<Hazard>{Hazard{AABB{200.0F, 211.0F, 8.0F, 5.0F}}});
+        rooms.emplace_back("b", test_maps::makeMap(), std::map<Side, domain::RoomId>{{Side::West, "a"}});
+        const auto report = analyzeReachability(RoomGraph(std::move(rooms)), startAt("a"));
+        CHECK(report.room_reachable.at("b"));
+    }
+
+    SUBCASE("a wall of hazards taller than any jump blocks the way to the next room") {
+        std::vector<Room> rooms;
+        rooms.emplace_back("a", test_maps::makeMap(), std::map<Side, domain::RoomId>{{Side::East, "b"}},
+                           std::vector<Coin>{}, std::vector<Hazard>{Hazard{AABB{200.0F, 100.0F, 8.0F, 116.0F}}});
+        rooms.emplace_back("b", test_maps::makeMap(), std::map<Side, domain::RoomId>{{Side::West, "a"}});
+        const auto report = analyzeReachability(RoomGraph(std::move(rooms)), startAt("a"));
+        CHECK_FALSE(report.room_reachable.at("b"));
     }
 }
 
@@ -248,6 +285,58 @@ TEST_CASE("text <-> Tiled round trips") {
         REQUIRE(again.coins.size() == 1);
         CHECK(again.coins[0].x == level.coins[0].x);
         CHECK(again.coins[0].y == level.coins[0].y);
+    }
+
+    SUBCASE("spikes (^) become a hitbox that leaves the tips forgiving") {
+        const TextLevel spiked = parseTextLevel("---\n..^.\n####\n");
+        REQUIRE(spiked.hazards.size() == 1);
+        CHECK(spiked.hazards[0].bounds.x == 16.0F);
+        CHECK(spiked.hazards[0].bounds.y == 3.0F);       // top 3 px of the tile are free
+        CHECK(spiked.hazards[0].bounds.width == 8.0F);
+        CHECK(spiked.hazards[0].bounds.height == 5.0F);
+    }
+
+    SUBCASE("spikes survive text -> tmj -> game and tmj -> text") {
+        const TextLevel spiked = parseTextLevel("---\n..^.\n####\n");
+        const Room room = infrastructure::parseTiledRoom("r", toTiledJson(spiked));
+        REQUIRE(room.hazards().size() == 1);
+        CHECK(room.hazards()[0].bounds.x == 16.0F);
+        CHECK(room.hazards()[0].bounds.y == 3.0F);
+
+        const TextLevel again = parseTextLevel(toText(room));
+        REQUIRE(again.hazards.size() == 1);
+        CHECK(again.hazards[0].bounds.x == 16.0F);
+        CHECK(again.hazards[0].bounds.y == 3.0F);
+    }
+
+    SUBCASE("stalactite traps (V) survive text -> tmj -> game and tmj -> text") {
+        const TextLevel trapped = parseTextLevel("---\n#V##\n....\n####\n");
+        REQUIRE(trapped.stalactites.size() == 1);
+        CHECK(trapped.stalactites[0].bounds.x == 8.0F);
+        CHECK(trapped.stalactites[0].bounds.y == 0.0F);
+        CHECK(trapped.stalactites[0].bounds.width == 8.0F);
+
+        const Room room = infrastructure::parseTiledRoom("r", toTiledJson(trapped));
+        REQUIRE(room.stalactites().size() == 1);
+        CHECK(room.stalactites()[0].bounds.x == 8.0F);
+
+        const TextLevel again = parseTextLevel(toText(room));
+        REQUIRE(again.stalactites.size() == 1);
+        CHECK(again.stalactites[0].bounds.x == 8.0F);
+        CHECK(again.tiles == trapped.tiles);
+    }
+
+    SUBCASE("toText rejects a stalactite trap that is not exactly one tile") {
+        const Room odd("o", domain::TileMap(4, 2, 8, std::vector<int>(8, 0)), {}, {}, {},
+                       {domain::FallingStalactite{domain::AABB{3.0F, 0.0F, 8.0F, 12.0F}}});
+        CHECK_THROWS_WITH_AS(toText(odd), doctest::Contains("not exactly one tile"), std::runtime_error);
+    }
+
+    SUBCASE("toText rejects hazards that are not tile-aligned spikes") {
+        const Room odd("o", domain::TileMap(4, 2, 8, std::vector<int>(8, 0)), {}, {},
+                       {domain::Hazard{domain::AABB{3.0F, 3.0F, 20.0F, 5.0F}}});
+        CHECK_THROWS_WITH_AS(toText(odd), doctest::Contains("not a tile-aligned spike"),
+                             std::runtime_error);
     }
 
     SUBCASE("toText round-trips the extra tileset tiles 3 and 4") {
