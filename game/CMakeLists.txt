@@ -21,7 +21,8 @@ add_library(domain STATIC
     src/domain/world/stalactite_traps.cpp
     src/domain/rules/room_transition.cpp
     src/domain/rules/coin_pickup.cpp
-    src/domain/rules/damage.cpp)
+    src/domain/rules/damage.cpp
+    src/domain/rules/healing.cpp)
 target_include_directories(domain PUBLIC src)
 target_compile_options(domain PRIVATE ${WARNINGS})
 
@@ -119,6 +120,7 @@ if(PLATFORMER_BUILD_TESTS)
         tests/stalactite_test.cpp
         tests/slope_test.cpp
         tests/crouch_test.cpp
+        tests/fruit_test.cpp
         tests/animation_test.cpp
         tests/decoration_test.cpp
         tests/autotile_test.cpp

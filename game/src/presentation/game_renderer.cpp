@@ -24,6 +24,8 @@ constexpr float kCoinSheetY = 18.0F;  // coin frames sit below the player frames
 constexpr float kCoinSize = 8.0F;
 constexpr float kHeartSheetY = 26.0F;  // heart icons (full, then empty) sit below the coins
 constexpr float kHeartSize = 8.0F;
+constexpr float kFruitSheetY = 34.0F;   // the glowing berry frames sit below the hearts
+constexpr float kFruitFrameSize = 16.0F;  // the berry is 8x8, in the middle of its halo
 
 constexpr float kDecorSize = 8.0F;
 
@@ -75,6 +77,7 @@ void GameRenderer::draw(const application::GameSession& session) {
     drawTiles(session.map());
     drawScenery(session.map(), time_ms);
     drawHazards(session);
+    drawFruits(session, time_ms);
     drawCoins(session, time_ms);
     drawPlayer(session.player(), time_ms);
     drawHud(session, time_ms);
@@ -199,6 +202,24 @@ void GameRenderer::drawHazards(const application::GameSession& session) const {
                                  : 0.0F;
         hazards_.draw(renderer_, SDL_FRect{kSprite, 0.0F, kSprite, kSprite},
                       SDL_FRect{box.x + wobble, box.y, kSprite, kSprite});
+    }
+}
+
+// The healing fruits of the room that nobody has eaten yet: a berry that glows.
+void GameRenderer::drawFruits(const application::GameSession& session, std::uint64_t time_ms) const {
+    const domain::Room& room = session.currentRoom();
+    const SDL_FRect source{static_cast<float>(fruitFrame(time_ms)) * kFruitFrameSize, kFruitSheetY,
+                           kFruitFrameSize, kFruitFrameSize};
+    const float bob = static_cast<float>(fruitBob(time_ms));
+    for (std::size_t index = 0; index < room.fruits().size(); ++index) {
+        if (session.eatenFruits().isCollected(room.id(), index)) {
+            continue;
+        }
+        const domain::AABB box = room.fruits()[index].bounds();
+        // The frame is bigger than the fruit: centre it, so the halo spills around the hitbox.
+        const float margin = (kFruitFrameSize - box.width) * 0.5F;
+        sprites_.draw(renderer_, source,
+                      SDL_FRect{box.x - margin, box.y - margin + bob, kFruitFrameSize, kFruitFrameSize});
     }
 }
 

@@ -51,6 +51,20 @@ const std::string kSpikeMap = R"({
   ]
 })";
 
+// A fruit (also with the old "type" field), a coin and another class, which is ignored.
+const std::string kFruitMap = R"({
+  "width": 4, "height": 2, "tilewidth": 8, "tileheight": 8, "infinite": false,
+  "layers": [
+    { "type": "objectgroup", "name": "objects", "objects": [
+        { "id": 1, "class": "fruit", "x": 8, "y": 4, "width": 8, "height": 8 },
+        { "id": 2, "type": "fruit", "x": 16.5, "y": 0, "width": 0, "height": 0 },
+        { "id": 3, "class": "coin", "x": 24, "y": 0, "width": 8, "height": 8 },
+        { "id": 4, "class": "decoration", "x": 0, "y": 0, "width": 8, "height": 8 }
+    ] },
+    { "type": "tilelayer", "name": "ground", "width": 4, "height": 2, "data": [0,0,0,0, 1,1,1,1] }
+  ]
+})";
+
 const std::string kShippedRooms[] = {"room_01", "room_02", "room_03", "room_04"};
 
 std::string roomPath(const std::string& name) {
@@ -184,6 +198,29 @@ TEST_CASE("parseTiledRoom reads spikes") {
     }
 }
 
+TEST_CASE("parseTiledRoom reads fruits") {
+    SUBCASE("every object of class fruit becomes a fruit at its position") {
+        const auto room = parseTiledRoom("r", kFruitMap);
+
+        REQUIRE(room.fruits().size() == 2);
+        CHECK(room.fruits()[0].x == 8.0F);
+        CHECK(room.fruits()[0].y == 4.0F);
+        CHECK(room.fruits()[0].size == 8.0F);
+        CHECK(room.fruits()[1].x == 16.5F);
+        CHECK(room.fruits()[1].size == 8.0F);  // no width: the default size
+    }
+
+    SUBCASE("fruits and coins are separate lists") {
+        const auto room = parseTiledRoom("r", kFruitMap);
+        CHECK(room.coins().size() == 1);
+        CHECK(room.hazards().empty());
+    }
+
+    SUBCASE("a room without fruits has none") {
+        CHECK(parseTiledRoom("r", kSmallMap).fruits().empty());
+    }
+}
+
 TEST_CASE("the shipped rooms form a consistent world") {
     std::vector<domain::Room> rooms;
     for (const std::string& name : kShippedRooms) {
@@ -235,6 +272,28 @@ TEST_CASE("the shipped rooms form a consistent world") {
         }
         CHECK(map.isSolid(32, 22));                   // the plateau
         CHECK_FALSE(map.isGround(32, 21));
+    }
+
+    SUBCASE("healing fruits: one in room_02 (past the spikes) and one in room_04") {
+        CHECK(graph.room("room_01").fruits().empty());
+        CHECK(graph.room("room_02").fruits().size() == 1);
+        CHECK(graph.room("room_03").fruits().empty());
+        CHECK(graph.room("room_04").fruits().size() == 1);
+    }
+
+    SUBCASE("no fruit is buried inside a solid tile, and each rests on something") {
+        for (const std::string& name : kShippedRooms) {
+            const auto& room = graph.room(name);
+            const auto& map = room.map();
+            const int ts = map.tileSize();
+            for (const auto& fruit : room.fruits()) {
+                INFO(name << " fruit at " << fruit.x << "," << fruit.y);
+                const int column = static_cast<int>(fruit.x) / ts;
+                const int row = static_cast<int>(fruit.y) / ts;
+                CHECK_FALSE(map.isGround(column, row));
+                CHECK(map.isGround(column, row + 1));  // it is not left floating in the air
+            }
+        }
     }
 
     SUBCASE("hazards: spikes in rooms 01, 02 and 04, stalactite traps in 01 and 04") {

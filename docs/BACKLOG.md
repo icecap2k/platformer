@@ -25,11 +25,17 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 30 | ADR-0010 y post 14 |
 | 32 | **Agacharse** (flecha abajo en suelo firme: hitbox a la mitad, 0,75 px/paso, no salta, solo se levanta con hueco encima) y **deslizar con la flecha abajo** sobre una rampa (corrige la primera versión, que deslizaba al caminar); ADR-0011 y post 15 |
 
+## Hecho (E10 · Frutas que curan)
+
+| # | Tarea |
+|---|---|
+| 34 | **Frutas que curan** (baya luminosa, 1 corazón, se come aunque la salud esté llena): `Fruit`, `PickupCollection` y detección de contacto compartidas con las monedas, evento `FruitEaten`, clase `fruit` de Tiled y símbolo `F`; `level_check` las comprueba; colocadas en `room_02` y `room_04`; ADR-0012 y post 16 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
 |---|---|---|---|---|
-| 8 | **Frutas que curan**: generalizar `Coin` a un coleccionable con tipo (moneda, fruta que cura 1) | P1 | M | — |
+| 8 | ~~Frutas que curan~~ — hecho en E10 (ver arriba). Pendiente: un `Collectible` genérico con tipo cuando haya un tercer tipo de recogible | P3 | S | — |
 | 9 | **Enemigos** básicos (patrulla; reutilizan `applyDamage` y `PlayerHurt`; decidir si se pueden pisar) | P1 | L | — |
 | 10 | **Sonido**: `AudioPlayer` en infraestructura que reacciona a los eventos (moneda, daño, salto, gota, estalactita) | P1 | M | — (los eventos ya existen) |
 | 11 | **Pantalla de título, pausa y Game Over** (estado por encima de `GameSession`) | P1 | M | — |

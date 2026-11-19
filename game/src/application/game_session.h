@@ -30,6 +30,7 @@ public:
     const domain::TileMap& map() const { return currentRoom().map(); }
 
     const domain::CoinCollection& collectedCoins() const { return collected_coins_; }
+    const domain::PickupCollection& eatenFruits() const { return eaten_fruits_; }
     int totalCoins() const { return world_.totalCoins(); }
     const domain::StalactiteTraps& stalactiteTraps() const { return traps_; }
 
@@ -50,6 +51,7 @@ private:
     domain::RoomId current_room_;
     domain::Player player_;
     domain::CoinCollection collected_coins_;
+    domain::PickupCollection eaten_fruits_;
     domain::StalactiteTraps traps_;
 };
 

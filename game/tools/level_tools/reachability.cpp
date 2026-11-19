@@ -75,7 +75,9 @@ bool ReachabilityReport::allOk() const {
         }
     }
     return std::all_of(coins.begin(), coins.end(),
-                       [](const CoinStatus& coin) { return coin.touchable; });
+                       [](const CoinStatus& coin) { return coin.touchable; }) &&
+           std::all_of(fruits.begin(), fruits.end(),
+                       [](const FruitStatus& fruit) { return fruit.touchable; });
 }
 
 ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
@@ -93,6 +95,10 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
         const auto& coins = world.room(id).coins();
         for (std::size_t index = 0; index < coins.size(); ++index) {
             report.coins.push_back(CoinStatus{id, index, coins[index], false});
+        }
+        const auto& fruits = world.room(id).fruits();
+        for (std::size_t index = 0; index < fruits.size(); ++index) {
+            report.fruits.push_back(FruitStatus{id, index, fruits[index], false});
         }
     }
 
@@ -122,6 +128,12 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
         report.room_reachable[room.id()] = true;
         if (current.player.on_ground) {
             report.room_standable[room.id()] = true;
+        }
+        for (FruitStatus& fruit : report.fruits) {
+            if (fruit.room == room.id() && !fruit.touchable &&
+                current.player.bounds().overlaps(fruit.fruit.bounds())) {
+                fruit.touchable = true;
+            }
         }
         for (CoinStatus& coin : report.coins) {
             if (coin.room == room.id() && !coin.touchable &&

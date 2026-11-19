@@ -36,6 +36,9 @@ std::string assetPath(const std::string& relative) {
 void report(const application::GameEvent& event) {
     if (const auto* changed = std::get_if<application::RoomChanged>(&event)) {
         std::cout << "[event] room " << changed->from << " -> " << changed->to << '\n';
+    } else if (const auto* fruit = std::get_if<application::FruitEaten>(&event)) {
+        std::cout << "[event] fruit eaten in " << fruit->room << " (" << fruit->health_after
+                  << " hearts" << (fruit->hearts_gained == 0 ? ", wasted" : "") << ")" << std::endl;
     } else if (const auto* hurt = std::get_if<application::PlayerHurt>(&event)) {
         std::cout << "[event] player hurt in " << hurt->room << " (" << hurt->health_left
                   << " hearts left)" << std::endl;

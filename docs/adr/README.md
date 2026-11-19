@@ -21,6 +21,7 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0009](0009-convenciones-de-trabajo-y-pruebas.md) | Convenciones de trabajo, pruebas y git | Aceptada |
 | [0010](0010-rampas-de-45-y-deslizamiento.md) | Rampas de 45° y deslizamiento | Aceptada (el disparador, sustituido por 0011) |
 | [0011](0011-agacharse-y-deslizar-con-la-flecha-abajo.md) | Agacharse y deslizar con la flecha abajo | Aceptada |
+| [0012](0012-frutas-que-curan-y-recogibles.md) | Frutas que curan y recogibles | Aceptada |
 
 ## Plantilla
 

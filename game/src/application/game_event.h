@@ -22,6 +22,15 @@ struct CoinCollected {
     int total_collected;  // including this one
 };
 
+// A healing fruit was eaten. `hearts_gained` is 0 when the player was already at
+// full health: the fruit is eaten anyway and wasted.
+struct FruitEaten {
+    domain::RoomId room;
+    std::size_t fruit_index;
+    int health_after;
+    int hearts_gained;
+};
+
 struct PlayerHurt {
     domain::RoomId room;
     int health_left;  // hearts left after this hit
@@ -36,6 +45,6 @@ struct StalactiteFell {
 // The player lost its last heart: everything starts over from the first room.
 struct GameRestarted {};
 
-using GameEvent = std::variant<RoomChanged, CoinCollected, PlayerHurt, StalactiteFell, GameRestarted>;
+using GameEvent = std::variant<RoomChanged, CoinCollected, FruitEaten, PlayerHurt, StalactiteFell, GameRestarted>;
 
 }  // namespace application

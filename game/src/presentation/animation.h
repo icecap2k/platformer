@@ -42,4 +42,11 @@ bool facesLeft(const domain::Player& player, bool was_facing_left);
 // Frame (0..3) of the spinning coin.
 int coinFrame(std::uint64_t time_ms);
 
+// Frame (0..3) of the glowing healing fruit: its halo breathes (grows and brightens,
+// then shrinks).
+int fruitFrame(std::uint64_t time_ms);
+
+// How many pixels (-1, 0 or +1) the fruit floats up or down: a slow bob.
+int fruitBob(std::uint64_t time_ms);
+
 }  // namespace presentation

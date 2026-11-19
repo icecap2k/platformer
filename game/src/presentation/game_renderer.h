@@ -26,6 +26,7 @@ private:
     void drawScenery(const domain::TileMap& map, std::uint64_t time_ms) const;
     void drawDrip(const domain::TileMap& map, int column, int row, std::uint64_t time_ms) const;
     void drawHazards(const application::GameSession& session) const;
+    void drawFruits(const application::GameSession& session, std::uint64_t time_ms) const;
     void drawCoins(const application::GameSession& session, std::uint64_t time_ms) const;
     void drawPlayer(const domain::Player& player, std::uint64_t time_ms);
     void drawHud(const application::GameSession& session, std::uint64_t time_ms) const;

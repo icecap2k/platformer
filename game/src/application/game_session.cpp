@@ -6,6 +6,7 @@
 #include "domain/physics/player_physics.h"
 #include "domain/rules/coin_pickup.h"
 #include "domain/rules/damage.h"
+#include "domain/rules/healing.h"
 #include "domain/rules/room_transition.h"
 
 namespace application {
@@ -30,6 +31,7 @@ void GameSession::restart() {
     player_.x = spawn_x_;
     player_.y = spawn_y_;
     collected_coins_ = domain::CoinCollection{};
+    eaten_fruits_ = domain::PickupCollection{};
     traps_ = domain::StalactiteTraps{};
 }
 
@@ -87,6 +89,13 @@ std::vector<GameEvent> GameSession::update(const domain::InputState& input) {
     for (const std::size_t index : domain::coinsTouchedBy(player_, here, collected_coins_)) {
         collected_coins_.collect(here.id(), index);
         events.push_back(CoinCollected{here.id(), index, collected_coins_.count()});
+    }
+
+    // Healing fruits: eaten on touch, even at full health (then they are wasted).
+    for (const std::size_t index : domain::fruitsTouchedBy(player_, here, eaten_fruits_)) {
+        eaten_fruits_.collect(here.id(), index);
+        const int gained = domain::heal(player_, domain::kFruitHealing);
+        events.push_back(FruitEaten{here.id(), index, player_.health, gained});
     }
 
     // Hazards: a hit costs a heart, throws the player back and gives a moment of
