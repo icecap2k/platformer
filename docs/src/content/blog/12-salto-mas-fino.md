@@ -17,7 +17,7 @@ if (!input.jump && player.velocity_y < -kJumpCutSpeed) {
 }
 ```
 
-Un toque da un saltito; mantenerlo da el salto completo (unos 60 px con la integración discreta; la fórmula continua `v²/2g` da 62,5), igual que antes.
+Un toque da un saltito; mantenerlo da el salto completo (con la fórmula continua `v²/2g`). *Nota posterior:* al jugarlo, el salto completo de 62 px se veía demasiado alto y lo bajamos al 70 % (`kJumpSpeed = 4.2`, unos 44 px). Como la altura crece con el cuadrado de la velocidad, para un 70 % de altura la velocidad es √0,7 ≈ 84 % de la anterior. El recorte de salto se escaló igual (de 2,0 a 1,7). Los niveles siguieron siendo ganables, comprobado con `level_check`.
 
 ## 2. Coyote time
 
@@ -26,12 +26,12 @@ Es la cortesía de dejarte saltar **unos pasos después de pisar el borde**. El 
 Se guarda un contador en `Player`:
 
 ```cpp
-if (player.on_ground) player.coyote_steps = kCoyoteSteps;  // 6 pasos = 0,1 s
+if (player.on_ground) player.coyote_steps = kCoyoteSteps;  // 4 pasos = 0,07 s
 // ...se comprueba el salto, y si no se salta en el aire:
 else if (player.coyote_steps > 0) --player.coyote_steps;
 ```
 
-Y el salto pregunta por el contador en lugar de por `on_ground`. El contador se gasta **después** de comprobar el salto, así que la ventana es de exactamente 6 pasos en el aire (la primera versión gastaba uno antes y daba solo 5: lo cazó una revisión externa y ahora hay un test de frontera con un borde real). Al saltar se pone a 0, para que no se pueda encadenar un segundo salto en el aire.
+Y el salto pregunta por el contador en lugar de por `on_ground`. El contador se gasta **después** de comprobar el salto, así que la ventana es de exactamente `kCoyoteSteps` pasos en el aire (4 hoy; empezó en 6 y se redujo al probarlo, porque se sentía demasiado permisiva) (la primera versión gastaba uno antes y daba solo 5: lo cazó una revisión externa y ahora hay un test de frontera con un borde real). Al saltar se pone a 0, para que no se pueda encadenar un segundo salto en el aire.
 
 ## 3. Hay que volver a pulsar
 

@@ -84,8 +84,19 @@ void moveVertically(Player& player, const TileMap& map) {
 }  // namespace
 
 void stepPlayer(Player& player, const InputState& input, const TileMap& map) {
-    // Horizontal movement: direct control, no acceleration.
-    player.velocity_x = static_cast<float>(input.horizontalAxis()) * kRunSpeed;
+    if (player.invulnerable_steps > 0) {
+        --player.invulnerable_steps;
+    }
+    const bool hurt = player.hurt_steps > 0;
+
+    // Horizontal movement: direct control, no acceleration. While hurt, the
+    // hit decides instead of the player.
+    if (hurt) {
+        player.velocity_x = static_cast<float>(player.hurt_direction) * kKnockbackSpeed;
+        --player.hurt_steps;
+    } else {
+        player.velocity_x = static_cast<float>(input.horizontalAxis()) * kRunSpeed;
+    }
     moveHorizontally(player, map);
 
     // Coyote time: standing refills the grace period; each airborne step that
@@ -96,16 +107,17 @@ void stepPlayer(Player& player, const InputState& input, const TileMap& map) {
     }
 
     // Jump: needs a fresh press (not held since last step) and ground, or the
-    // grace period after leaving it.
-    if (input.jump && !player.jump_held && player.coyote_steps > 0) {
+    // grace period after leaving it. Not while hurt.
+    if (!hurt && input.jump && !player.jump_held && player.coyote_steps > 0) {
         player.velocity_y = -kJumpSpeed;
         player.coyote_steps = 0;  // spent: no double jump
     } else if (!player.on_ground && player.coyote_steps > 0) {
         --player.coyote_steps;
     }
 
-    // Variable height: letting go while rising cuts the jump short.
-    if (!input.jump && player.velocity_y < -kJumpCutSpeed) {
+    // Variable height: letting go while rising cuts the jump short (but never
+    // the small hop of a hit).
+    if (!hurt && !input.jump && player.velocity_y < -kJumpCutSpeed) {
         player.velocity_y = -kJumpCutSpeed;
     }
     player.jump_held = input.jump;

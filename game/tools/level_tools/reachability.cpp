@@ -10,6 +10,7 @@
 #include "domain/entities/player.h"
 #include "domain/input/input_state.h"
 #include "domain/physics/player_physics.h"
+#include "domain/rules/damage.h"
 #include "domain/rules/room_transition.h"
 
 namespace level_tools {
@@ -127,6 +128,11 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
                 const domain::RoomId target = *room.neighbor(*side);  // a copy: neighbor() returns by value
                 next.room = indexOf(target);
                 domain::enterRoom(next.player, *side, world.room(target).map());
+            }
+            // Touching a hazard hurts: a route that goes through spikes is not a
+            // route. (Falling stalactites are dynamic and are not modelled.)
+            if (domain::hazardTouching(next.player, world.room(ids[next.room])).has_value()) {
+                continue;
             }
             if (seen.insert(keyOf(next)).second) {
                 queue.push_back(next);

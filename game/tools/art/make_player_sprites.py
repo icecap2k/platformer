@@ -6,7 +6,8 @@
 Layout of the sheet: one 12x18 cell per player frame, left to right, in the
 order of `presentation::PlayerPose` (see src/presentation/animation.h). The coin
 frames below them (y = 18) are copied from the sheet already on disk, so running
-this script never touches the coins.
+this script never touches the coins. The HUD hearts (full, empty) are drawn in
+the row below the coins (y = 26).
 
 Frames face right; the renderer mirrors them to face left. The collision box is
 8x16 and sits at cell (2, 1): the figure is drawn inside x 1..10, y 1..16 and a
@@ -231,14 +232,31 @@ FRAMES = [
     frame(0, [(-1, 2), (-1, 1), (-1, 0), (-1, -1)], legs=((-1, 0), (1, 1)), arms=("up", "up"), head_drop=1),
     # Land: a squashed crouch.
     frame(2, [(-1, 3), (-2, 4), (-2, 5)], legs=((-1, 0), (1, 0)), arms=("forward", "forward")),
+    # Hurt: thrown back, arms flailing, the hood's tip flung up.
+    frame(0, [(-1, 2), (-2, 1), (-2, 0), (-2, -1)], legs=((-1, 1), (2, 0)), arms=("up", "backward"), head_drop=1),
 ]
+
+# Heart icons for the HUD: 8x8, full then empty, in the row below the coins.
+HEART_ROW = (26, 34)
+HEART = [
+    "........",
+    ".OO..OO.",
+    "OhrOOrrO",
+    "OhrrrrrO",
+    "OrrrrrdO",
+    ".OrrrdO.",
+    "..OrdO..",
+    "...OO...",
+]
+HEART_FULL = {"r": (222, 60, 76, 255), "h": (255, 160, 160, 255), "d": (150, 30, 60, 255)}
+HEART_EMPTY = {"r": (60, 48, 72, 255), "h": (88, 74, 102, 255), "d": (44, 34, 56, 255)}
 
 
 def build_sheet():
     coin_top, coin_bottom = COIN_ROWS
     old_w, old_h, old = read_png(SHEET_PATH)
     assert old_h >= coin_bottom, "the sheet on disk has no coin rows"
-    width, height = CELL_W * len(FRAMES), coin_bottom
+    width, height = CELL_W * len(FRAMES), HEART_ROW[1]
     sheet = [[(0, 0, 0, 0)] * width for _ in range(height)]
     for index, cell in enumerate(FRAMES):
         for (x, y), color in cell.outlined().items():
@@ -246,6 +264,11 @@ def build_sheet():
     for y in range(coin_top, coin_bottom):          # keep the coins as they are
         for x in range(min(old_w, width)):
             sheet[y][x] = old[y][x]
+    for index, palette in enumerate((HEART_FULL, HEART_EMPTY)):
+        for y, row in enumerate(HEART):
+            for x, char in enumerate(row):
+                if char != ".":
+                    sheet[HEART_ROW[0] + y][index * 8 + x] = OUTLINE if char == "O" else palette[char]
     return sheet
 
 

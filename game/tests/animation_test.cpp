@@ -24,7 +24,7 @@ TEST_CASE("playerPose") {
                                   PlayerPose::Idle3, PlayerPose::Run0,  PlayerPose::Run1,
                                   PlayerPose::Run2,  PlayerPose::Run3,  PlayerPose::Run4,
                                   PlayerPose::Run5,  PlayerPose::Rise,  PlayerPose::Apex,
-                                  PlayerPose::Fall,  PlayerPose::Land};
+                                  PlayerPose::Fall,  PlayerPose::Land, PlayerPose::Hurt};
         int seen = 0;
         for (const PlayerPose pose : all) {
             CHECK(column(pose) == seen);  // contiguous, in order
@@ -74,10 +74,48 @@ TEST_CASE("playerPose") {
         CHECK(presentation::playerPose(still, 1000) != PlayerPose::Land);
     }
 
+    SUBCASE("being thrown back shows the hurt pose, whatever else is going on") {
+        domain::Player hurt = playerWith(-1.2F, false, -2.0F);
+        hurt.hurt_steps = 5;
+        CHECK(presentation::playerPose(hurt, 0) == PlayerPose::Hurt);
+
+        hurt.on_ground = true;
+        hurt.velocity_x = 0.0F;
+        CHECK(presentation::playerPose(hurt, 0, 0) == PlayerPose::Hurt);  // even right after landing
+
+        hurt.hurt_steps = 0;  // recovered
+        CHECK(presentation::playerPose(hurt, 0) != PlayerPose::Hurt);
+    }
+
     SUBCASE("landing while running does not squash: the run continues") {
         const PlayerPose pose = presentation::playerPose(playerWith(1.5F, true), 0, 0);
         CHECK(pose == PlayerPose::Run0);
     }
+}
+
+TEST_CASE("isVisibleWhileInvulnerable") {
+    SUBCASE("always visible when not invulnerable") {
+        CHECK(presentation::isVisibleWhileInvulnerable(0));
+        CHECK(presentation::isVisibleWhileInvulnerable(-1));
+    }
+
+    SUBCASE("blinks while invulnerable, hidden half of the time") {
+        int hidden = 0;
+        for (int steps = 1; steps <= 90; ++steps) {
+            hidden += presentation::isVisibleWhileInvulnerable(steps) ? 0 : 1;
+        }
+        CHECK(hidden >= 40);
+        CHECK(hidden <= 50);
+        // and it really alternates in short bursts
+        CHECK(presentation::isVisibleWhileInvulnerable(6) != presentation::isVisibleWhileInvulnerable(3));
+    }
+}
+
+TEST_CASE("a player thrown back keeps facing what hit it") {
+    domain::Player hurt = playerWith(1.2F, false);  // thrown to the right...
+    hurt.hurt_steps = 5;
+    CHECK(presentation::facesLeft(hurt, true));    // ...but still looking left
+    CHECK_FALSE(presentation::facesLeft(hurt, false));
 }
 
 TEST_CASE("facesLeft") {

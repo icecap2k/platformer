@@ -15,7 +15,7 @@ namespace presentation {
 class GameRenderer {
 public:
     // `assets_dir` must end with a path separator and contain sprites/rocks.png,
-    // sprites/sprites.png, sprites/decor.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
+    // sprites/sprites.png, sprites/decor.png, sprites/hazards.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
     GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir);
 
     void draw(const application::GameSession& session);
@@ -25,6 +25,7 @@ private:
     void drawTiles(const domain::TileMap& map) const;
     void drawScenery(const domain::TileMap& map, std::uint64_t time_ms) const;
     void drawDrip(const domain::TileMap& map, int column, int row, std::uint64_t time_ms) const;
+    void drawHazards(const application::GameSession& session) const;
     void drawCoins(const application::GameSession& session, std::uint64_t time_ms) const;
     void drawPlayer(const domain::Player& player, std::uint64_t time_ms);
     void drawHud(const application::GameSession& session, std::uint64_t time_ms) const;
@@ -33,6 +34,7 @@ private:
     infrastructure::Texture rocks_;
     infrastructure::Texture sprites_;
     infrastructure::Texture decor_;
+    infrastructure::Texture hazards_;
     infrastructure::Texture cave_;
     bool facing_left_ = false;
     bool was_on_ground_ = true;

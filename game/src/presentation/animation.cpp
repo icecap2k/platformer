@@ -13,6 +13,9 @@ constexpr float kApexSpeed = 1.0F;
 
 PlayerPose playerPose(const domain::Player& player, std::uint64_t time_ms,
                       std::uint64_t ms_since_landing) {
+    if (player.hurt_steps > 0) {
+        return PlayerPose::Hurt;
+    }
     if (!player.on_ground) {
         if (player.velocity_y < -kApexSpeed) {
             return PlayerPose::Rise;
@@ -30,7 +33,15 @@ PlayerPose playerPose(const domain::Player& player, std::uint64_t time_ms,
                                    static_cast<int>((time_ms / kRunFrameMs) % 6));
 }
 
+bool isVisibleWhileInvulnerable(int invulnerable_steps) {
+    // 3 steps shown, 3 steps hidden: a quick blink (10 times a second).
+    return invulnerable_steps <= 0 || (invulnerable_steps / 3) % 2 == 0;
+}
+
 bool facesLeft(const domain::Player& player, bool was_facing_left) {
+    if (player.hurt_steps > 0) {
+        return was_facing_left;  // moving backwards, but still facing the danger
+    }
     if (player.velocity_x < 0.0F) {
         return true;
     }

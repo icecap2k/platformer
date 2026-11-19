@@ -18,8 +18,10 @@ add_library(domain STATIC
     src/domain/world/room.cpp
     src/domain/world/room_graph.cpp
     src/domain/world/coin_collection.cpp
+    src/domain/world/stalactite_traps.cpp
     src/domain/rules/room_transition.cpp
-    src/domain/rules/coin_pickup.cpp)
+    src/domain/rules/coin_pickup.cpp
+    src/domain/rules/damage.cpp)
 target_include_directories(domain PUBLIC src)
 target_compile_options(domain PRIVATE ${WARNINGS})
 
@@ -113,6 +115,8 @@ if(PLATFORMER_BUILD_TESTS)
         tests/player_physics_test.cpp
         tests/room_transition_test.cpp
         tests/coin_test.cpp
+        tests/damage_test.cpp
+        tests/stalactite_test.cpp
         tests/animation_test.cpp
         tests/decoration_test.cpp
         tests/autotile_test.cpp

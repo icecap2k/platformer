@@ -8,6 +8,7 @@
 #include "domain/world/coin_collection.h"
 #include "domain/world/room.h"
 #include "domain/world/room_graph.h"
+#include "domain/world/stalactite_traps.h"
 
 namespace application {
 
@@ -30,12 +31,26 @@ public:
 
     const domain::CoinCollection& collectedCoins() const { return collected_coins_; }
     int totalCoins() const { return world_.totalCoins(); }
+    const domain::StalactiteTraps& stalactiteTraps() const { return traps_; }
 
 private:
+    // Hurts the player (one heart, knockback). Returns true if that was the last
+    // heart and the game restarted.
+    bool hurtPlayer(std::vector<GameEvent>& events, const domain::AABB& source);
+    // Wakes up, moves and lets fall the stalactite traps of the current room.
+    void updateStalactites(std::vector<GameEvent>& events);
+
+    // Back to the start: first room, full health, no coins collected.
+    void restart();
+
     domain::RoomGraph world_;
+    domain::RoomId start_room_;
+    float spawn_x_;
+    float spawn_y_;
     domain::RoomId current_room_;
     domain::Player player_;
     domain::CoinCollection collected_coins_;
+    domain::StalactiteTraps traps_;
 };
 
 }  // namespace application

@@ -5,7 +5,8 @@ structure a game with clear layers (in the spirit of DDD). Levels are screens
 connected through their four edges and are authored with
 [Tiled](https://www.mapeditor.org/).
 
-The development diary is a Spanish blog in [`docs/`](docs/): one post per epic.
+The development diary is a Spanish blog in [`docs/`](docs/): one post per epic. Design decisions are recorded as
+ADRs in [`docs/adr/`](docs/adr/) (start there for context) and the pending work is in [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 ## Controls
 
@@ -67,6 +68,10 @@ Rooms are Tiled maps (`game/assets/tiled/*.tmj`, JSON, CSV layer data):
 - **Map properties** `north`, `south`, `east`, `west` (string): id of the room
   behind that edge. No property means a wall. The id is the file name.
 - **Objects** of class `coin` (rectangles): collectible coins.
+- **Objects** of class `spikes` (rectangles): the rectangle is the hitbox. A hit costs one of the 3 hearts.
+- **Objects** of class `falling_stalactite` (rectangles): a trap that shakes when the player walks under it,
+  then falls. Hang it under a solid tile.
+- `game/assets/tiled/platformer.tiled-project` defines these three classes for Tiled's object *Class* field.
 
 ## Level tools
 
@@ -84,7 +89,7 @@ same `domain` library as the game, so they always use the real physics.
 ./build/level_to_text game/assets/tiled/room_02.tmj room_02.txt
 ```
 
-Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin; header lines
+Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin, `^` spikes, `V` stalactite trap; header lines
 `north/south/east/west: room_id`).
 
 ## Player art
@@ -98,6 +103,15 @@ coin frames in the same sheet are preserved.
 python3 game/tools/art/make_player_sprites.py
 python3 game/tools/art/make_player_sprites.py --preview preview.png   # enlarged, does not touch the sheet
 ```
+
+## Health and hazards
+
+The player has 3 hearts. A hit (spikes, a falling stalactite) costs one, throws the player back with a small hop
+and gives 1.5 s of invulnerability (the sprite blinks). With no hearts left the whole game restarts. Every hit goes
+through `domain::applyDamage` (`domain/rules/damage.h`), so future enemies feel the same. `level_check` treats
+touching spikes as deadly, so it only approves routes that avoid them (stalactites are not modelled).
+The hazard sprites come from `game/tools/art/make_hazards.py`, the hearts and the hurt frame from
+`make_player_sprites.py`.
 
 ## Rock tiles
 

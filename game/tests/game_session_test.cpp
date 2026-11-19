@@ -6,6 +6,8 @@
 #include <vector>
 
 #include "application/game_session.h"
+#include "domain/rules/damage.h"
+#include "domain/world/stalactite_traps.h"
 #include "infrastructure/assets/tiled_map_loader.h"
 #include "test_maps.h"
 
@@ -254,5 +256,188 @@ TEST_CASE("GameSession with the shipped rooms") {
         CHECK(session.currentRoom().id() == "room_02");
         run(session, InputState{}, 120);  // it may still be in the air from the last jump
         CHECK(session.player().on_ground);
+    }
+}
+
+namespace {
+
+// One room with a floor and a coin. The spikes stand on the floor: either one
+// small patch in the middle, or all along it (`everywhere`).
+RoomGraph makeSpikeWorld(bool everywhere = false) {
+    using domain::AABB;
+    const AABB spikes = everywhere ? AABB{0.0F, 211.0F, 320.0F, 5.0F} : AABB{100.0F, 211.0F, 8.0F, 5.0F};
+    std::vector<Room> rooms;
+    rooms.emplace_back("only", test_maps::makeMap(), std::map<Side, domain::RoomId>{},
+                       std::vector<domain::Coin>{domain::Coin{40.0F, 200.0F}},
+                       std::vector<domain::Hazard>{domain::Hazard{spikes}});
+    return RoomGraph(std::move(rooms));
+}
+
+int hurtCount(const std::vector<application::GameEvent>& events) {
+    int count = 0;
+    for (const auto& event : events) {
+        count += std::holds_alternative<application::PlayerHurt>(event) ? 1 : 0;
+    }
+    return count;
+}
+
+int restartCount(const std::vector<application::GameEvent>& events) {
+    int count = 0;
+    for (const auto& event : events) {
+        count += std::holds_alternative<application::GameRestarted>(event) ? 1 : 0;
+    }
+    return count;
+}
+
+}  // namespace
+
+TEST_CASE("GameSession hazards and health") {
+    SUBCASE("touching spikes costs one heart and reports it") {
+        // Standing on the floor, right on the spikes.
+        GameSession session(makeSpikeWorld(), "only", 100.0F, test_maps::kFloorTop - 16.0F);
+        REQUIRE(session.player().health == domain::kMaxHealth);
+
+        const auto events = session.update(InputState{});
+
+        REQUIRE(hurtCount(events) == 1);
+        const auto* hurt = std::get_if<application::PlayerHurt>(&events[0]);
+        REQUIRE(hurt != nullptr);
+        CHECK(hurt->room == "only");
+        CHECK(hurt->health_left == domain::kMaxHealth - 1);
+        CHECK(session.player().health == domain::kMaxHealth - 1);
+    }
+
+    SUBCASE("the player is thrown back, away from the spikes") {
+        // Just left of the spikes' centre: it must be thrown to the left.
+        GameSession session(makeSpikeWorld(), "only", 98.0F, test_maps::kFloorTop - 16.0F);
+        const float before = session.player().x;
+        run(session, InputState{}, domain::kHurtSteps + 2);
+        CHECK(session.player().x < before - 5.0F);   // thrown to the left (not toward the spikes)...
+        CHECK(session.player().x > before - 12.0F);  // ...but only a little
+    }
+
+    SUBCASE("one hit per invulnerability window, even if it keeps touching the spikes") {
+        // Spikes all along the floor: the player stays on them the whole time.
+        GameSession session(makeSpikeWorld(true), "only", 100.0F, test_maps::kFloorTop - 16.0F);
+        int hits = 0;
+        for (int step = 0; step < domain::kInvulnerableSteps - 5; ++step) {
+            hits += hurtCount(session.update(InputState{}));
+        }
+        CHECK(hits == 1);
+    }
+
+    SUBCASE("losing the last heart restarts the whole game") {
+        // Spawns in the air above the coin; spikes all along the floor. It lands
+        // (collecting the coin, and taking the first hit) and keeps getting hurt
+        // each time the invulnerability wears off.
+        GameSession session(makeSpikeWorld(true), "only", 40.0F, 60.0F);
+
+        int hits = 0;
+        int restarts = 0;
+        bool had_coin = false;
+        for (int step = 0; step < 60 * 30 && restarts == 0; ++step) {
+            const auto events = session.update(InputState{});
+            had_coin = had_coin || session.collectedCoins().count() == 1;
+            hits += hurtCount(events);
+            restarts += restartCount(events);
+        }
+
+        CHECK(had_coin);
+        CHECK(restarts == 1);
+        CHECK(hits == domain::kMaxHealth);  // three hits, the last one ends it
+        CHECK(session.player().health == domain::kMaxHealth);
+        CHECK(session.currentRoom().id() == "only");
+        CHECK(session.collectedCoins().count() == 0);  // the coin is back
+        CHECK(session.player().x == doctest::Approx(40.0F));
+        CHECK(session.player().y == doctest::Approx(60.0F));
+        CHECK(session.player().invulnerable_steps == 0);
+    }
+}
+
+namespace {
+
+// A ceiling tile at (12, 5) with a stalactite trap hanging right under it.
+RoomGraph makeTrapWorld() {
+    std::vector<Room> rooms;
+    rooms.emplace_back("only", test_maps::makeMap({{12, 5}}), std::map<Side, domain::RoomId>{},
+                       std::vector<domain::Coin>{}, std::vector<domain::Hazard>{},
+                       std::vector<domain::FallingStalactite>{
+                           domain::FallingStalactite{domain::AABB{96.0F, 48.0F, 8.0F, 8.0F}}});
+    return RoomGraph(std::move(rooms));
+}
+
+int fellCount(const std::vector<application::GameEvent>& events) {
+    int count = 0;
+    for (const auto& event : events) {
+        count += std::holds_alternative<application::StalactiteFell>(event) ? 1 : 0;
+    }
+    return count;
+}
+
+}  // namespace
+
+TEST_CASE("GameSession stalactite traps") {
+    // Standing right under it, on the floor.
+    GameSession session(makeTrapWorld(), "only", 96.0F, test_maps::kFloorTop - 16.0F);
+    const auto phase = [&session]() { return session.stalactiteTraps().state("only", 0).phase; };
+
+    SUBCASE("it warns first, then falls and reports it once") {
+        session.update(InputState{});
+        CHECK(phase() == domain::StalactitePhase::Shaking);
+
+        int fell = 0;
+        int steps_until_fall = 0;
+        for (int step = 0; step < 100 && fell == 0; ++step) {
+            fell += fellCount(session.update(InputState{}));
+            ++steps_until_fall;
+        }
+        CHECK(fell == 1);
+        CHECK(steps_until_fall >= domain::kShakeSteps - 2);  // the player had time to react
+        CHECK(phase() == domain::StalactitePhase::Falling);
+    }
+
+    SUBCASE("a player who stays under it is hurt once, and the stalactite shatters on them") {
+        int hits = 0;
+        for (int step = 0; step < 300; ++step) {
+            hits += hurtCount(session.update(InputState{}));
+        }
+        CHECK(hits == 1);
+        CHECK(session.player().health == domain::kMaxHealth - 1);
+        CHECK(phase() == domain::StalactitePhase::Gone);
+    }
+
+    SUBCASE("a player who walks away during the warning is not hurt") {
+        InputState right;
+        right.right = true;
+        int hits = 0;
+        for (int step = 0; step < 300; ++step) {
+            hits += hurtCount(session.update(right));
+        }
+        CHECK(hits == 0);
+        CHECK(session.player().health == domain::kMaxHealth);
+        CHECK(phase() == domain::StalactitePhase::Gone);  // it fell anyway, and missed
+    }
+
+    SUBCASE("restarting the game puts the trap back") {
+        // Same trap, plus spikes all along the floor: the player is hurt by the
+        // spikes until it loses everything, long after the stalactite has fallen.
+        std::vector<Room> rooms;
+        rooms.emplace_back("only", test_maps::makeMap({{12, 5}}), std::map<Side, domain::RoomId>{},
+                           std::vector<domain::Coin>{},
+                           std::vector<domain::Hazard>{domain::Hazard{domain::AABB{0.0F, 211.0F, 320.0F, 5.0F}}},
+                           std::vector<domain::FallingStalactite>{
+                               domain::FallingStalactite{domain::AABB{96.0F, 48.0F, 8.0F, 8.0F}}});
+        GameSession doomed(RoomGraph(std::move(rooms)), "only", 96.0F, 60.0F);
+
+        bool shattered_first = false;
+        int restarts = 0;
+        for (int step = 0; step < 60 * 30 && restarts == 0; ++step) {
+            restarts += restartCount(doomed.update(InputState{}));
+            shattered_first = shattered_first ||
+                              doomed.stalactiteTraps().state("only", 0).phase == domain::StalactitePhase::Gone;
+        }
+        CHECK(shattered_first);  // it had fallen by then
+        REQUIRE(restarts == 1);
+        CHECK(doomed.stalactiteTraps().state("only", 0).phase == domain::StalactitePhase::Idle);  // and is back
     }
 }
