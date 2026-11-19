@@ -45,6 +45,7 @@ target_compile_options(infrastructure_assets PRIVATE ${WARNINGS})
 find_package(SDL3 REQUIRED)
 
 add_library(infrastructure STATIC
+    src/infrastructure/audio/audio_player.cpp
     src/infrastructure/sdl/window.cpp
     src/infrastructure/sdl/texture.cpp
     src/infrastructure/input/keyboard_input_mapper.cpp)
@@ -58,8 +59,9 @@ add_library(presentation_animation STATIC
     src/presentation/animation.cpp
     src/presentation/decoration.cpp
     src/presentation/autotile.cpp
-    src/presentation/drip.cpp)
-target_link_libraries(presentation_animation PUBLIC domain)
+    src/presentation/drip.cpp
+    src/presentation/sound_cues.cpp)
+target_link_libraries(presentation_animation PUBLIC domain application)
 target_compile_options(presentation_animation PRIVATE ${WARNINGS})
 
 add_library(presentation STATIC
@@ -121,6 +123,8 @@ if(PLATFORMER_BUILD_TESTS)
         tests/slope_test.cpp
         tests/crouch_test.cpp
         tests/fruit_test.cpp
+        tests/sound_cues_test.cpp
+        tests/sound_assets_test.cpp
         tests/animation_test.cpp
         tests/decoration_test.cpp
         tests/autotile_test.cpp

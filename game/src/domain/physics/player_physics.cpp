@@ -191,7 +191,8 @@ void moveVertically(Player& player, const TileMap& map) {
 
 }  // namespace
 
-void stepPlayer(Player& player, const InputState& input, const TileMap& map) {
+StepResult stepPlayer(Player& player, const InputState& input, const TileMap& map) {
+    StepResult result;
     if (player.invulnerable_steps > 0) {
         --player.invulnerable_steps;
     }
@@ -242,6 +243,7 @@ void stepPlayer(Player& player, const InputState& input, const TileMap& map) {
     if (!hurt && !player.crouching && input.jump && !player.jump_held && player.coyote_steps > 0) {
         player.velocity_y = -kJumpSpeed;
         player.coyote_steps = 0;  // spent: no double jump
+        result.jumped = true;
     } else if (!player.on_ground && player.coyote_steps > 0) {
         --player.coyote_steps;
     }
@@ -260,6 +262,7 @@ void stepPlayer(Player& player, const InputState& input, const TileMap& map) {
     if (ramp.found && !player.on_ground && player.velocity_y >= 0.0F && player.velocity_y <= kGravity) {
         snapToFloorBelow(player, map);  // it just stepped off the foot of a ramp
     }
+    return result;
 }
 
 }  // namespace domain

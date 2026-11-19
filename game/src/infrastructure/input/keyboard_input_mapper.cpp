@@ -11,8 +11,16 @@ void KeyboardInputMapper::poll() {
             quit_requested_ = true;
         } else if (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode == SDL_SCANCODE_ESCAPE) {
             quit_requested_ = true;
+        } else if (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode == SDL_SCANCODE_M && !event.key.repeat) {
+            mute_toggled_ = true;
         }
     }
+}
+
+bool KeyboardInputMapper::takeMuteToggle() {
+    const bool pressed = mute_toggled_;
+    mute_toggled_ = false;
+    return pressed;
 }
 
 domain::InputState KeyboardInputMapper::state() const {

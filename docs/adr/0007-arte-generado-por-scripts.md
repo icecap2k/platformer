@@ -22,6 +22,8 @@ Los PNG de `game/assets/sprites` y `background` **son salidas**: la fuente son s
 - **Rocas (autotiles):** cada tile se elige según qué lados dan al aire (16 máscaras × 4 variantes × 2 materiales). Los extremos de plataforma acaban en **punta que se estrecha por debajo**, la cara superior queda plana e iluminada, la inferior irregular. **El contorno forma parte del dibujo**, no lo pinta el renderer. La colisión **no** se talla: sigue siendo un tile completo.
 - Cada ejecución del script de arte puede regenerar la hoja entera; el de jugador conserva las monedas leyéndolas de la hoja en disco.
 
+Los **sonidos** siguen la misma idea (ADR-0013): `game/tools/audio/make_sounds.py` sintetiza los WAV.
+
 ## Alternativas descartadas
 - Pintar los PNG a mano y versionar solo el resultado: no se puede iterar ni reproducir.
 - Instalar Pillow: se evitó una dependencia; se escribió un lector/escritor de PNG mínimo.

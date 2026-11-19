@@ -16,6 +16,7 @@ ADRs in [`docs/adr/`](docs/adr/) (start there for context) and the pending work 
 | Jump | `Space`, `Up` or `W` (hold for a full jump, tap for a hop; press again to re-jump) |
 | Crouch | `Down` or `S` on firm ground (half height, slow, no jumping; it only stands up when there is room) |
 | Slide | `Down` or `S` while on a ramp (you slide down it; walking on a ramp does not slide) |
+| Mute / unmute | `M` |
 | Quit | `Esc` |
 
 ## Build and run
@@ -117,6 +118,19 @@ through `domain::applyDamage` (`domain/rules/damage.h`), so future enemies feel 
 touching spikes as deadly, so it only approves routes that avoid them (stalactites are not modelled).
 The hazard sprites come from `game/tools/art/make_hazards.py`, the hearts and the hurt frame from
 `make_player_sprites.py`.
+
+## Sound
+
+Sound effects react to the game's events (jump, landing, coin, fruit, hit, slide, the three stages of a
+stalactite trap, game restart): `presentation::soundFor` maps each `GameEvent` to a sound and
+`infrastructure::AudioPlayer` plays `game/assets/sounds/<name>.wav`. The WAV files are synthesised by
+`game/tools/audio/make_sounds.py` (edit it and rerun to change them). If there is no audio device the game
+runs silently. Press `M` to mute. To hear one without the game: `afplay game/assets/sounds/coin.wav`.
+
+```bash
+python3 game/tools/audio/make_sounds.py            # writes the WAV files
+python3 game/tools/audio/make_sounds.py --report   # lengths and loudness, writes nothing
+```
 
 ## Rock tiles
 

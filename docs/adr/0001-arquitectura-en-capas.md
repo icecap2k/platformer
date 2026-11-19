@@ -16,7 +16,7 @@ presentation ──► application ──► domain
 ```
 
 - `domain`: reglas puras (jugador, física, mapas, salas, daño, trampas). **No incluye SDL**; el compilador lo hace cumplir porque la librería no enlaza con él.
-- `application`: `GameSession`, un paso del juego (`update(input)`), devuelve **eventos** (`RoomChanged`, `CoinCollected`, `PlayerHurt`, `StalactiteFell`, `GameRestarted`) en vez de actuar sobre ellos.
+- `application`: `GameSession`, un paso del juego (`update(input)`), devuelve **eventos** (`RoomChanged`, `CoinCollected`, `FruitEaten`, `PlayerHurt`, `StalactiteFell`, `GameRestarted`, etc.) en vez de actuar sobre ellos. El sonido (ADR-0013) es precisamente quien reacciona a esos eventos.
 - `infrastructure`: ventana, texturas, teclado, cargador de Tiled (el cargador va en su propia librería sin SDL, `infrastructure_assets`).
 - `presentation`: `GameRenderer`; la lógica visual pura (`animation`, `decoration`, `autotile`, `drip`) vive en `presentation_animation`, sin SDL, para poder probarla.
 - `main.cpp` es la raíz de composición.

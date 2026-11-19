@@ -31,6 +31,30 @@ struct FruitEaten {
     int hearts_gained;
 };
 
+// The player started a jump.
+struct PlayerJumped {};
+
+// The player touched the ground after falling at `impact_speed` (pixels per step).
+// Only reported for real landings, not for the little steps of walking up ramps.
+struct PlayerLanded {
+    float impact_speed;
+};
+
+// The player started sliding down a ramp.
+struct SlideStarted {};
+
+// A stalactite trap began to shake (the warning) and, later, shattered on the
+// floor or on the player. (StalactiteFell is the moment in between: it comes loose.)
+struct StalactiteWarned {
+    domain::RoomId room;
+    std::size_t index;
+};
+
+struct StalactiteShattered {
+    domain::RoomId room;
+    std::size_t index;
+};
+
 struct PlayerHurt {
     domain::RoomId room;
     int health_left;  // hearts left after this hit
@@ -45,6 +69,8 @@ struct StalactiteFell {
 // The player lost its last heart: everything starts over from the first room.
 struct GameRestarted {};
 
-using GameEvent = std::variant<RoomChanged, CoinCollected, FruitEaten, PlayerHurt, StalactiteFell, GameRestarted>;
+using GameEvent = std::variant<RoomChanged, CoinCollected, FruitEaten, PlayerJumped, PlayerLanded,
+                               SlideStarted, PlayerHurt, StalactiteWarned, StalactiteFell,
+                               StalactiteShattered, GameRestarted>;
 
 }  // namespace application

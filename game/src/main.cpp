@@ -11,9 +11,11 @@
 #include "application/game_session.h"
 #include "domain/time/fixed_timestep.h"
 #include "infrastructure/assets/tiled_map_loader.h"
+#include "infrastructure/audio/audio_player.h"
 #include "infrastructure/input/keyboard_input_mapper.h"
 #include "infrastructure/sdl/window.h"
 #include "presentation/game_renderer.h"
+#include "presentation/sound_cues.h"
 
 namespace {
 
@@ -52,6 +54,15 @@ void report(const application::GameEvent& event) {
     }
 }
 
+// The names of every sound file the audio player has to load.
+std::vector<std::string> soundNames() {
+    std::vector<std::string> names;
+    for (const presentation::Sound sound : presentation::allSounds()) {
+        names.push_back(presentation::soundName(sound));
+    }
+    return names;
+}
+
 domain::RoomGraph loadWorld() {
     std::vector<domain::Room> rooms;
     for (const char* name : {"room_01", "room_02", "room_03", "room_04"}) {
@@ -69,11 +80,19 @@ int main() {
         presentation::GameRenderer renderer(window.renderer(), assetPath(""));
         domain::FixedTimestep timestep(kStepNs);
         application::GameSession session(loadWorld(), "room_01", kSpawnX, kSpawnY);
+        // Sound: after the window so it is closed first; it stays silent if there is no audio.
+        infrastructure::AudioPlayer audio(assetPath("sounds/"), soundNames());
+        std::cout << "[audio] " << audio.loadedCount() << " sounds loaded"
+                  << (audio.available() ? ", press M to mute" : " (no audio device)") << std::endl;
 
         std::uint64_t previous_ns = SDL_GetTicksNS();
 
         while (!input_mapper.quitRequested()) {
             input_mapper.poll();
+            if (input_mapper.takeMuteToggle()) {
+                audio.toggleMute();
+                std::cout << "[audio] " << (audio.muted() ? "muted" : "sound on") << std::endl;
+            }
             const domain::InputState input = input_mapper.state();
 
             const std::uint64_t now_ns = SDL_GetTicksNS();
@@ -83,6 +102,9 @@ int main() {
             for (int i = 0; i < steps; ++i) {
                 for (const application::GameEvent& event : session.update(input)) {
                     report(event);
+                    if (const auto sound = presentation::soundFor(event)) {
+                        audio.play(presentation::soundName(*sound));
+                    }
                 }
             }
 
