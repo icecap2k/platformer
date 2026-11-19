@@ -50,3 +50,17 @@ TEST_CASE("rockSheetRow") {
         CHECK(variants.size() == kRockVariants);
     }
 }
+
+TEST_CASE("slopeMask") {
+    CHECK(slopeMask(false, false) == 0);
+    CHECK(slopeMask(true, false) == 1);
+    CHECK(slopeMask(false, true) == 2);
+    CHECK(slopeMask(true, true) == 3);
+    CHECK(slopeMask(true, true) < kSlopeMasks);
+
+    SUBCASE("the ramp rows follow the block rows in the sheet") {
+        CHECK(kSlopeRowRight == kRockRows);
+        CHECK(kSlopeRowLeft == kRockRows + 1);
+        CHECK(kSheetRows == kRockRows + 2);
+    }
+}

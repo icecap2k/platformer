@@ -9,6 +9,7 @@ struct InputState {
     bool left = false;
     bool right = false;
     bool jump = false;
+    bool down = false;  // crouch on firm ground; slide on a ramp
 
     // -1 = moving left, 0 = still, +1 = moving right.
     // Pressing both directions cancels out.

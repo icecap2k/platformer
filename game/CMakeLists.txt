@@ -117,6 +117,8 @@ if(PLATFORMER_BUILD_TESTS)
         tests/coin_test.cpp
         tests/damage_test.cpp
         tests/stalactite_test.cpp
+        tests/slope_test.cpp
+        tests/crouch_test.cpp
         tests/animation_test.cpp
         tests/decoration_test.cpp
         tests/autotile_test.cpp

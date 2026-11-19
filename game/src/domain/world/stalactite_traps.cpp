@@ -13,12 +13,12 @@ int tileIndex(float pixel, int tile_size) {
     return static_cast<int>(std::floor(pixel / static_cast<float>(tile_size)));
 }
 
-// Is there something solid in the columns the box covers, in the given tile row?
+// Is there something to land on (a block or a ramp) in the columns the box covers, in the given tile row?
 bool solidInRow(const TileMap& map, const AABB& box, int row) {
     const int first = tileIndex(box.left(), map.tileSize());
     const int last = tileIndex(box.right() - 0.01F, map.tileSize());
     for (int column = first; column <= last; ++column) {
-        if (map.isSolid(column, row)) {
+        if (map.isGround(column, row)) {  // a block or a ramp stops it
             return true;
         }
     }

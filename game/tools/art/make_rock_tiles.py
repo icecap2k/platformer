@@ -6,14 +6,21 @@
 
 Writes:
   game/assets/sprites/rocks.png  the autotile sheet the game draws from
-  game/assets/tiled/tiles.png    4 plain tiles, the palette shown in Tiled
+  game/assets/tiled/tiles.png    6 plain tiles, the palette shown in Tiled (ids 1-4 blocks, 5-6 ramps)
 
 Autotiles: every solid tile is drawn differently depending on which of its four
 sides touch open air ("exposed"). The sheet has 16 columns, one per combination
-(see presentation/autotile.h for the bit values) and 8 rows:
+(see presentation/autotile.h for the bit values) and 10 rows:
 
     rows 0-3  ground (tile id 1), four texture variants
     rows 4-7  rock   (any other id), four texture variants
+    row 8     ramp rising to the right (tile id 5), 4 columns
+    row 9     ramp rising to the left  (tile id 6), 4 columns
+
+A ramp is a 45 degree triangle (see ADR-0010). Its column is a 2-bit mask: bit 0 =
+the south face is exposed (nothing under it), bit 1 = the face on its high side is
+exposed (east for id 5, west for id 6). The hypotenuse always has the outline, with
+a lit line under it, as it is the surface the player walks on.
 
 Shapes follow the cave's rocks: a platform ends in a pointed tip that tapers
 underneath (thinner than the tile), corners on top are rounded, and the
@@ -132,11 +139,44 @@ def draw_tile(material, variant, mask):
     return out
 
 
+def draw_slope(rises_right, mask):
+    """An 8x8 ramp tile. Pixel (x, y) is rock when it is on or under the diagonal."""
+    base, light, dark, top = MATERIALS[1]
+    tex = texture(1, 0)
+    south_exposed = bool(mask & 1)
+    high_side_exposed = bool(mask & 2)
+    out = [[(0, 0, 0, 0)] * SIZE for _ in range(SIZE)]
+    for y in range(SIZE):
+        for x in range(SIZE):
+            column = x if rises_right else SIZE - 1 - x     # distance from the low end
+            if y < SIZE - 1 - column:
+                continue                                    # above the surface
+            if y == SIZE - 1 - column:
+                color = OUTLINE                             # the surface itself
+            elif y == SIZE - column:
+                color = top                                 # lit line under it
+            else:
+                color = tex[y][x]
+            if south_exposed and y == SIZE - 1:
+                color = OUTLINE
+            high_edge = SIZE - 1 if rises_right else 0
+            if high_side_exposed and x == high_edge:
+                color = OUTLINE
+            out[y][x] = color
+    return out
+
+
 def build_sheet():
-    sheet = [[(0, 0, 0, 0)] * (16 * SIZE) for _ in range(8 * SIZE)]
+    sheet = [[(0, 0, 0, 0)] * (16 * SIZE) for _ in range(10 * SIZE)]
     for row, (material, variant) in enumerate((m, v) for m in (0, 1) for v in range(4)):
         for mask in range(16):
             tile = draw_tile(material, variant, mask)
+            for y in range(SIZE):
+                for x in range(SIZE):
+                    sheet[row * SIZE + y][mask * SIZE + x] = tile[y][x]
+    for row, rises_right in ((8, True), (9, False)):
+        for mask in range(4):
+            tile = draw_slope(rises_right, mask)
             for y in range(SIZE):
                 for x in range(SIZE):
                     sheet[row * SIZE + y][mask * SIZE + x] = tile[y][x]
@@ -144,9 +184,11 @@ def build_sheet():
 
 
 def build_palette():
-    """The four tiles Tiled shows: ground, rock, rock (variant) and a sunlit rock."""
-    tiles = [draw_tile(0, 0, 0), draw_tile(1, 0, 0), draw_tile(1, 1, 0), draw_tile(1, 0, NORTH)]
-    palette = [[(0, 0, 0, 0)] * (4 * SIZE) for _ in range(SIZE)]
+    """The six tiles Tiled shows: ids 1-4 (ground, rock, rock variant, sunlit rock), then
+    id 5 (ramp rising to the right) and id 6 (ramp rising to the left)."""
+    tiles = [draw_tile(0, 0, 0), draw_tile(1, 0, 0), draw_tile(1, 1, 0), draw_tile(1, 0, NORTH),
+             draw_slope(True, 0), draw_slope(False, 0)]
+    palette = [[(0, 0, 0, 0)] * (6 * SIZE) for _ in range(SIZE)]
     for index, tile in enumerate(tiles):
         for y in range(SIZE):
             for x in range(SIZE):
@@ -154,20 +196,32 @@ def build_palette():
     return palette
 
 
-# A little level to judge the shapes: bedrock floor, a thick rock block, a thin
-# platform with two pointed ends, a one-tile boulder and a 2-tile ledge.
-SAMPLE = [
-    "..........................",
-    "..........................",
-    "..........................",
-    "......RRRR.......RR.......",
-    "......RRRRR...............",
-    "..........................",
-    "...RRRRRRR......R.....RRRR",
-    "..........................",
-    "GGGGGGGGGGGGGGGGGGGGGGGGGG",
-    "GGGGGGGGGGGGGGGGGGGGGGGGGG",
-]
+# A little level to judge the shapes: bedrock floor ('G'), rock ('R'), ramps rising to
+# the right ('/') and to the left ('\\'), and a floating platform.
+def make_sample():
+    """Floor, a platform, a 4-tile ramp rising to the right (with its filler blocks and a
+    plateau) and the mirror image of it rising to the left."""
+    width, height = 26, 10
+    grid = [["."] * width for _ in range(height)]
+    for row in (8, 9):
+        grid[row] = ["G"] * width
+    for c in range(11, 17):
+        grid[3][c] = "R"
+    for i in range(4):                       # the ramp: 4 tiles, rising 32 px
+        ramp_row = 7 - i
+        grid[ramp_row][3 + i] = "/"
+        grid[ramp_row][width - 1 - (3 + i)] = "\\"
+        for row in range(ramp_row + 1, 8):   # filler under the ramp
+            grid[row][3 + i] = "R"
+            grid[row][width - 1 - (3 + i)] = "R"
+    for c in range(7, 11):                   # the plateaus, with filler under them
+        for row in range(4, 8):
+            grid[row][c] = "R"
+            grid[row][width - 1 - c] = "R"
+    return ["".join(line) for line in grid]
+
+
+SAMPLE = make_sample()
 
 
 def write_preview(path, scale=6):
@@ -177,18 +231,33 @@ def write_preview(path, scale=6):
     background = (70, 74, 120, 255)  # lighter than the cave so the outline can be judged
     canvas = [[background] * (cols * SIZE) for _ in range(rows * SIZE)]
 
-    def solid(c, r):
+    def covers(c, r, face):
+        """Does the cell fill this face? Outside the screen counts as filled."""
         if c < 0 or r < 0 or c >= cols or r >= rows:
-            return True  # outside the screen counts as solid (no outline on the edges)
-        return SAMPLE[r][c] != "."
+            return True
+        ch = SAMPLE[r][c]
+        if ch in "GR":
+            return True
+        if ch == "/":
+            return face in (SOUTH, EAST)
+        if ch == "\\":
+            return face in (SOUTH, WEST)
+        return False
 
     for r in range(rows):
         for c in range(cols):
-            if SAMPLE[r][c] == ".":
+            ch = SAMPLE[r][c]
+            if ch == ".":
                 continue
-            mask = (NORTH if not solid(c, r - 1) else 0) | (SOUTH if not solid(c, r + 1) else 0) | \
-                   (EAST if not solid(c + 1, r) else 0) | (WEST if not solid(c - 1, r) else 0)
-            row = (0 if SAMPLE[r][c] == "G" else 4) + ((c * 7 + r * 13) % 4)
+            south_exposed = not covers(c, r + 1, NORTH)
+            if ch in "/\\":
+                side_exposed = not (covers(c + 1, r, WEST) if ch == "/" else covers(c - 1, r, EAST))
+                row = 8 if ch == "/" else 9
+                mask = (1 if south_exposed else 0) | (2 if side_exposed else 0)
+            else:
+                mask = (NORTH if not covers(c, r - 1, SOUTH) else 0) | (SOUTH if south_exposed else 0) | \
+                       (EAST if not covers(c + 1, r, WEST) else 0) | (WEST if not covers(c - 1, r, EAST) else 0)
+                row = (0 if ch == "G" else 4) + ((c * 7 + r * 13) % 4)
             for y in range(SIZE):
                 for x in range(SIZE):
                     px = sheet[row * SIZE + y][mask * SIZE + x]
@@ -207,4 +276,4 @@ if __name__ == "__main__":
     else:
         write_png(ROOT / "sprites" / "rocks.png", build_sheet())
         write_png(ROOT / "tiled" / "tiles.png", build_palette())
-        print("wrote sprites/rocks.png (128x64) and tiled/tiles.png (32x8)")
+        print("wrote sprites/rocks.png (128x80) and tiled/tiles.png (48x8)")

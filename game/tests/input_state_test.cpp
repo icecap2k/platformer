@@ -27,3 +27,10 @@ TEST_CASE("InputState horizontal axis") {
         CHECK(input.horizontalAxis() == 0);
     }
 }
+
+TEST_CASE("InputState down") {
+    InputState input;
+    CHECK_FALSE(input.down);  // not pressed by default
+    input.down = true;
+    CHECK(input.horizontalAxis() == 0);  // down is independent of left and right
+}

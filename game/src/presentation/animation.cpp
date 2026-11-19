@@ -16,6 +16,12 @@ PlayerPose playerPose(const domain::Player& player, std::uint64_t time_ms,
     if (player.hurt_steps > 0) {
         return PlayerPose::Hurt;
     }
+    if (player.on_ground && player.slide_steps > 0) {
+        return PlayerPose::Slide;  // on the ground and still carrying the speed of a ramp
+    }
+    if (player.on_ground && player.crouching) {
+        return PlayerPose::Crouch;  // one pose, whether it is still or crawling
+    }
     if (!player.on_ground) {
         if (player.velocity_y < -kApexSpeed) {
             return PlayerPose::Rise;

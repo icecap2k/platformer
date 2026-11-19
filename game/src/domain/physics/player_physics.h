@@ -30,6 +30,26 @@ inline constexpr float kHurtHopSpeed = 1.7F;
 // Scaled with the jump so a tap is still about the same fraction of a full jump.
 inline constexpr float kJumpCutSpeed = 1.7F;
 
+// Ramps (45 degrees, tile ids 5 and 6) and sliding. The player stands on a ramp
+// by its centre: the feet follow the surface. Walking on a ramp, up or down, is a
+// normal walk and standing still does nothing. Pressing DOWN while on a ramp makes
+// the player slide down it, whichever way it is pushing: it moves at kSlideSpeed
+// and, once it lets go of the key, the ramp ends or it jumps, keeps that speed for
+// kSlideCarrySteps steps, fading to a stop. Pressing the opposite way, hitting a
+// wall or being hurt ends the slide.
+//
+// Crouching: pressing DOWN on firm ground (not on a ramp) makes the box half as
+// tall, with the feet where they were, and the player walks at kCrouchSpeed and
+// cannot jump. It only stands up again when there is room above its head, so a
+// low passage keeps it crouched even if the key is released.
+inline constexpr float kSlideSpeed = 2.4F;
+inline constexpr int kSlideCarrySteps = 12;
+// How far above a ramp the feet can be and still be pulled down onto it when
+// walking down (less than one tile).
+inline constexpr float kSlopeSnap = 8.0F;
+
+inline constexpr float kCrouchSpeed = 0.75F;  // half of the run
+
 // Advances the player by exactly one fixed simulation step, colliding with
 // the solid tiles of `map`.
 //

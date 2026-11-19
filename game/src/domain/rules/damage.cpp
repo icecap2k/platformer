@@ -18,6 +18,7 @@ void applyDamage(Player& player, int amount, int direction) {
     player.velocity_y = -kHurtHopSpeed;  // a small hop, much lower than a jump
     player.on_ground = false;
     player.coyote_steps = 0;  // no jumping off the ground it was just thrown from
+    player.slide_steps = 0;   // a hit ends any slide
 }
 
 int knockbackDirection(const Player& player, const AABB& source) {

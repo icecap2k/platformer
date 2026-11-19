@@ -17,7 +17,9 @@ namespace {
 constexpr float kPlayerSpriteWidth = 12.0F;
 constexpr float kPlayerSpriteHeight = 18.0F;
 constexpr float kPlayerOffsetX = -2.0F;  // sprite origin relative to the collision box
-constexpr float kPlayerOffsetY = -1.0F;
+// The sprite is aligned by its feet (a crouching player has a box half as tall): its
+// last row, the outline under the soles, is this many pixels below the box's bottom.
+constexpr float kPlayerSoleOverhang = 1.0F;
 constexpr float kCoinSheetY = 18.0F;  // coin frames sit below the player frames
 constexpr float kCoinSize = 8.0F;
 constexpr float kHeartSheetY = 26.0F;  // heart icons (full, then empty) sit below the coins
@@ -25,22 +27,34 @@ constexpr float kHeartSize = 8.0F;
 
 constexpr float kDecorSize = 8.0F;
 
-// A cell outside the map counts as solid, so no outline is drawn along the
-// edges of the screen (the world continues into the next room there).
-bool solidOrOutside(const domain::TileMap& map, int column, int row) {
+// A cell outside the map counts as filled, so no outline is drawn along the
+// edges of the screen (the world continues into the next room there). Inside the
+// map, `face` is the face of that cell that touches the tile being drawn: a ramp
+// only fills some of its faces.
+bool coversOrOutside(const domain::TileMap& map, int column, int row, domain::Side face) {
     const bool outside = column < 0 || row < 0 || column >= map.width() || row >= map.height();
-    return outside || map.isSolid(column, row);
+    return outside || map.blocksFace(column, row, face);
 }
 
 // Which part of the rock sheet (sprites/rocks.png) to draw for the tile at
 // (column, row): the column depends on which sides touch open air, the row on
-// the material and a position-based texture variant.
+// the material and a position-based texture variant (ramps have their own rows).
 SDL_FRect rockSource(const domain::TileMap& map, int column, int row, float size) {
-    const int mask = exposureMask(!solidOrOutside(map, column, row - 1),
-                                  !solidOrOutside(map, column, row + 1),
-                                  !solidOrOutside(map, column + 1, row),
-                                  !solidOrOutside(map, column - 1, row));
-    const int sheet_row = rockSheetRow(map.tileAt(column, row), column, row);
+    using domain::Side;
+    const bool north_open = !coversOrOutside(map, column, row - 1, Side::South);
+    const bool south_open = !coversOrOutside(map, column, row + 1, Side::North);
+    const bool east_open = !coversOrOutside(map, column + 1, row, Side::West);
+    const bool west_open = !coversOrOutside(map, column - 1, row, Side::East);
+
+    int mask = exposureMask(north_open, south_open, east_open, west_open);
+    int sheet_row = rockSheetRow(map.tileAt(column, row), column, row);
+    if (map.shape(column, row) == domain::TileShape::SlopeRight) {
+        mask = slopeMask(south_open, east_open);
+        sheet_row = kSlopeRowRight;
+    } else if (map.shape(column, row) == domain::TileShape::SlopeLeft) {
+        mask = slopeMask(south_open, west_open);
+        sheet_row = kSlopeRowLeft;
+    }
     return SDL_FRect{static_cast<float>(mask) * size, static_cast<float>(sheet_row) * size, size, size};
 }
 
@@ -79,7 +93,7 @@ void GameRenderer::drawTiles(const domain::TileMap& map) const {
     const float size = static_cast<float>(map.tileSize());
     for (int row = 0; row < map.height(); ++row) {
         for (int column = 0; column < map.width(); ++column) {
-            if (!map.isSolid(column, row)) {
+            if (!map.isGround(column, row)) {  // blocks and ramps
                 continue;
             }
             const SDL_FRect destination{static_cast<float>(column) * size,
@@ -90,7 +104,7 @@ void GameRenderer::drawTiles(const domain::TileMap& map) const {
 }
 
 // Vegetation growing out of the tiles: it sticks out of the solid area, on
-// top of tiles and hanging below them.
+// top of blocks and hanging below them (never on ramps).
 void GameRenderer::drawScenery(const domain::TileMap& map, std::uint64_t time_ms) const {
     const float size = static_cast<float>(map.tileSize());
     for (int row = 0; row < map.height(); ++row) {
@@ -101,14 +115,14 @@ void GameRenderer::drawScenery(const domain::TileMap& map, std::uint64_t time_ms
             const float x = static_cast<float>(column) * size;
             const float y = static_cast<float>(row) * size;
 
-            if (row > 0 && !map.isSolid(column, row - 1)) {
+            if (row > 0 && !map.isGround(column, row - 1)) {
                 const int frame = standingDecoration(column, row);
                 if (frame != kNoDecoration) {
                     decor_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kDecorSize, 0.0F, kDecorSize, kDecorSize},
                                 SDL_FRect{x, y - size + 1.0F, kDecorSize, kDecorSize});
                 }
             }
-            if (row + 1 < map.height() && !map.isSolid(column, row + 1)) {
+            if (row + 1 < map.height() && !map.isGround(column, row + 1)) {
                 const int frame = hangingDecoration(column, row);
                 if (frame != kNoDecoration) {
                     decor_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kDecorSize, 0.0F, kDecorSize, kDecorSize},
@@ -133,7 +147,7 @@ void GameRenderer::drawDrip(const domain::TileMap& map, int column, int row,
 
     const float size = static_cast<float>(map.tileSize());
     int ground_row = row + 1;
-    while (ground_row < map.height() && !map.isSolid(column, ground_row)) {
+    while (ground_row < map.height() && !map.isGround(column, ground_row)) {
         ++ground_row;
     }
     const float ground_y = static_cast<float>(ground_row) * size;
@@ -215,8 +229,8 @@ void GameRenderer::drawPlayer(const domain::Player& player, std::uint64_t time_m
     const SDL_FRect source{static_cast<float>(static_cast<int>(pose)) * kPlayerSpriteWidth, 0.0F,
                            kPlayerSpriteWidth, kPlayerSpriteHeight};
     const domain::AABB box = player.bounds();
-    const SDL_FRect destination{box.x + kPlayerOffsetX, box.y + kPlayerOffsetY, kPlayerSpriteWidth,
-                                kPlayerSpriteHeight};
+    const SDL_FRect destination{box.x + kPlayerOffsetX, box.bottom() - kPlayerSpriteHeight + kPlayerSoleOverhang,
+                                kPlayerSpriteWidth, kPlayerSpriteHeight};
     if (!isVisibleWhileInvulnerable(player.invulnerable_steps)) {
         return;  // blinking after a hit
     }

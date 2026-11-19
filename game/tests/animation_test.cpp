@@ -24,7 +24,8 @@ TEST_CASE("playerPose") {
                                   PlayerPose::Idle3, PlayerPose::Run0,  PlayerPose::Run1,
                                   PlayerPose::Run2,  PlayerPose::Run3,  PlayerPose::Run4,
                                   PlayerPose::Run5,  PlayerPose::Rise,  PlayerPose::Apex,
-                                  PlayerPose::Fall,  PlayerPose::Land, PlayerPose::Hurt};
+                                  PlayerPose::Fall,  PlayerPose::Land, PlayerPose::Hurt,
+                                  PlayerPose::Slide, PlayerPose::Crouch};
         int seen = 0;
         for (const PlayerPose pose : all) {
             CHECK(column(pose) == seen);  // contiguous, in order
@@ -85,6 +86,52 @@ TEST_CASE("playerPose") {
 
         hurt.hurt_steps = 0;  // recovered
         CHECK(presentation::playerPose(hurt, 0) != PlayerPose::Hurt);
+    }
+
+    SUBCASE("carrying the speed of a ramp on the ground shows the slide pose") {
+        domain::Player sliding = playerWith(-2.4F, true);
+        sliding.slide_steps = 5;
+        CHECK(presentation::playerPose(sliding, 0) == PlayerPose::Slide);
+        CHECK(presentation::playerPose(sliding, 1000) == PlayerPose::Slide);  // no cycle: one pose
+
+        sliding.slide_steps = 0;  // the slide ended
+        CHECK(presentation::playerPose(sliding, 0) != PlayerPose::Slide);
+    }
+
+    SUBCASE("in the air the slide pose is not shown, and a hit wins over it") {
+        domain::Player jumping = playerWith(-2.4F, false, -3.0F);
+        jumping.slide_steps = 5;
+        CHECK(presentation::playerPose(jumping, 0) == PlayerPose::Rise);
+
+        domain::Player hurt = playerWith(0.6F, true);
+        hurt.slide_steps = 5;
+        hurt.hurt_steps = 3;
+        CHECK(presentation::playerPose(hurt, 0) == PlayerPose::Hurt);
+    }
+
+    SUBCASE("crouching on the ground shows the crouch pose, still or moving") {
+        domain::Player crouched = playerWith(0.0F, true);
+        crouched.crouching = true;
+        CHECK(presentation::playerPose(crouched, 0) == PlayerPose::Crouch);
+        CHECK(presentation::playerPose(crouched, 1234) == PlayerPose::Crouch);  // no cycle
+
+        crouched.velocity_x = 0.75F;  // crouch-walking
+        CHECK(presentation::playerPose(crouched, 0) == PlayerPose::Crouch);
+    }
+
+    SUBCASE("a hit or a slide wins over the crouch pose, and in the air it is not shown") {
+        domain::Player crouched = playerWith(0.0F, true);
+        crouched.crouching = true;
+        crouched.hurt_steps = 2;
+        CHECK(presentation::playerPose(crouched, 0) == PlayerPose::Hurt);
+
+        crouched.hurt_steps = 0;
+        crouched.slide_steps = 3;
+        CHECK(presentation::playerPose(crouched, 0) == PlayerPose::Slide);
+
+        crouched.slide_steps = 0;
+        crouched.on_ground = false;
+        CHECK(presentation::playerPose(crouched, 0) != PlayerPose::Crouch);
     }
 
     SUBCASE("landing while running does not squash: the run continues") {

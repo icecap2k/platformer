@@ -14,6 +14,8 @@ ADRs in [`docs/adr/`](docs/adr/) (start there for context) and the pending work 
 |---|---|
 | Move | Arrow keys or `A` / `D` |
 | Jump | `Space`, `Up` or `W` (hold for a full jump, tap for a hop; press again to re-jump) |
+| Crouch | `Down` or `S` on firm ground (half height, slow, no jumping; it only stands up when there is room) |
+| Slide | `Down` or `S` while on a ramp (you slide down it; walking on a ramp does not slide) |
 | Quit | `Esc` |
 
 ## Build and run
@@ -64,7 +66,9 @@ Everything except the SDL-facing code is covered by unit tests (`game/tests`).
 
 Rooms are Tiled maps (`game/assets/tiled/*.tmj`, JSON, CSV layer data):
 
-- **Tile layer**: any non-zero tile is solid. Tile 1 is ground, 2 is brick.
+- **Tile layer**: ids 1-4 are solid blocks (1 is ground, 2 is brick). Ids **5 and 6 are 45 degree ramps** (5 rises to
+  the right, 6 to the left): not solid: you walk up and down them, and **slide down them** when you press down. A ramp must
+  stand on solid tiles (filler under it and at its high side); there are no ceiling ramps.
 - **Map properties** `north`, `south`, `east`, `west` (string): id of the room
   behind that edge. No property means a wall. The id is the file name.
 - **Objects** of class `coin` (rectangles): collectible coins.
@@ -89,7 +93,7 @@ same `domain` library as the game, so they always use the real physics.
 ./build/level_to_text game/assets/tiled/room_02.tmj room_02.txt
 ```
 
-Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin, `^` spikes, `V` stalactite trap; header lines
+Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin, `^` spikes, `V` stalactite trap, `/` and `\` ramps; header lines
 `north/south/east/west: room_id`).
 
 ## Player art

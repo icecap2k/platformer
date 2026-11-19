@@ -1265,12 +1265,12 @@
    "firstgid": 1,
    "name": "tiles",
    "image": "tiles.png",
-   "imagewidth": 32,
+   "imagewidth": 48,
    "imageheight": 8,
    "tilewidth": 8,
    "tileheight": 8,
-   "tilecount": 4,
-   "columns": 4,
+   "tilecount": 6,
+   "columns": 6,
    "margin": 0,
    "spacing": 0
   }

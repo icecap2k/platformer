@@ -22,6 +22,7 @@ domain::InputState KeyboardInputMapper::state() const {
     input.left = keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A];
     input.right = keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D];
     input.jump = keys[SDL_SCANCODE_SPACE] || keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W];
+    input.down = keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S];
     return input;
 }
 
