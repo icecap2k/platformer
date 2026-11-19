@@ -49,4 +49,7 @@ int fruitFrame(std::uint64_t time_ms);
 // How many pixels (-1, 0 or +1) the fruit floats up or down: a slow bob.
 int fruitBob(std::uint64_t time_ms);
 
+// Frame (0..1) of the walking enemy: its legs swap phase.
+int enemyFrame(std::uint64_t time_ms);
+
 }  // namespace presentation

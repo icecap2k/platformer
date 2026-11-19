@@ -11,7 +11,7 @@
  "tilewidth": 8,
  "tileheight": 8,
  "nextlayerid": 3,
- "nextobjectid": 5,
+ "nextobjectid": 6,
  "properties": [
   {
    "name": "west",
@@ -1253,6 +1253,18 @@
      "class": "coin",
      "x": 240,
      "y": 164,
+     "width": 8,
+     "height": 8,
+     "rotation": 0,
+     "visible": true
+    },
+    {
+     "id": 5,
+     "name": "walker",
+     "type": "",
+     "class": "walker",
+     "x": 240,
+     "y": 208,
      "width": 8,
      "height": 8,
      "rotation": 0,

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "domain/enemies/enemy.h"
 #include "domain/world/coin.h"
 #include "domain/world/falling_stalactite.h"
 #include "domain/world/fruit.h"
@@ -18,12 +19,13 @@ using RoomId = std::string;
 
 // One screen of the game: its tiles, which room lies beyond each edge, the
 // coins placed in it, the hazards that hurt, the stalactite traps and the
-// healing fruits. An edge without a neighbour is a wall.
+// healing fruits and the patrolling enemies. An edge without a neighbour is a wall.
 class Room {
 public:
     Room(RoomId id, TileMap map, std::map<Side, RoomId> neighbors = {},
          std::vector<Coin> coins = {}, std::vector<Hazard> hazards = {},
-         std::vector<FallingStalactite> stalactites = {}, std::vector<Fruit> fruits = {});
+         std::vector<FallingStalactite> stalactites = {}, std::vector<Fruit> fruits = {},
+         std::vector<Enemy> enemies = {});
 
     const RoomId& id() const { return id_; }
     const TileMap& map() const { return map_; }
@@ -32,6 +34,7 @@ public:
     const std::vector<Hazard>& hazards() const { return hazards_; }
     const std::vector<FallingStalactite>& stalactites() const { return stalactites_; }
     const std::vector<Fruit>& fruits() const { return fruits_; }
+    const std::vector<Enemy>& enemies() const { return enemies_; }
 
     std::optional<RoomId> neighbor(Side side) const;
 
@@ -43,6 +46,7 @@ private:
     std::vector<Hazard> hazards_;
     std::vector<FallingStalactite> stalactites_;
     std::vector<Fruit> fruits_;
+    std::vector<Enemy> enemies_;
 };
 
 }  // namespace domain

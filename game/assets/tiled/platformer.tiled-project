@@ -51,6 +51,17 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "color": "#8a60d0",
+      "drawFill": true,
+      "id": 5,
+      "members": [],
+      "name": "walker",
+      "type": "class",
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

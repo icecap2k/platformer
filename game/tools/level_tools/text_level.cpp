@@ -153,6 +153,12 @@ TextLevel parseTextLevel(const std::string& text) {
                         static_cast<float>(column) * size, static_cast<float>(row) * size, size, size}});
                     break;
                 }
+                case 'E': {
+                    const float size = static_cast<float>(level.tile_size);
+                    level.enemies.push_back(domain::Enemy{domain::AABB{
+                        static_cast<float>(column) * size, static_cast<float>(row) * size, size, size}});
+                    break;
+                }
                 case 'F': {
                     const float size = static_cast<float>(level.tile_size);
                     level.fruits.push_back(domain::Fruit{static_cast<float>(column) * size,
@@ -168,7 +174,7 @@ TextLevel parseTextLevel(const std::string& text) {
                 default:
                     failAt(line_number, std::string("unknown character '") +
                                             cells[static_cast<std::size_t>(column)] +
-                                            "' (use . # B 3 4 / \\ ^ V C F)");
+                                            "' (use . # B 3 4 / \\ ^ V C F E)");
             }
             level.tiles[static_cast<std::size_t>(row * level.width + column)] = tile;
         }
@@ -179,7 +185,7 @@ TextLevel parseTextLevel(const std::string& text) {
 domain::Room toRoom(const domain::RoomId& id, const TextLevel& level) {
     return domain::Room(id, domain::TileMap(level.width, level.height, level.tile_size, level.tiles),
                         level.neighbors, level.coins, level.hazards, level.stalactites,
-                        level.fruits);
+                        level.fruits, level.enemies);
 }
 
 std::string toTiledJson(const TextLevel& level) {
@@ -193,6 +199,18 @@ std::string toTiledJson(const TextLevel& level) {
 
     json objects = json::array();
     int object_id = 1;
+    for (const domain::Enemy& enemy : level.enemies) {
+        objects.push_back({{"id", object_id++},
+                           {"name", "walker"},
+                           {"type", ""},
+                           {"class", "walker"},
+                           {"x", enemy.bounds.x},
+                           {"y", enemy.bounds.y},
+                           {"width", enemy.bounds.width},
+                           {"height", enemy.bounds.height},
+                           {"rotation", 0},
+                           {"visible", true}});
+    }
     for (const domain::Fruit& fruit : level.fruits) {
         objects.push_back({{"id", object_id++},
                            {"name", "fruit"},
@@ -379,6 +397,27 @@ std::string toText(const domain::Room& room) {
                                      std::to_string(row) + " sits on a solid tile or a spike");
         }
         cell = 'V';
+    }
+
+    for (const domain::Enemy& enemy : room.enemies()) {
+        const float size = static_cast<float>(map.tileSize());
+        const int column = static_cast<int>(std::lround(enemy.bounds.x / size));
+        const int row = static_cast<int>(std::lround(enemy.bounds.y / size));
+        const bool is_tile = column >= 0 && column < map.width() && row >= 0 && row < map.height() &&
+                             enemy.bounds.x == static_cast<float>(column) * size &&
+                             enemy.bounds.y == static_cast<float>(row) * size &&
+                             enemy.bounds.width == size && enemy.bounds.height == size;
+        if (!is_tile) {
+            throw std::runtime_error("an enemy at (" + std::to_string(enemy.bounds.x) + ", " +
+                                     std::to_string(enemy.bounds.y) +
+                                     ") is not exactly one tile, so it has no text symbol");
+        }
+        char& cell = grid[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)];
+        if (cell != '.') {
+            throw std::runtime_error("an enemy at column " + std::to_string(column) + ", row " +
+                                     std::to_string(row) + " sits on a solid tile or another item");
+        }
+        cell = 'E';
     }
 
     for (const domain::Fruit& fruit : room.fruits()) {

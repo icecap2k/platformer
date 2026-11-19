@@ -22,7 +22,9 @@ add_library(domain STATIC
     src/domain/rules/room_transition.cpp
     src/domain/rules/coin_pickup.cpp
     src/domain/rules/damage.cpp
-    src/domain/rules/healing.cpp)
+    src/domain/rules/healing.cpp
+    src/domain/enemies/enemy_patrols.cpp
+    src/domain/enemies/enemy_contact.cpp)
 target_include_directories(domain PUBLIC src)
 target_compile_options(domain PRIVATE ${WARNINGS})
 
@@ -123,6 +125,7 @@ if(PLATFORMER_BUILD_TESTS)
         tests/slope_test.cpp
         tests/crouch_test.cpp
         tests/fruit_test.cpp
+        tests/enemy_test.cpp
         tests/sound_cues_test.cpp
         tests/sound_assets_test.cpp
         tests/animation_test.cpp

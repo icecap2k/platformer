@@ -647,3 +647,107 @@ TEST_CASE("GameSession announces the stages of a stalactite trap") {
         CHECK(countOfType<application::StalactiteWarned>(events) == 0);
     }
 }
+
+namespace {
+
+// One room with a floor and a walker standing on it at x = 140 (it starts going left).
+RoomGraph makeEnemyWorld(float enemy_x = 140.0F) {
+    using domain::AABB;
+    std::vector<Room> rooms;
+    rooms.emplace_back("only", test_maps::makeMap(), std::map<Side, domain::RoomId>{},
+                       std::vector<domain::Coin>{}, std::vector<domain::Hazard>{},
+                       std::vector<domain::FallingStalactite>{}, std::vector<domain::Fruit>{},
+                       std::vector<domain::Enemy>{domain::Enemy{AABB{enemy_x, test_maps::kFloorTop - 8.0F, 8.0F, 8.0F}}});
+    return RoomGraph(std::move(rooms));
+}
+
+template <class Event>
+int countOf(const std::vector<application::GameEvent>& events) {
+    int count = 0;
+    for (const auto& event : events) {
+        count += std::holds_alternative<Event>(event) ? 1 : 0;
+    }
+    return count;
+}
+
+}  // namespace
+
+TEST_CASE("GameSession enemies") {
+    SUBCASE("an enemy walks while the session runs") {
+        GameSession session(makeEnemyWorld(), "only", 20.0F, test_maps::kFloorTop - 16.0F);
+        run(session, InputState{}, 30);
+        CHECK(session.enemyPatrols().state("only", 0).x_offset < 0.0F);  // it set off to the left
+        CHECK(session.player().health == domain::kMaxHealth);
+    }
+
+    SUBCASE("walking into an enemy hurts the player and throws them back") {
+        GameSession session(makeEnemyWorld(), "only", 120.0F, test_maps::kFloorTop - 16.0F);
+        InputState right;
+        right.right = true;
+        std::vector<application::GameEvent> all;
+        for (int step = 0; step < 120 && countOf<application::PlayerHurt>(all) == 0; ++step) {
+            const auto events = session.update(right);
+            all.insert(all.end(), events.begin(), events.end());
+        }
+        CHECK(countOf<application::PlayerHurt>(all) == 1);
+        CHECK(session.player().health == domain::kMaxHealth - 1);
+        CHECK(session.player().invulnerable_steps > 0);
+        CHECK(session.enemyPatrols().state("only", 0).alive);  // a side hit does not hurt the enemy
+        CHECK(session.player().hurt_direction == -1);          // thrown away from it, to the left
+    }
+
+    SUBCASE("landing on an enemy defeats it and bounces the player") {
+        // The player falls straight onto the enemy's head.
+        GameSession session(makeEnemyWorld(), "only", 140.0F, test_maps::kFloorTop - 8.0F - 16.0F - 20.0F);
+        std::vector<application::GameEvent> all;
+        for (int step = 0; step < 60 && countOf<application::EnemyStomped>(all) == 0; ++step) {
+            const auto events = session.update(InputState{});
+            all.insert(all.end(), events.begin(), events.end());
+        }
+        REQUIRE(countOf<application::EnemyStomped>(all) == 1);
+        CHECK_FALSE(session.enemyPatrols().state("only", 0).alive);
+        CHECK(session.player().health == domain::kMaxHealth);  // unhurt
+        CHECK(countOf<application::PlayerHurt>(all) == 0);
+        CHECK(session.player().velocity_y < 0.0F);             // going up
+        CHECK_FALSE(session.player().on_ground);
+    }
+
+    SUBCASE("a defeated enemy no longer hurts, and is reported once") {
+        GameSession session(makeEnemyWorld(), "only", 140.0F, test_maps::kFloorTop - 8.0F - 16.0F - 20.0F);
+        std::vector<application::GameEvent> all;
+        for (int step = 0; step < 200; ++step) {
+            const auto events = session.update(InputState{});
+            all.insert(all.end(), events.begin(), events.end());
+        }
+        CHECK(countOf<application::EnemyStomped>(all) == 1);
+        CHECK(countOf<application::PlayerHurt>(all) == 0);
+    }
+
+    SUBCASE("the total restart brings defeated enemies back") {
+        // Spikes cover the floor right of the enemy. The player stomps it, then walks into
+        // the spikes until every heart is gone.
+        using domain::AABB;
+        std::vector<Room> rooms;
+        rooms.emplace_back("only", test_maps::makeMap(), std::map<Side, domain::RoomId>{},
+                           std::vector<domain::Coin>{},
+                           std::vector<domain::Hazard>{domain::Hazard{AABB{160.0F, 211.0F, 160.0F, 5.0F}}},
+                           std::vector<domain::FallingStalactite>{}, std::vector<domain::Fruit>{},
+                           std::vector<domain::Enemy>{
+                               domain::Enemy{AABB{140.0F, test_maps::kFloorTop - 8.0F, 8.0F, 8.0F}}});
+        GameSession session{RoomGraph(std::move(rooms)), "only", 140.0F,
+                            test_maps::kFloorTop - 8.0F - 16.0F - 20.0F};
+        InputState right;
+        right.right = true;
+        bool stomped = false;
+        bool restarted = false;
+        for (int step = 0; step < 2000 && !restarted; ++step) {
+            const auto events = session.update(stomped ? right : InputState{});
+            stomped = stomped || countOf<application::EnemyStomped>(events) > 0;
+            restarted = countOf<application::GameRestarted>(events) > 0;
+        }
+        REQUIRE(stomped);
+        REQUIRE(restarted);
+        CHECK(session.enemyPatrols().state("only", 0).alive);
+        CHECK(session.player().health == domain::kMaxHealth);
+    }
+}

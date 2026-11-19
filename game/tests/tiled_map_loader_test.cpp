@@ -65,6 +65,19 @@ const std::string kFruitMap = R"({
   ]
 })";
 
+// Walkers (also with the old "type" field), a coin and another class, which is ignored.
+const std::string kWalkerMap = R"({
+  "width": 4, "height": 2, "tilewidth": 8, "tileheight": 8, "infinite": false,
+  "layers": [
+    { "type": "objectgroup", "name": "objects", "objects": [
+        { "id": 1, "class": "walker", "x": 8, "y": 8, "width": 8, "height": 8 },
+        { "id": 2, "type": "walker", "x": 16.5, "y": 6, "width": 8, "height": 10 },
+        { "id": 3, "class": "coin", "x": 24, "y": 0, "width": 8, "height": 8 }
+    ] },
+    { "type": "tilelayer", "name": "ground", "width": 4, "height": 2, "data": [0,0,0,0, 1,1,1,1] }
+  ]
+})";
+
 const std::string kShippedRooms[] = {"room_01", "room_02", "room_03", "room_04"};
 
 std::string roomPath(const std::string& name) {
@@ -198,6 +211,30 @@ TEST_CASE("parseTiledRoom reads spikes") {
     }
 }
 
+TEST_CASE("parseTiledRoom reads enemies") {
+    SUBCASE("every object of class walker becomes an enemy whose rectangle is its start and hitbox") {
+        const auto room = parseTiledRoom("r", kWalkerMap);
+        REQUIRE(room.enemies().size() == 2);
+        CHECK(room.enemies()[0].bounds.x == 8.0F);
+        CHECK(room.enemies()[0].bounds.y == 8.0F);
+        CHECK(room.enemies()[0].bounds.width == 8.0F);
+        CHECK(room.enemies()[1].bounds.x == 16.5F);
+        CHECK(room.enemies()[1].bounds.height == 10.0F);
+        CHECK(room.coins().size() == 1);  // other classes are not enemies
+    }
+    SUBCASE("a walker without a size is an error") {
+        const std::string text = R"({
+          "width": 1, "height": 1, "tilewidth": 8, "tileheight": 8, "infinite": false,
+          "layers": [ { "type": "objectgroup", "name": "o", "objects": [
+            { "id": 1, "class": "walker", "x": 0, "y": 0 } ] },
+            { "type": "tilelayer", "name": "g", "width": 1, "height": 1, "data": [0] } ] })";
+        CHECK_THROWS_AS(parseTiledRoom("r", text), std::runtime_error);
+    }
+    SUBCASE("a room without enemies has none") {
+        CHECK(parseTiledRoom("r", kSmallMap).enemies().empty());
+    }
+}
+
 TEST_CASE("parseTiledRoom reads fruits") {
     SUBCASE("every object of class fruit becomes a fruit at its position") {
         const auto room = parseTiledRoom("r", kFruitMap);
@@ -292,6 +329,25 @@ TEST_CASE("the shipped rooms form a consistent world") {
                 const int row = static_cast<int>(fruit.y) / ts;
                 CHECK_FALSE(map.isGround(column, row));
                 CHECK(map.isGround(column, row + 1));  // it is not left floating in the air
+            }
+        }
+    }
+
+    SUBCASE("enemies: one walker in room_03 and one in room_04, each standing on the floor") {
+        CHECK(graph.room("room_01").enemies().empty());
+        CHECK(graph.room("room_02").enemies().empty());
+        CHECK(graph.room("room_03").enemies().size() == 1);
+        CHECK(graph.room("room_04").enemies().size() == 1);
+        for (const std::string& name : kShippedRooms) {
+            const auto& map = graph.room(name).map();
+            const int ts = map.tileSize();
+            for (const auto& enemy : graph.room(name).enemies()) {
+                INFO(name << " enemy at " << enemy.bounds.x << "," << enemy.bounds.y);
+                const int column = static_cast<int>(enemy.bounds.x) / ts;
+                const int row = static_cast<int>(enemy.bounds.y) / ts;
+                CHECK_FALSE(map.isGround(column, row));
+                CHECK(map.isGround(column, row + 1));
+                CHECK(enemy.bounds.bottom() == static_cast<float>((row + 1) * ts));  // feet on the floor
             }
         }
     }

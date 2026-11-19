@@ -37,12 +37,19 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 35 | **Sonido por eventos**: 10 efectos sintetizados (`make_sounds.py`), `soundFor` (puro) y `AudioPlayer` (SDL, mudo si no hay audio), tecla `M`, eventos nuevos (`PlayerJumped`, `PlayerLanded`, `SlideStarted`, `StalactiteWarned`, `StalactiteShattered`); ADR-0013 y post 17 |
 
+## Hecho (E12 · Enemigos)
+
+| # | Tarea |
+|---|---|
+| 9 | **Enemigos que patrullan** (`walker`, un escarabajo): caminan por el suelo y dan la vuelta ante paredes, rampas y bordes; **se pisan** (rebote, y más alto si mantienes salto) y si no, dañan por `applyDamage`; estado `EnemyPatrols`, evento `EnemyStomped`, sonido `stomp`, clase `walker` de Tiled y símbolo `E`; uno en `room_03` y otro en `room_04`; `level_check` los cuenta pero no los modela; ADR-0014 y post 18 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
 |---|---|---|---|---|
 | 8 | ~~Frutas que curan~~ — hecho en E10 (ver arriba). Pendiente: un `Collectible` genérico con tipo cuando haya un tercer tipo de recogible | P3 | S | — |
-| 9 | **Enemigos** básicos (patrulla; reutilizan `applyDamage` y `PlayerHurt`; decidir si se pueden pisar) | P1 | L | — |
+| 9 | ~~Enemigos básicos~~ — hecho en E12 (ver arriba). Pendiente: gravedad y rampas para enemigos, más tipos (voladores, perseguidores), animación al morir | P2 | M | — |
+| 38 | **Afinar de oído el sonido `stomp`** y el color del escarabajo (se ve oscuro sobre el fondo de la cueva) | P3 | S | — |
 | 10 | ~~Sonido~~ — hecho en E11 (ver arriba). **Pendiente: escuchar y afinar los sonidos de oído** (no se pudo hacer al construirlos) | P1 | S | — |
 | 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
 | 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |
@@ -70,4 +77,5 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 - El reinicio total es duro: si se siente frustrante, subir la tarea 12 (checkpoints).
 - Cada estado nuevo (salud, invulnerabilidad, estalactitas) agranda la búsqueda de `level_check`; ya pasó con el salto (tarea 13).
 - Generalizar los coleccionables (tarea 8) **antes** de duplicar código para las frutas.
+- Los enemigos tampoco están en `level_check`: un nivel podría exigir pisarlos o esquivarlos sin que el comprobador lo sepa.
 - Las estalactitas no están en el análisis de alcanzabilidad: un nivel podría ser "ganable" según `level_check` y exigir esquivarlas.

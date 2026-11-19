@@ -128,6 +128,31 @@ std::vector<domain::Fruit> readFruits(const json& map) {
     return fruits;
 }
 
+// Patrolling enemies are rectangle objects of class "walker": the rectangle is where
+// it starts and the size of its hitbox. (Put it standing on the floor.)
+std::vector<domain::Enemy> readEnemies(const json& map) {
+    std::vector<domain::Enemy> enemies;
+    for (const json& layer : map.at("layers")) {
+        if (layer.at("type").get<std::string>() != "objectgroup") {
+            continue;
+        }
+        for (const json& object : layer.at("objects")) {
+            const std::string kind = object.value("class", object.value("type", std::string()));
+            if (kind != "walker") {
+                continue;
+            }
+            const float width = object.value("width", 0.0F);
+            const float height = object.value("height", 0.0F);
+            if (width <= 0.0F || height <= 0.0F) {
+                throw std::invalid_argument("a 'walker' object must be a rectangle with a size");
+            }
+            enemies.push_back(domain::Enemy{domain::AABB{object.at("x").get<float>(),
+                                                         object.at("y").get<float>(), width, height}});
+        }
+    }
+    return enemies;
+}
+
 // Spikes are rectangle objects of class "spikes": the rectangle IS the hitbox.
 std::vector<domain::Hazard> readHazards(const json& map) {
     std::vector<domain::Hazard> hazards;
@@ -183,7 +208,7 @@ domain::Room parseTiledRoom(const std::string& room_id, const std::string& json_
     try {
         const json map = json::parse(json_text);
         return domain::Room(room_id, readTiles(map), readNeighbors(map), readCoins(map),
-                            readHazards(map), readStalactites(map), readFruits(map));
+                            readHazards(map), readStalactites(map), readFruits(map), readEnemies(map));
     } catch (const json::exception& error) {
         throw std::runtime_error("Invalid Tiled map '" + room_id + "': " + error.what());
     } catch (const std::invalid_argument& error) {

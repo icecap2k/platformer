@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "domain/enemies/enemy_contact.h"
 #include "domain/physics/player_physics.h"
 #include "domain/rules/coin_pickup.h"
 #include "domain/rules/damage.h"
@@ -39,6 +40,7 @@ void GameSession::restart() {
     collected_coins_ = domain::CoinCollection{};
     eaten_fruits_ = domain::PickupCollection{};
     traps_ = domain::StalactiteTraps{};
+    enemies_ = domain::EnemyPatrols{};
 }
 
 bool GameSession::hurtPlayer(std::vector<GameEvent>& events, const domain::AABB& source) {
@@ -80,6 +82,33 @@ void GameSession::updateStalactites(std::vector<GameEvent>& events) {
             }
         }
     }
+}
+
+bool GameSession::updateEnemies(std::vector<GameEvent>& events) {
+    const domain::Room& room = currentRoom();
+    for (std::size_t index = 0; index < room.enemies().size(); ++index) {
+        const domain::Enemy& enemy = room.enemies()[index];
+        domain::EnemyState& state = enemies_.state(room.id(), index);
+        if (!state.alive) {
+            continue;
+        }
+        domain::stepEnemy(enemy, state, room.map());
+        const domain::AABB box = domain::currentBounds(enemy, state);
+        if (!player_.bounds().overlaps(box) || player_.health <= 0) {
+            continue;
+        }
+        if (domain::isStomp(player_, box)) {
+            // A stomp works even during the invulnerability after a hit.
+            state.alive = false;
+            domain::bounceOffEnemy(player_);
+            events.push_back(EnemyStomped{room.id(), index});
+        } else if (domain::canBeHurt(player_)) {
+            if (hurtPlayer(events, box)) {
+                return true;  // restarted: this room is no longer the current one
+            }
+        }
+    }
+    return false;
 }
 
 std::vector<GameEvent> GameSession::update(const domain::InputState& input) {
@@ -133,6 +162,9 @@ std::vector<GameEvent> GameSession::update(const domain::InputState& input) {
         if (const auto source = domain::hazardTouching(player_, here)) {
             restarted = hurtPlayer(events, *source);
         }
+    }
+    if (!restarted) {
+        restarted = updateEnemies(events);
     }
     if (!restarted) {
         updateStalactites(events);

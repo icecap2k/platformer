@@ -25,6 +25,8 @@ namespace level_tools {
 //   3  tile 3 of the tileset    4  tile 4 of the tileset (both solid, drawn as brick)
 //   C  coin on an empty tile    ^  spikes standing on an empty tile
 //   F  a healing fruit on an empty tile
+//   E  a patrolling enemy (a walker) standing on the floor: put it on an empty tile with ground
+//      under it
 //   V  a stalactite trap hanging in an empty tile (put it under a ceiling)
 //   /  a 45 degree ramp rising to the right (tile 5)    \  rising to the left (tile 6)
 //      A ramp must stand on solid tiles: filler under it and on its high side.
@@ -46,6 +48,7 @@ struct TextLevel {
     std::vector<domain::Hazard> hazards;
     std::vector<domain::FallingStalactite> stalactites;
     std::vector<domain::Fruit> fruits;
+    std::vector<domain::Enemy> enemies;
     std::map<domain::Side, domain::RoomId> neighbors;
 };
 

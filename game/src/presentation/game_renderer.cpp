@@ -68,6 +68,7 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
       sprites_(renderer, assets_dir + "sprites/sprites.png"),
       decor_(renderer, assets_dir + "sprites/decor.png"),
       hazards_(renderer, assets_dir + "sprites/hazards.png"),
+      enemies_(renderer, assets_dir + "sprites/enemies.png"),
       cave_(renderer, assets_dir + "background/cave.png") {}
 
 void GameRenderer::draw(const application::GameSession& session) {
@@ -77,6 +78,7 @@ void GameRenderer::draw(const application::GameSession& session) {
     drawTiles(session.map());
     drawScenery(session.map(), time_ms);
     drawHazards(session);
+    drawEnemies(session, time_ms);
     drawFruits(session, time_ms);
     drawCoins(session, time_ms);
     drawPlayer(session.player(), time_ms);
@@ -202,6 +204,22 @@ void GameRenderer::drawHazards(const application::GameSession& session) const {
                                  : 0.0F;
         hazards_.draw(renderer_, SDL_FRect{kSprite, 0.0F, kSprite, kSprite},
                       SDL_FRect{box.x + wobble, box.y, kSprite, kSprite});
+    }
+}
+
+// The enemies still alive: the beetle faces the way it walks (the sheet draws it facing right).
+void GameRenderer::drawEnemies(const application::GameSession& session, std::uint64_t time_ms) const {
+    constexpr float kSprite = 8.0F;
+    const domain::Room& room = session.currentRoom();
+    for (std::size_t index = 0; index < room.enemies().size(); ++index) {
+        const domain::EnemyState& state = session.enemyPatrols().state(room.id(), index);
+        if (!state.alive) {
+            continue;
+        }
+        const domain::AABB box = domain::currentBounds(room.enemies()[index], state);
+        // The sprite is 8x8: sit it on the bottom of the hitbox.
+        enemies_.draw(renderer_, SDL_FRect{static_cast<float>(enemyFrame(time_ms)) * kSprite, 0.0F, kSprite, kSprite},
+                      SDL_FRect{box.x, box.bottom() - kSprite, kSprite, kSprite}, state.direction < 0);
     }
 }
 

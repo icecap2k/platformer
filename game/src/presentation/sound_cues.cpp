@@ -30,6 +30,7 @@ std::optional<Sound> soundFor(const application::GameEvent& event) {
             [](const StalactiteWarned&) -> std::optional<Sound> { return Sound::StalactiteWarning; },
             [](const StalactiteFell&) -> std::optional<Sound> { return Sound::StalactiteCrack; },
             [](const StalactiteShattered&) -> std::optional<Sound> { return Sound::StalactiteCrash; },
+            [](const EnemyStomped&) -> std::optional<Sound> { return Sound::Stomp; },
             [](const GameRestarted&) -> std::optional<Sound> { return Sound::Restart; },
         },
         event);
@@ -55,6 +56,8 @@ std::string soundName(Sound sound) {
             return "stalactite_crack";
         case Sound::StalactiteCrash:
             return "stalactite_crash";
+        case Sound::Stomp:
+            return "stomp";
         case Sound::Restart:
             return "restart";
     }
@@ -65,7 +68,7 @@ std::vector<Sound> allSounds() {
     return {Sound::Jump,           Sound::Land,           Sound::Coin,
             Sound::Fruit,          Sound::Hurt,           Sound::Slide,
             Sound::StalactiteWarning, Sound::StalactiteCrack, Sound::StalactiteCrash,
-            Sound::Restart};
+            Sound::Stomp,      Sound::Restart};
 }
 
 }  // namespace presentation
