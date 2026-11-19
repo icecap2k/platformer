@@ -175,6 +175,40 @@ TEST_CASE("facesLeft") {
     }
 }
 
+TEST_CASE("fruitFrame: the halo breathes through four frames") {
+    CHECK(presentation::fruitFrame(0) == 0);
+    CHECK(presentation::fruitFrame(159) == 0);
+    CHECK(presentation::fruitFrame(160) == 1);
+    CHECK(presentation::fruitFrame(320) == 2);
+    CHECK(presentation::fruitFrame(480) == 3);
+    CHECK(presentation::fruitFrame(640) == 0);
+    // The berry and the coin do not beat together for long: at 1120 ms they are in frames 3 and 0.
+    CHECK(presentation::fruitFrame(1120) == 3);
+    CHECK(presentation::coinFrame(1120) == 0);
+}
+
+TEST_CASE("fruitBob floats one pixel up and down") {
+    CHECK(presentation::fruitBob(0) == 0);
+    CHECK(presentation::fruitBob(300) == -1);
+    CHECK(presentation::fruitBob(600) == 0);
+    CHECK(presentation::fruitBob(900) == 1);
+    CHECK(presentation::fruitBob(1200) == 0);
+
+    SUBCASE("it never moves more than a pixel from its place, and it does move") {
+        int up = 0;
+        int down = 0;
+        for (std::uint64_t t = 0; t < 5000; t += 10) {
+            const int bob = presentation::fruitBob(t);
+            CHECK(bob >= -1);
+            CHECK(bob <= 1);
+            up += bob < 0 ? 1 : 0;
+            down += bob > 0 ? 1 : 0;
+        }
+        CHECK(up > 0);
+        CHECK(down > 0);
+    }
+}
+
 TEST_CASE("coinFrame cycles through four frames") {
     CHECK(presentation::coinFrame(0) == 0);
     CHECK(presentation::coinFrame(140) == 1);

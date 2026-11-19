@@ -12,6 +12,7 @@ Nada podía dañar al jugador. Se quiere una base reutilizable para pinchos, tra
 - **Retroceso:** durante `hurt_steps` el jugador **ignora el input** y se mueve a `kKnockbackSpeed = 0.6` px/paso (≈ **8 px** en total); no se aplica el recorte del salto. El mini salto `kHurtHopSpeed = 1.7` ≈ **7 px**. Valores tras ajuste del autor: el primer ajuste lanzaba 17 px y saltaba 14 px, y se redujo a la mitad.
 - **Dirección:** la aleja del peligro (centro del jugador frente al centro del peligro); si están alineados, contra su movimiento. Mientras está herido, el sprite **mantiene la mirada** (si no, se giraba de espaldas).
 - **Al llegar a 0 corazones se reinicia todo** (`GameSession::restart()`): sala inicial, spawn, 3 corazones, 0 monedas y trampas colgando de nuevo. Evento `GameRestarted`.
+- La salud se recupera con **frutas** (ADR-0012): un corazón cada una, nunca por encima del máximo.
 - Presentación: pose `Hurt`, parpadeo mientras es invulnerable (3 pasos visible / 3 oculto) y HUD de corazones arriba a la derecha.
 
 ## Alternativas descartadas

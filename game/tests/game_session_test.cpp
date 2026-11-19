@@ -435,3 +435,92 @@ TEST_CASE("GameSession stalactite traps") {
         CHECK(doomed.stalactiteTraps().state("only", 0).phase == domain::StalactitePhase::Idle);  // and is back
     }
 }
+
+namespace {
+
+// One room: a floor, spikes under the spawn point (x = 100) and a fruit further right.
+RoomGraph makeFruitWorld(bool spikes_everywhere = false) {
+    using domain::AABB;
+    const AABB spikes = spikes_everywhere ? AABB{0.0F, 211.0F, 320.0F, 5.0F} : AABB{100.0F, 211.0F, 8.0F, 5.0F};
+    std::vector<Room> rooms;
+    rooms.emplace_back("only", test_maps::makeMap(), std::map<Side, domain::RoomId>{},
+                       std::vector<domain::Coin>{}, std::vector<domain::Hazard>{domain::Hazard{spikes}},
+                       std::vector<domain::FallingStalactite>{},
+                       std::vector<domain::Fruit>{domain::Fruit{180.0F, 208.0F}});
+    return RoomGraph(std::move(rooms));
+}
+
+std::vector<application::FruitEaten> eatenIn(const std::vector<application::GameEvent>& events) {
+    std::vector<application::FruitEaten> eaten;
+    for (const auto& event : events) {
+        if (const auto* fruit = std::get_if<application::FruitEaten>(&event)) {
+            eaten.push_back(*fruit);
+        }
+    }
+    return eaten;
+}
+
+}  // namespace
+
+TEST_CASE("GameSession healing fruits") {
+    SUBCASE("a fruit heals one heart after a hit and reports it") {
+        // Spawns on the spikes: it is hurt at once (2 hearts), then walks to the fruit.
+        GameSession session(makeFruitWorld(), "only", 100.0F, test_maps::kFloorTop - 16.0F);
+        session.update(InputState{});
+        REQUIRE(session.player().health == domain::kMaxHealth - 1);
+
+        InputState right;
+        right.right = true;
+        std::vector<application::FruitEaten> eaten;
+        for (int step = 0; step < 200 && eaten.empty(); ++step) {
+            const auto found = eatenIn(session.update(right));
+            eaten.insert(eaten.end(), found.begin(), found.end());
+        }
+
+        REQUIRE(eaten.size() == 1);
+        CHECK(eaten[0].room == "only");
+        CHECK(eaten[0].fruit_index == 0);
+        CHECK(eaten[0].health_after == domain::kMaxHealth);
+        CHECK(eaten[0].hearts_gained == 1);
+        CHECK(session.player().health == domain::kMaxHealth);
+        CHECK(session.eatenFruits().count() == 1);
+    }
+
+    SUBCASE("at full health the fruit is eaten anyway and wasted") {
+        GameSession session(makeFruitWorld(), "only", 180.0F, test_maps::kFloorTop - 16.0F);
+        REQUIRE(session.player().health == domain::kMaxHealth);
+
+        const auto eaten = eatenIn(session.update(InputState{}));
+
+        REQUIRE(eaten.size() == 1);
+        CHECK(eaten[0].hearts_gained == 0);
+        CHECK(eaten[0].health_after == domain::kMaxHealth);
+        CHECK(session.player().health == domain::kMaxHealth);
+        CHECK(session.eatenFruits().count() == 1);  // it is gone
+    }
+
+    SUBCASE("a fruit is eaten only once") {
+        GameSession session(makeFruitWorld(), "only", 180.0F, test_maps::kFloorTop - 16.0F);
+        int total = 0;
+        for (int step = 0; step < 60; ++step) {
+            total += static_cast<int>(eatenIn(session.update(InputState{})).size());
+        }
+        CHECK(total == 1);
+    }
+
+    SUBCASE("the game restarting puts the fruit back") {
+        // Spikes along the whole floor: it eats the fruit (wasted), then loses every heart.
+        GameSession session(makeFruitWorld(true), "only", 180.0F, 60.0F);
+        bool ate = false;
+        int restarts = 0;
+        for (int step = 0; step < 60 * 30 && restarts == 0; ++step) {
+            const auto events = session.update(InputState{});
+            ate = ate || !eatenIn(events).empty();
+            restarts += restartCount(events);
+        }
+        CHECK(ate);
+        REQUIRE(restarts == 1);
+        CHECK(session.eatenFruits().count() == 0);
+        CHECK(session.player().health == domain::kMaxHealth);
+    }
+}

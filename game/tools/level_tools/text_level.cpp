@@ -153,6 +153,12 @@ TextLevel parseTextLevel(const std::string& text) {
                         static_cast<float>(column) * size, static_cast<float>(row) * size, size, size}});
                     break;
                 }
+                case 'F': {
+                    const float size = static_cast<float>(level.tile_size);
+                    level.fruits.push_back(domain::Fruit{static_cast<float>(column) * size,
+                                                         static_cast<float>(row) * size, size});
+                    break;
+                }
                 case 'C': {
                     const float size = static_cast<float>(level.tile_size);
                     level.coins.push_back(domain::Coin{static_cast<float>(column) * size,
@@ -162,7 +168,7 @@ TextLevel parseTextLevel(const std::string& text) {
                 default:
                     failAt(line_number, std::string("unknown character '") +
                                             cells[static_cast<std::size_t>(column)] +
-                                            "' (use . # B 3 4 / \\ ^ V C)");
+                                            "' (use . # B 3 4 / \\ ^ V C F)");
             }
             level.tiles[static_cast<std::size_t>(row * level.width + column)] = tile;
         }
@@ -172,7 +178,8 @@ TextLevel parseTextLevel(const std::string& text) {
 
 domain::Room toRoom(const domain::RoomId& id, const TextLevel& level) {
     return domain::Room(id, domain::TileMap(level.width, level.height, level.tile_size, level.tiles),
-                        level.neighbors, level.coins, level.hazards, level.stalactites);
+                        level.neighbors, level.coins, level.hazards, level.stalactites,
+                        level.fruits);
 }
 
 std::string toTiledJson(const TextLevel& level) {
@@ -186,6 +193,18 @@ std::string toTiledJson(const TextLevel& level) {
 
     json objects = json::array();
     int object_id = 1;
+    for (const domain::Fruit& fruit : level.fruits) {
+        objects.push_back({{"id", object_id++},
+                           {"name", "fruit"},
+                           {"type", ""},
+                           {"class", "fruit"},
+                           {"x", fruit.x},
+                           {"y", fruit.y},
+                           {"width", fruit.size},
+                           {"height", fruit.size},
+                           {"rotation", 0},
+                           {"visible", true}});
+    }
     for (const domain::Coin& coin : level.coins) {
         objects.push_back({{"id", object_id++},
                            {"name", "coin"},
@@ -360,6 +379,18 @@ std::string toText(const domain::Room& room) {
                                      std::to_string(row) + " sits on a solid tile or a spike");
         }
         cell = 'V';
+    }
+
+    for (const domain::Fruit& fruit : room.fruits()) {
+        const float size = static_cast<float>(map.tileSize());
+        const int column = std::clamp(static_cast<int>(std::lround(fruit.x / size)), 0, map.width() - 1);
+        const int row = std::clamp(static_cast<int>(std::lround(fruit.y / size)), 0, map.height() - 1);
+        char& cell = grid[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)];
+        if (cell != '.') {
+            throw std::runtime_error("a fruit at column " + std::to_string(column) + ", row " +
+                                     std::to_string(row) + " sits on a solid tile or another item");
+        }
+        cell = 'F';
     }
 
     for (const domain::Coin& coin : room.coins()) {

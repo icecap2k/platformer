@@ -24,6 +24,7 @@ namespace level_tools {
 //   .  empty        #  ground (tile 1)        B  brick (tile 2)
 //   3  tile 3 of the tileset    4  tile 4 of the tileset (both solid, drawn as brick)
 //   C  coin on an empty tile    ^  spikes standing on an empty tile
+//   F  a healing fruit on an empty tile
 //   V  a stalactite trap hanging in an empty tile (put it under a ceiling)
 //   /  a 45 degree ramp rising to the right (tile 5)    \  rising to the left (tile 6)
 //      A ramp must stand on solid tiles: filler under it and on its high side.
@@ -44,6 +45,7 @@ struct TextLevel {
     std::vector<domain::Coin> coins;
     std::vector<domain::Hazard> hazards;
     std::vector<domain::FallingStalactite> stalactites;
+    std::vector<domain::Fruit> fruits;
     std::map<domain::Side, domain::RoomId> neighbors;
 };
 
@@ -57,7 +59,7 @@ domain::Room toRoom(const domain::RoomId& id, const TextLevel& level);
 std::string toTiledJson(const TextLevel& level);
 
 // Draws an existing room as text. Coins snap to the nearest tile. Throws
-// std::runtime_error for tile ids the text format cannot express, for a coin
+// std::runtime_error for tile ids the text format cannot express, for a coin or fruit
 // that sits on a solid tile, for a hazard that is not a tile-aligned patch of spikes (one or more tiles wide), or for a stalactite trap that is not
 // exactly one tile.
 std::string toText(const domain::Room& room);

@@ -234,6 +234,37 @@ TEST_CASE("analyzeReachability with ramps") {
     }
 }
 
+TEST_CASE("analyzeReachability checks fruits like coins") {
+    using domain::Fruit;
+    auto world = [](float fruit_y) {
+        std::vector<Room> rooms;
+        rooms.emplace_back("a", test_maps::makeMap(), std::map<Side, domain::RoomId>{}, std::vector<Coin>{},
+                           std::vector<domain::Hazard>{}, std::vector<domain::FallingStalactite>{},
+                           std::vector<Fruit>{Fruit{100.0F, fruit_y}});
+        return RoomGraph(std::move(rooms));
+    };
+
+    SUBCASE("a fruit on the floor can be touched") {
+        const auto report = analyzeReachability(world(208.0F), startAt("a"));
+        REQUIRE(report.fruits.size() == 1);
+        CHECK(report.fruits[0].touchable);
+        CHECK(report.allOk());
+    }
+
+    SUBCASE("a fruit floating too high is reported and the level is not ok") {
+        const auto report = analyzeReachability(world(100.0F), startAt("a"));
+        REQUIRE(report.fruits.size() == 1);
+        CHECK_FALSE(report.fruits[0].touchable);
+        CHECK_FALSE(report.allOk());
+    }
+
+    SUBCASE("coins and fruits are reported separately") {
+        const auto report = analyzeReachability(world(208.0F), startAt("a"));
+        CHECK(report.coins.empty());
+        CHECK(report.fruits.size() == 1);
+    }
+}
+
 TEST_CASE("RoomGraph::ids is sorted") {
     std::vector<Room> rooms;
     rooms.emplace_back("b", test_maps::makeMap());
@@ -360,6 +391,31 @@ TEST_CASE("text <-> Tiled round trips") {
         REQUIRE(again.hazards.size() == 1);
         CHECK(again.hazards[0].bounds.x == 16.0F);
         CHECK(again.hazards[0].bounds.y == 3.0F);
+    }
+
+    SUBCASE("fruits (F) survive text -> tmj -> game and tmj -> text") {
+        const TextLevel fruity = parseTextLevel("---\n.F.C\n####\n");
+        REQUIRE(fruity.fruits.size() == 1);
+        CHECK(fruity.fruits[0].x == 8.0F);
+        CHECK(fruity.fruits[0].y == 0.0F);
+        REQUIRE(fruity.coins.size() == 1);  // the coin next to it is still a coin
+
+        const Room room = infrastructure::parseTiledRoom("r", toTiledJson(fruity));
+        REQUIRE(room.fruits().size() == 1);
+        CHECK(room.fruits()[0].x == 8.0F);
+        CHECK(room.coins().size() == 1);
+
+        const TextLevel again = parseTextLevel(toText(room));
+        REQUIRE(again.fruits.size() == 1);
+        CHECK(again.fruits[0].x == 8.0F);
+        CHECK(again.coins.size() == 1);
+        CHECK(again.tiles == fruity.tiles);
+    }
+
+    SUBCASE("a fruit buried in a solid tile cannot be drawn as text") {
+        const Room buried("b", domain::TileMap(2, 1, 8, {kTileGround, kTileGround}), {}, {}, {}, {},
+                          {domain::Fruit{0.0F, 0.0F}});
+        CHECK_THROWS_WITH_AS(toText(buried), doctest::Contains("fruit"), std::runtime_error);
     }
 
     SUBCASE("stalactite traps (V) survive text -> tmj -> game and tmj -> text") {

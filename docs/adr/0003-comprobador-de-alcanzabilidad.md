@@ -7,6 +7,8 @@
 Dibujar a ojo engaña: una plataforma puede estar 8 px demasiado alta. Se quería **demostrar** que cada sala y cada moneda se pueden alcanzar, no estimarlo.
 
 ## Decisión
+(Desde ADR-0012 también comprueba las **frutas**: una fruta que no se pueda tocar hace fallar el nivel, igual que una moneda.)
+
 `level_check` (en `game/tools/`, enlaza la misma librería `domain` que el juego) hace una **búsqueda en anchura** sobre el estado `(sala, jugador)` probando 6 combinaciones de entrada por paso (izq/der/quieto × salto sí/no), con `stepPlayer`, `confineToMap`, `exitedThrough` y `enterRoom` reales. También se ejecuta como test de CTest (`shipped_levels_reachable`).
 
 - La clave de estado cuantiza posición (0,5 px) y velocidad (0,1) para que el espacio sea finito, e incluye el estado del salto, **normalizado a lo que aún puede cambiar el futuro** (en suelo el coyote siempre está lleno; en el aire sin coyote, `jump_held` no importa). Sin esa normalización se agotaba el límite de 20 M de estados.

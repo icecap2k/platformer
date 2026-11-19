@@ -78,6 +78,15 @@ int main(int argc, char** argv) {
                       << '\n';
         }
 
+        if (!report.fruits.empty()) {
+            std::cout << "\nFruits:\n";
+            for (const level_tools::FruitStatus& fruit : report.fruits) {
+                std::cout << "  " << fruit.room << " #" << fruit.index << " at (" << fruit.fruit.x << ", "
+                          << fruit.fruit.y << ")  " << (fruit.touchable ? "OK" : "CANNOT BE TOUCHED")
+                          << '\n';
+            }
+        }
+
         if (report.allOk() && !report.truncated) {
             std::cout << "\nResult: OK\n";
             return 0;

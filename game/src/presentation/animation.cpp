@@ -7,6 +7,8 @@ constexpr std::uint64_t kIdleFrameMs = 220;
 constexpr std::uint64_t kRunFrameMs = 80;
 constexpr std::uint64_t kLandMs = 100;
 constexpr std::uint64_t kCoinFrameMs = 140;
+constexpr std::uint64_t kFruitFrameMs = 160;  // a quick breath: a full pulse every 0.64 s
+constexpr std::uint64_t kFruitBobMs = 300;    // the bob moves one pixel every 0.3 s
 // Vertical speed (pixels per step) below which the player is at the top of a jump.
 constexpr float kApexSpeed = 1.0F;
 }  // namespace
@@ -55,6 +57,15 @@ bool facesLeft(const domain::Player& player, bool was_facing_left) {
         return false;
     }
     return was_facing_left;
+}
+
+int fruitFrame(std::uint64_t time_ms) {
+    return static_cast<int>((time_ms / kFruitFrameMs) % 4);
+}
+
+int fruitBob(std::uint64_t time_ms) {
+    constexpr int kBob[4] = {0, -1, 0, 1};  // middle, up, middle, down
+    return kBob[(time_ms / kFruitBobMs) % 4];
 }
 
 int coinFrame(std::uint64_t time_ms) {

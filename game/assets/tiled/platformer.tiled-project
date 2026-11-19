@@ -40,6 +40,17 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "color": "#ff7860",
+      "drawFill": true,
+      "id": 4,
+      "members": [],
+      "name": "fruit",
+      "type": "class",
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }
