@@ -49,4 +49,11 @@ int fruitFrame(std::uint64_t time_ms);
 // How many pixels (-1, 0 or +1) the fruit floats up or down: a slow bob.
 int fruitBob(std::uint64_t time_ms);
 
+// A squashed enemy blinks while it has `steps_left` steps or fewer before it disappears
+// (the last domain::kSquashBlinkSteps); this says whether it is drawn on that step. Always drawn before that.
+bool isVisibleWhileFading(int steps_left);
+
+// Frame (0..1) of the walking enemy: its legs swap phase.
+int enemyFrame(std::uint64_t time_ms);
+
 }  // namespace presentation

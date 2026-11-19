@@ -46,6 +46,8 @@ void report(const application::GameEvent& event) {
                   << " hearts left)" << std::endl;
     } else if (const auto* fell = std::get_if<application::StalactiteFell>(&event)) {
         std::cout << "[event] a stalactite trap came loose in " << fell->room << std::endl;
+    } else if (const auto* stomped = std::get_if<application::EnemyStomped>(&event)) {
+        std::cout << "[event] enemy stomped in " << stomped->room << std::endl;
     } else if (std::holds_alternative<application::GameRestarted>(event)) {
         std::cout << "[event] game over: starting again from the first room" << std::endl;
     } else if (const auto* coin = std::get_if<application::CoinCollected>(&event)) {

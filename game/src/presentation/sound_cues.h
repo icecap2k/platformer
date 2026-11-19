@@ -22,6 +22,7 @@ enum class Sound {
     StalactiteWarning,  // the rumble before it comes loose
     StalactiteCrack,    // it comes loose
     StalactiteCrash,    // it shatters
+    Stomp,              // the player lands on an enemy
     Restart,            // all hearts lost: the game starts over
 };
 

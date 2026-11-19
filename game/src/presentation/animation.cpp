@@ -1,5 +1,7 @@
 #include "presentation/animation.h"
 
+#include "domain/enemies/enemy_patrols.h"
+
 namespace presentation {
 
 namespace {
@@ -8,6 +10,7 @@ constexpr std::uint64_t kRunFrameMs = 80;
 constexpr std::uint64_t kLandMs = 100;
 constexpr std::uint64_t kCoinFrameMs = 140;
 constexpr std::uint64_t kFruitFrameMs = 160;  // a quick breath: a full pulse every 0.64 s
+constexpr std::uint64_t kEnemyFrameMs = 180;
 constexpr std::uint64_t kFruitBobMs = 300;    // the bob moves one pixel every 0.3 s
 // Vertical speed (pixels per step) below which the player is at the top of a jump.
 constexpr float kApexSpeed = 1.0F;
@@ -70,6 +73,17 @@ int fruitBob(std::uint64_t time_ms) {
 
 int coinFrame(std::uint64_t time_ms) {
     return static_cast<int>((time_ms / kCoinFrameMs) % 4);
+}
+
+bool isVisibleWhileFading(int steps_left) {
+    if (steps_left > domain::kSquashBlinkSteps) {
+        return true;
+    }
+    return (steps_left / 3) % 2 == 0;
+}
+
+int enemyFrame(std::uint64_t time_ms) {
+    return static_cast<int>((time_ms / kEnemyFrameMs) % 2);
 }
 
 }  // namespace presentation

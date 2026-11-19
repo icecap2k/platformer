@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "application/game_event.h"
+#include "domain/enemies/enemy_patrols.h"
 #include "domain/entities/player.h"
 #include "domain/input/input_state.h"
 #include "domain/world/coin_collection.h"
@@ -33,6 +34,7 @@ public:
     const domain::PickupCollection& eatenFruits() const { return eaten_fruits_; }
     int totalCoins() const { return world_.totalCoins(); }
     const domain::StalactiteTraps& stalactiteTraps() const { return traps_; }
+    const domain::EnemyPatrols& enemyPatrols() const { return enemies_; }
 
 private:
     // Hurts the player (one heart, knockback). Returns true if that was the last
@@ -40,6 +42,9 @@ private:
     bool hurtPlayer(std::vector<GameEvent>& events, const domain::AABB& source);
     // Wakes up, moves and lets fall the stalactite traps of the current room.
     void updateStalactites(std::vector<GameEvent>& events);
+    // Walks the enemies of the current room and resolves contact: a stomp defeats the
+    // enemy, any other touch hurts the player. Returns true if the game restarted.
+    bool updateEnemies(std::vector<GameEvent>& events);
 
     // Back to the start: first room, full health, no coins collected.
     void restart();
@@ -53,6 +58,7 @@ private:
     domain::CoinCollection collected_coins_;
     domain::PickupCollection eaten_fruits_;
     domain::StalactiteTraps traps_;
+    domain::EnemyPatrols enemies_;
 };
 
 }  // namespace application

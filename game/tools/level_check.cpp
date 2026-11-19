@@ -45,6 +45,10 @@ int main(int argc, char** argv) {
         for (const auto& file : files) {
             rooms.push_back(infrastructure::loadTiledRoom(file.string()));
         }
+        std::size_t enemy_count = 0;
+        for (const domain::Room& room : rooms) {
+            enemy_count += room.enemies().size();
+        }
         const domain::RoomGraph world(std::move(rooms));
 
         level_tools::ReachabilityOptions options;
@@ -85,6 +89,12 @@ int main(int argc, char** argv) {
                           << fruit.fruit.y << ")  " << (fruit.touchable ? "OK" : "CANNOT BE TOUCHED")
                           << '\n';
             }
+        }
+
+        // Enemies are not part of the search (ADR-0014): say so, so nobody trusts it for them.
+        if (enemy_count > 0) {
+            std::cout << "\nEnemies: " << enemy_count
+                      << " placed; NOT modelled by this check (it assumes they never get in the way)\n";
         }
 
         if (report.allOk() && !report.truncated) {

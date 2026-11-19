@@ -19,3 +19,4 @@ La decoración y las gotas de las estalactitas debían ser solo cosmética: sin 
 ## Consecuencias
 - El renderer es fino; cambiar el aspecto no toca el juego.
 - Cualquier efecto nuevo debería seguir el mismo patrón (función de posición y reloj).
+- **Luciérnagas** (E12): `fireflyRoutes(sala, mapa)` elige por hash 3 puntos de partida con la caja de vuelo (5×2 tiles) libre de suelo y `fireflyAt(ruta, tiempo)` da su posición. Ciclo: 3 s quietas aleteando → tramo de 5 tiles de lado y 2 hacia abajo en curva (empieza plano y acaba empinado, girando hacia donde va) → 3 s quietas → vuelta por la misma curva (sube). Cada una tiene su **desfase propio**, así no arrancan a la vez. Sprite `fireflies.png` (`make_fireflies.py`): aleteo × brillo, con halo translúcido.

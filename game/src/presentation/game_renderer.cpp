@@ -7,6 +7,7 @@
 #include "presentation/autotile.h"
 #include "presentation/decoration.h"
 #include "presentation/drip.h"
+#include "presentation/firefly.h"
 
 namespace presentation {
 
@@ -68,6 +69,8 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
       sprites_(renderer, assets_dir + "sprites/sprites.png"),
       decor_(renderer, assets_dir + "sprites/decor.png"),
       hazards_(renderer, assets_dir + "sprites/hazards.png"),
+      enemies_(renderer, assets_dir + "sprites/enemies.png"),
+      fireflies_(renderer, assets_dir + "sprites/fireflies.png"),
       cave_(renderer, assets_dir + "background/cave.png") {}
 
 void GameRenderer::draw(const application::GameSession& session) {
@@ -76,7 +79,9 @@ void GameRenderer::draw(const application::GameSession& session) {
     drawCave();
     drawTiles(session.map());
     drawScenery(session.map(), time_ms);
+    drawFireflies(session, time_ms);
     drawHazards(session);
+    drawEnemies(session, time_ms);
     drawFruits(session, time_ms);
     drawCoins(session, time_ms);
     drawPlayer(session.player(), time_ms);
@@ -172,6 +177,20 @@ void GameRenderer::drawDrip(const domain::TileMap& map, int column, int row,
     decor_.draw(renderer_, source, SDL_FRect{x, y, kDecorSize, kDecorSize});
 }
 
+// Fireflies: pure decoration, behind everything that matters (hazards, enemies, player).
+void GameRenderer::drawFireflies(const application::GameSession& session, std::uint64_t time_ms) {
+    constexpr float kSprite = 8.0F;
+    if (firefly_room_ != session.currentRoom().id()) {
+        firefly_room_ = session.currentRoom().id();
+        firefly_routes_ = fireflyRoutes(firefly_room_, session.map());
+    }
+    for (const FireflyRoute& route : firefly_routes_) {
+        const Firefly firefly = fireflyAt(route, time_ms);
+        fireflies_.draw(renderer_, SDL_FRect{static_cast<float>(firefly.frame) * kSprite, 0.0F, kSprite, kSprite},
+                        SDL_FRect{firefly.x, firefly.y, kSprite, kSprite}, firefly.facing_left);
+    }
+}
+
 // Spikes: the hazard's rectangle is the hitbox, and the 8x8 spike sprite is
 // repeated along it. The sprite is drawn one pixel lower than the rectangle's
 // bottom edge: its last row is a dark line that merges with the floor's top
@@ -202,6 +221,28 @@ void GameRenderer::drawHazards(const application::GameSession& session) const {
                                  : 0.0F;
         hazards_.draw(renderer_, SDL_FRect{kSprite, 0.0F, kSprite, kSprite},
                       SDL_FRect{box.x + wobble, box.y, kSprite, kSprite});
+    }
+}
+
+// The enemies still alive: the beetle faces the way it walks (the sheet draws it facing right).
+void GameRenderer::drawEnemies(const application::GameSession& session, std::uint64_t time_ms) const {
+    constexpr float kSprite = 8.0F;
+    const domain::Room& room = session.currentRoom();
+    for (std::size_t index = 0; index < room.enemies().size(); ++index) {
+        const domain::EnemyState& state = session.enemyPatrols().state(room.id(), index);
+        const domain::AABB box = domain::currentBounds(room.enemies()[index], state);
+        // The sprite is 8x8: sit it on the bottom of the hitbox.
+        const SDL_FRect destination{box.x, box.bottom() - kSprite, kSprite, kSprite};
+        if (!state.alive) {
+            // Frame 2: squashed flat. It blinks for its last third of a second, then it is gone.
+            if (domain::isSquashedBody(state) && isVisibleWhileFading(domain::kSquashSteps - state.dead_steps)) {
+                enemies_.draw(renderer_, SDL_FRect{2.0F * kSprite, 0.0F, kSprite, kSprite}, destination,
+                              state.direction < 0);
+            }
+            continue;
+        }
+        enemies_.draw(renderer_, SDL_FRect{static_cast<float>(enemyFrame(time_ms)) * kSprite, 0.0F, kSprite, kSprite},
+                      destination, state.direction < 0);
     }
 }
 

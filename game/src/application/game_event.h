@@ -66,11 +66,17 @@ struct StalactiteFell {
     std::size_t index;
 };
 
+// The player landed on an enemy and defeated it.
+struct EnemyStomped {
+    domain::RoomId room;
+    std::size_t index;
+};
+
 // The player lost its last heart: everything starts over from the first room.
 struct GameRestarted {};
 
 using GameEvent = std::variant<RoomChanged, CoinCollected, FruitEaten, PlayerJumped, PlayerLanded,
                                SlideStarted, PlayerHurt, StalactiteWarned, StalactiteFell,
-                               StalactiteShattered, GameRestarted>;
+                               StalactiteShattered, EnemyStomped, GameRestarted>;
 
 }  // namespace application

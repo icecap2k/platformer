@@ -23,6 +23,7 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0011](0011-agacharse-y-deslizar-con-la-flecha-abajo.md) | Agacharse y deslizar con la flecha abajo | Aceptada |
 | [0012](0012-frutas-que-curan-y-recogibles.md) | Frutas que curan y recogibles | Aceptada |
 | [0013](0013-sonido-por-eventos.md) | Sonido por eventos y efectos sintetizados | Aceptada |
+| [0014](0014-enemigos-que-patrullan-y-se-pisan.md) | Enemigos que patrullan y se pisan | Aceptada |
 
 ## Plantilla
 

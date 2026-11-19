@@ -22,7 +22,9 @@ add_library(domain STATIC
     src/domain/rules/room_transition.cpp
     src/domain/rules/coin_pickup.cpp
     src/domain/rules/damage.cpp
-    src/domain/rules/healing.cpp)
+    src/domain/rules/healing.cpp
+    src/domain/enemies/enemy_patrols.cpp
+    src/domain/enemies/enemy_contact.cpp)
 target_include_directories(domain PUBLIC src)
 target_compile_options(domain PRIVATE ${WARNINGS})
 
@@ -60,6 +62,7 @@ add_library(presentation_animation STATIC
     src/presentation/decoration.cpp
     src/presentation/autotile.cpp
     src/presentation/drip.cpp
+    src/presentation/firefly.cpp
     src/presentation/sound_cues.cpp)
 target_link_libraries(presentation_animation PUBLIC domain application)
 target_compile_options(presentation_animation PRIVATE ${WARNINGS})
@@ -123,12 +126,14 @@ if(PLATFORMER_BUILD_TESTS)
         tests/slope_test.cpp
         tests/crouch_test.cpp
         tests/fruit_test.cpp
+        tests/enemy_test.cpp
         tests/sound_cues_test.cpp
         tests/sound_assets_test.cpp
         tests/animation_test.cpp
         tests/decoration_test.cpp
         tests/autotile_test.cpp
         tests/drip_test.cpp
+        tests/firefly_test.cpp
         tests/game_session_test.cpp
         tests/tiled_map_loader_test.cpp
         tests/level_tools_test.cpp)

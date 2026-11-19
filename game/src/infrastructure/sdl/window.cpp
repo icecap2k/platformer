@@ -29,6 +29,13 @@ Window::Window(const char* title, int logical_width, int logical_height, int sca
         fail("SDL_CreateRenderer failed");
     }
 
+    // Present in step with the display: without it the loop draws thousands of frames per second
+    // and the ones that reach the screen are picked up at uneven moments, which looks like stutter.
+    // (If the driver refuses, the game still runs, just without vsync.)
+    if (!SDL_SetRenderVSync(renderer_, 1)) {
+        SDL_Log("warning: vsync is not available (%s); the game may stutter", SDL_GetError());
+    }
+
     SDL_SetRenderLogicalPresentation(renderer_, logical_width, logical_height,
                                      SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
 }

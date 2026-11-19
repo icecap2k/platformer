@@ -128,6 +128,19 @@ def fruit():
     return mix(*tracks)
 
 
+def stomp():
+    """A squashed 'boing': a fast downward glide with a pop on top."""
+    noise = Noise(31)
+    phase = [0.0]
+
+    def voice(t, d):
+        phase[0] += sweep(520, 170, t, d) / RATE
+        body = 0.7 * square(phase[0], 0.3) + 0.3 * triangle(phase[0])
+        pop = noise.next(0.5) * envelope(t, d, 0.001, 6.0)
+        return 0.5 * body * envelope(t, d, 0.003, 1.8) + 0.25 * pop
+    return render(0.14, voice)
+
+
 def hurt():
     noise = Noise(23)
     phase = [0.0]
@@ -208,6 +221,7 @@ SOUNDS = {
     "land": land,
     "coin": coin,
     "fruit": fruit,
+    "stomp": stomp,
     "hurt": hurt,
     "slide": slide,
     "stalactite_warning": stalactite_warning,

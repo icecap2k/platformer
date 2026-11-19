@@ -412,6 +412,29 @@ TEST_CASE("text <-> Tiled round trips") {
         CHECK(again.tiles == fruity.tiles);
     }
 
+    SUBCASE("enemies (E) survive text -> tmj -> game and tmj -> text") {
+        const TextLevel level = parseTextLevel("---\n.E.C\n####\n");
+        REQUIRE(level.enemies.size() == 1);
+        CHECK(level.enemies[0].bounds.x == 8.0F);
+        CHECK(level.enemies[0].bounds.width == 8.0F);
+        CHECK(level.coins.size() == 1);
+
+        const Room room = infrastructure::parseTiledRoom("r", toTiledJson(level));
+        REQUIRE(room.enemies().size() == 1);
+        CHECK(room.enemies()[0].bounds.x == 8.0F);
+
+        const TextLevel again = parseTextLevel(toText(room));
+        REQUIRE(again.enemies.size() == 1);
+        CHECK(again.enemies[0].bounds.x == 8.0F);
+        CHECK(again.tiles == level.tiles);
+    }
+
+    SUBCASE("an enemy that is not exactly one tile cannot be drawn as text") {
+        const Room odd("o", domain::TileMap(2, 2, 8, {0, 0, kTileGround, kTileGround}), {}, {}, {}, {}, {},
+                       {domain::Enemy{domain::AABB{0.0F, 0.0F, 8.0F, 6.0F}}});
+        CHECK_THROWS_WITH_AS(toText(odd), doctest::Contains("enemy"), std::runtime_error);
+    }
+
     SUBCASE("a fruit buried in a solid tile cannot be drawn as text") {
         const Room buried("b", domain::TileMap(2, 1, 8, {kTileGround, kTileGround}), {}, {}, {}, {},
                           {domain::Fruit{0.0F, 0.0F}});
