@@ -91,6 +91,15 @@ int main(int argc, char** argv) {
             }
         }
 
+        if (!report.checkpoints.empty()) {
+            std::cout << "\nCheckpoints:\n";
+            for (const level_tools::CheckpointStatus& checkpoint : report.checkpoints) {
+                std::cout << "  " << checkpoint.room << " #" << checkpoint.index << " at (" << checkpoint.checkpoint.x
+                          << ", " << checkpoint.checkpoint.y << ")  "
+                          << (checkpoint.touchable ? "OK" : "CANNOT BE TOUCHED") << '\n';
+            }
+        }
+
         // Enemies are not part of the search (ADR-0014): say so, so nobody trusts it for them.
         if (enemy_count > 0) {
             std::cout << "\nEnemies: " << enemy_count

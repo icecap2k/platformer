@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include <utility>
 #include <vector>
 
 #include "application/game_event.h"
@@ -36,15 +38,23 @@ public:
     const domain::StalactiteTraps& stalactiteTraps() const { return traps_; }
     const domain::EnemyPatrols& enemyPatrols() const { return enemies_; }
 
+    // The checkpoint where the player comes back (room, index in that room's list), if any was reached.
+    const std::optional<std::pair<domain::RoomId, std::size_t>>& lastCheckpoint() const {
+        return last_checkpoint_;
+    }
+
 private:
     // Hurts the player (one heart, knockback). Returns true if that was the last
-    // heart and the game restarted.
+    // heart and the player was sent back (to the last checkpoint, or to the very start).
     bool hurtPlayer(std::vector<GameEvent>& events, const domain::AABB& source);
     // Wakes up, moves and lets fall the stalactite traps of the current room.
     void updateStalactites(std::vector<GameEvent>& events);
     // Walks the enemies of the current room and resolves contact: a stomp defeats the
     // enemy, any other touch hurts the player. Returns true if the game restarted.
     bool updateEnemies(std::vector<GameEvent>& events);
+
+    // Back at the last checkpoint with full health; coins and fruits already taken stay taken.
+    void respawnAtCheckpoint();
 
     // Back to the start: first room, full health, no coins collected.
     void restart();
@@ -59,6 +69,7 @@ private:
     domain::PickupCollection eaten_fruits_;
     domain::StalactiteTraps traps_;
     domain::EnemyPatrols enemies_;
+    std::optional<std::pair<domain::RoomId, std::size_t>> last_checkpoint_;
 };
 
 }  // namespace application

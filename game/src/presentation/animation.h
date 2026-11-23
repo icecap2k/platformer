@@ -53,6 +53,9 @@ int fruitBob(std::uint64_t time_ms);
 // (the last domain::kSquashBlinkSteps); this says whether it is drawn on that step. Always drawn before that.
 bool isVisibleWhileFading(int steps_left);
 
+// Frame (1..2) of an active checkpoint's glow (frame 0 is the unlit one).
+int checkpointFrame(std::uint64_t time_ms);
+
 // Frame (0..1) of the walking enemy: its legs swap phase.
 int enemyFrame(std::uint64_t time_ms);
 

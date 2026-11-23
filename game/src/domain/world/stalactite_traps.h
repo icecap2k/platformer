@@ -53,6 +53,9 @@ public:
     const StalactiteState& state(const RoomId& room, std::size_t index) const;
     StalactiteState& state(const RoomId& room, std::size_t index);
 
+    // Hangs every stalactite trap of one room again.
+    void resetRoom(const RoomId& room);
+
 private:
     std::map<std::pair<RoomId, std::size_t>, StalactiteState> states_;
 };

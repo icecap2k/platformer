@@ -72,11 +72,23 @@ struct EnemyStomped {
     std::size_t index;
 };
 
-// The player lost its last heart: everything starts over from the first room.
+// The player touched a checkpoint that was not the active one: it is now where they come back.
+struct CheckpointReached {
+    domain::RoomId room;
+    std::size_t index;
+};
+
+// The player lost its last heart and came back at the last checkpoint with full health.
+struct PlayerRespawned {
+    domain::RoomId room;
+};
+
+// The player lost its last heart with no checkpoint reached: everything starts over from the first room.
 struct GameRestarted {};
 
 using GameEvent = std::variant<RoomChanged, CoinCollected, FruitEaten, PlayerJumped, PlayerLanded,
                                SlideStarted, PlayerHurt, StalactiteWarned, StalactiteFell,
-                               StalactiteShattered, EnemyStomped, GameRestarted>;
+                               StalactiteShattered, EnemyStomped, CheckpointReached, PlayerRespawned,
+                               GameRestarted>;
 
 }  // namespace application

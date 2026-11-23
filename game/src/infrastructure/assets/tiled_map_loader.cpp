@@ -153,6 +153,31 @@ std::vector<domain::Enemy> readEnemies(const json& map) {
     return enemies;
 }
 
+// Checkpoints are rectangle objects of class "checkpoint", read like coins.
+std::vector<domain::Checkpoint> readCheckpoints(const json& map) {
+    std::vector<domain::Checkpoint> checkpoints;
+    for (const json& layer : map.at("layers")) {
+        if (layer.at("type").get<std::string>() != "objectgroup") {
+            continue;
+        }
+        for (const json& object : layer.at("objects")) {
+            const std::string kind = object.value("class", object.value("type", std::string()));
+            if (kind != "checkpoint") {
+                continue;
+            }
+            domain::Checkpoint checkpoint;
+            checkpoint.x = object.at("x").get<float>();
+            checkpoint.y = object.at("y").get<float>();
+            const float width = object.value("width", 0.0F);
+            if (width > 0.0F) {
+                checkpoint.size = width;
+            }
+            checkpoints.push_back(checkpoint);
+        }
+    }
+    return checkpoints;
+}
+
 // Spikes are rectangle objects of class "spikes": the rectangle IS the hitbox.
 std::vector<domain::Hazard> readHazards(const json& map) {
     std::vector<domain::Hazard> hazards;
@@ -208,7 +233,8 @@ domain::Room parseTiledRoom(const std::string& room_id, const std::string& json_
     try {
         const json map = json::parse(json_text);
         return domain::Room(room_id, readTiles(map), readNeighbors(map), readCoins(map),
-                            readHazards(map), readStalactites(map), readFruits(map), readEnemies(map));
+                            readHazards(map), readStalactites(map), readFruits(map), readEnemies(map),
+                            readCheckpoints(map));
     } catch (const json::exception& error) {
         throw std::runtime_error("Invalid Tiled map '" + room_id + "': " + error.what());
     } catch (const std::invalid_argument& error) {

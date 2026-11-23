@@ -127,6 +127,7 @@ if(PLATFORMER_BUILD_TESTS)
         tests/crouch_test.cpp
         tests/fruit_test.cpp
         tests/enemy_test.cpp
+        tests/checkpoint_test.cpp
         tests/sound_cues_test.cpp
         tests/sound_assets_test.cpp
         tests/animation_test.cpp

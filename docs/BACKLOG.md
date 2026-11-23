@@ -44,6 +44,12 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 9 | **Enemigos que patrullan** (`walker`, un escarabajo): caminan por el suelo y dan la vuelta ante paredes, rampas, bordes y **pinchos**; al pisarlos quedan **chafados 1 s** y desaparecen; **se pisan** (rebote, y más alto si mantienes salto) y si no, dañan por `applyDamage`; estado `EnemyPatrols`, evento `EnemyStomped`, sonido `stomp`, clase `walker` de Tiled y símbolo `E`; uno en `room_03` y otro en `room_04`; `level_check` los cuenta pero no los modela; ADR-0014 y post 18 |
 | 39 | **Luciérnagas** decorativas (3 por sala, función pura del reloj, ADR-0008): quietas 3 s, vuelan en curva 5 tiles de lado y 2 abajo, con desfases propios |
 
+## Hecho (E13 · Checkpoints)
+
+| # | Tarea |
+|---|---|
+| 12 | **Checkpoints**: objeto `checkpoint` (símbolo `K`) que se toca y es donde reapareces con salud completa; se conservan monedas y frutas y se reponen enemigos y trampas de esa sala; sin checkpoint, reinicio total como antes; eventos `CheckpointReached` y `PlayerRespawned`, sonido `checkpoint`; `level_check` los comprueba; uno en `room_02` y otro en `room_03`; ADR-0015 y post 19 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
@@ -55,7 +61,6 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
 | 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |
 | 11 | **Pantalla de título, pausa y Game Over** (estado por encima de `GameSession`) | P1 | M | — |
-| 12 | **Checkpoints / reaparecer en la sala**: suavizar el reinicio total si resulta frustrante | P1 | M | — |
 | 13 | **Rendimiento de `level_check`**: ya tarda ~40-65 s (61 s con la rampa) y crece con cada sala y cada estado nuevo; poda/ordenación o etiqueta de test lento | P1 | S | — |
 | 14 | **CI** en GitHub Actions (build + `ctest`) e instalar `gh` para abrir PRs desde la terminal | P1 | S | 13 |
 | 15 | **Verificar el proyecto de Tiled** abriendo `game/assets/tiled/platformer.tiled-project` y colocando un pincho a mano | P1 | S | — |
@@ -75,7 +80,7 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 
 ## Riesgos e ideas a vigilar
 
-- El reinicio total es duro: si se siente frustrante, subir la tarea 12 (checkpoints).
+- Los checkpoints no se guardan en disco (tarea 19) y reaparecer sin invulnerabilidad puede ser duro si el checkpoint está junto a un peligro.
 - Cada estado nuevo (salud, invulnerabilidad, estalactitas) agranda la búsqueda de `level_check`; ya pasó con el salto (tarea 13).
 - Generalizar los coleccionables (tarea 8) **antes** de duplicar código para las frutas.
 - Los enemigos tampoco están en `level_check`: un nivel podría exigir pisarlos o esquivarlos sin que el comprobador lo sepa.

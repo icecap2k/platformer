@@ -141,6 +141,19 @@ def stomp():
     return render(0.14, voice)
 
 
+def checkpoint():
+    """A bright, rising two-note chime: something just lit up."""
+    tracks = []
+    for index, hz in enumerate([523, 784]):
+        phase = [0.0]
+
+        def voice(t, d, hz=hz, phase=phase):
+            phase[0] += hz / RATE
+            return 0.5 * (0.6 * sine(phase[0]) + 0.4 * triangle(phase[0] * 2)) * envelope(t, d, 0.004, 1.6)
+        tracks.append(delayed(render(0.3 if index else 0.18, voice), 0.12 * index))
+    return mix(*tracks)
+
+
 def hurt():
     noise = Noise(23)
     phase = [0.0]
@@ -222,6 +235,7 @@ SOUNDS = {
     "coin": coin,
     "fruit": fruit,
     "stomp": stomp,
+    "checkpoint": checkpoint,
     "hurt": hurt,
     "slide": slide,
     "stalactite_warning": stalactite_warning,

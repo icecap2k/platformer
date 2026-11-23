@@ -71,6 +71,7 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
       hazards_(renderer, assets_dir + "sprites/hazards.png"),
       enemies_(renderer, assets_dir + "sprites/enemies.png"),
       fireflies_(renderer, assets_dir + "sprites/fireflies.png"),
+      checkpoints_(renderer, assets_dir + "sprites/checkpoints.png"),
       cave_(renderer, assets_dir + "background/cave.png") {}
 
 void GameRenderer::draw(const application::GameSession& session) {
@@ -81,6 +82,7 @@ void GameRenderer::draw(const application::GameSession& session) {
     drawScenery(session.map(), time_ms);
     drawFireflies(session, time_ms);
     drawHazards(session);
+    drawCheckpoints(session, time_ms);
     drawEnemies(session, time_ms);
     drawFruits(session, time_ms);
     drawCoins(session, time_ms);
@@ -175,6 +177,20 @@ void GameRenderer::drawDrip(const domain::TileMap& map, int column, int row,
         y = ground_y - kDecorSize;  // the splash frames end in their bottom row
     }
     decor_.draw(renderer_, source, SDL_FRect{x, y, kDecorSize, kDecorSize});
+}
+
+// Checkpoints: a dark crystal lantern until touched; the active one glows (two frames that pulse).
+void GameRenderer::drawCheckpoints(const application::GameSession& session, std::uint64_t time_ms) const {
+    constexpr float kSprite = 8.0F;
+    const domain::Room& room = session.currentRoom();
+    for (std::size_t index = 0; index < room.checkpoints().size(); ++index) {
+        const domain::AABB box = room.checkpoints()[index].bounds();
+        const bool active = session.lastCheckpoint() &&
+                            *session.lastCheckpoint() == std::make_pair(room.id(), index);
+        const int frame = active ? checkpointFrame(time_ms) : 0;
+        checkpoints_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kSprite, 0.0F, kSprite, kSprite},
+                          SDL_FRect{box.x, box.bottom() - kSprite, kSprite, kSprite});
+    }
 }
 
 // Fireflies: pure decoration, behind everything that matters (hazards, enemies, player).

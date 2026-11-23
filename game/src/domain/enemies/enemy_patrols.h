@@ -49,6 +49,9 @@ public:
     const EnemyState& state(const RoomId& room, std::size_t index) const;
     EnemyState& state(const RoomId& room, std::size_t index);
 
+    // Puts every enemy of one room back where the level put it, alive.
+    void resetRoom(const RoomId& room);
+
 private:
     std::map<std::pair<RoomId, std::size_t>, EnemyState> states_;
 };
