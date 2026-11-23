@@ -30,6 +30,7 @@ target_compile_options(domain PRIVATE ${WARNINGS})
 
 # --- Application: orchestrates the domain. Still no SDL. ---
 add_library(application STATIC
+    src/application/game_flow.cpp
     src/application/game_session.cpp)
 target_link_libraries(application PUBLIC domain)
 target_compile_options(application PRIVATE ${WARNINGS})
@@ -127,6 +128,8 @@ if(PLATFORMER_BUILD_TESTS)
         tests/crouch_test.cpp
         tests/fruit_test.cpp
         tests/enemy_test.cpp
+        tests/checkpoint_test.cpp
+        tests/game_flow_test.cpp
         tests/sound_cues_test.cpp
         tests/sound_assets_test.cpp
         tests/animation_test.cpp

@@ -3,11 +3,13 @@
 
 #include <exception>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include "application/game_flow.h"
 #include "application/game_session.h"
 #include "domain/time/fixed_timestep.h"
 #include "infrastructure/assets/tiled_map_loader.h"
@@ -48,6 +50,10 @@ void report(const application::GameEvent& event) {
         std::cout << "[event] a stalactite trap came loose in " << fell->room << std::endl;
     } else if (const auto* stomped = std::get_if<application::EnemyStomped>(&event)) {
         std::cout << "[event] enemy stomped in " << stomped->room << std::endl;
+    } else if (const auto* reached = std::get_if<application::CheckpointReached>(&event)) {
+        std::cout << "[event] checkpoint reached in " << reached->room << std::endl;
+    } else if (const auto* respawned = std::get_if<application::PlayerRespawned>(&event)) {
+        std::cout << "[event] no hearts left: back at the last checkpoint in " << respawned->room << std::endl;
     } else if (std::holds_alternative<application::GameRestarted>(event)) {
         std::cout << "[event] game over: starting again from the first room" << std::endl;
     } else if (const auto* coin = std::get_if<application::CoinCollected>(&event)) {
@@ -81,7 +87,8 @@ int main() {
         infrastructure::KeyboardInputMapper input_mapper;
         presentation::GameRenderer renderer(window.renderer(), assetPath(""));
         domain::FixedTimestep timestep(kStepNs);
-        application::GameSession session(loadWorld(), "room_01", kSpawnX, kSpawnY);
+        application::GameFlow flow;
+        std::optional<application::GameSession> session;  // created when the player picks Start
         // Sound: after the window so it is closed first; it stays silent if there is no audio.
         infrastructure::AudioPlayer audio(assetPath("sounds/"), soundNames());
         std::cout << "[audio] " << audio.loadedCount() << " sounds loaded"
@@ -89,11 +96,16 @@ int main() {
 
         std::uint64_t previous_ns = SDL_GetTicksNS();
 
-        while (!input_mapper.quitRequested()) {
+        while (!input_mapper.quitRequested() && !flow.quitRequested()) {
             input_mapper.poll();
             if (input_mapper.takeMuteToggle()) {
                 audio.toggleMute();
                 std::cout << "[audio] " << (audio.muted() ? "muted" : "sound on") << std::endl;
+            }
+            for (const domain::MenuCommand command : input_mapper.takeMenuCommands()) {
+                if (flow.handle(command)) {
+                    session.emplace(loadWorld(), "room_01", kSpawnX, kSpawnY);  // a fresh game
+                }
             }
             const domain::InputState input = input_mapper.state();
 
@@ -101,8 +113,10 @@ int main() {
             const int steps = timestep.advance(now_ns - previous_ns);
             previous_ns = now_ns;
 
-            for (int i = 0; i < steps; ++i) {
-                for (const application::GameEvent& event : session.update(input)) {
+            // While paused (or on the title) the clock still runs, but no step is taken.
+            const int game_steps = flow.screen() == application::Screen::Playing && session ? steps : 0;
+            for (int i = 0; i < game_steps; ++i) {
+                for (const application::GameEvent& event : session->update(input)) {
                     report(event);
                     if (const auto sound = presentation::soundFor(event)) {
                         audio.play(presentation::soundName(*sound));
@@ -110,7 +124,7 @@ int main() {
                 }
             }
 
-            renderer.draw(session);
+            renderer.draw(session ? &*session : nullptr, flow);
         }
     } catch (const std::exception& error) {
         std::cerr << "Fatal error: " << error.what() << '\n';

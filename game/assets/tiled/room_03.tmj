@@ -11,7 +11,7 @@
  "tilewidth": 8,
  "tileheight": 8,
  "nextlayerid": 3,
- "nextobjectid": 3,
+ "nextobjectid": 4,
  "properties": [
   {
    "name": "south",
@@ -1261,6 +1261,18 @@
      "type": "",
      "class": "walker",
      "x": 96,
+     "y": 216,
+     "width": 8,
+     "height": 8,
+     "rotation": 0,
+     "visible": true
+    },
+    {
+     "id": 3,
+     "name": "checkpoint",
+     "type": "",
+     "class": "checkpoint",
+     "x": 32,
      "y": 216,
      "width": 8,
      "height": 8,

@@ -17,7 +17,8 @@ ADRs in [`docs/adr/`](docs/adr/) (start there for context) and the pending work 
 | Crouch | `Down` or `S` on firm ground (half height, slow, no jumping; it only stands up when there is room) |
 | Slide | `Down` or `S` while on a ramp (you slide down it; walking on a ramp does not slide) |
 | Mute / unmute | `M` |
-| Quit | `Esc` |
+| Pause / resume | `P` or `Esc` |
+| Menus | `Up`/`Down` (or `W`/`S`), `Enter` or `Space` to pick; `Esc` on the title quits |
 
 ## Build and run
 
@@ -74,6 +75,7 @@ Rooms are Tiled maps (`game/assets/tiled/*.tmj`, JSON, CSV layer data):
   behind that edge. No property means a wall. The id is the file name.
 - **Objects** of class `coin` (rectangles): collectible coins.
 - **Objects** of class `fruit` (rectangles): a healing fruit, it gives back one heart (eaten even at full health).
+- **Objects** of class `checkpoint` (rectangles): where the player comes back after losing every heart.
 - **Objects** of class `walker` (rectangles): a patrolling enemy; the rectangle is where it starts and its hitbox. Put it standing on the floor.
 - **Objects** of class `spikes` (rectangles): the rectangle is the hitbox. A hit costs one of the 3 hearts.
 - **Objects** of class `falling_stalactite` (rectangles): a trap that shakes when the player walks under it,
@@ -96,7 +98,7 @@ same `domain` library as the game, so they always use the real physics.
 ./build/level_to_text game/assets/tiled/room_02.tmj room_02.txt
 ```
 
-Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin, `F` healing fruit, `E` enemy, `^` spikes, `V` stalactite trap, `/` and `\` ramps; header lines
+Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin, `F` healing fruit, `E` enemy, `K` checkpoint, `^` spikes, `V` stalactite trap, `/` and `\` ramps; header lines
 `north/south/east/west: room_id`).
 
 ## Player art
@@ -120,6 +122,13 @@ touching spikes as deadly, so it only approves routes that avoid them (stalactit
 The hazard sprites come from `game/tools/art/make_hazards.py`, the hearts and the hurt frame from
 `make_player_sprites.py`.
 
+## Checkpoints
+
+A `checkpoint` object (text symbol `K`) lights up when touched and becomes where you come back after losing every
+heart, with full health. Coins and fruits you took stay taken, and the enemies and stalactite traps of that room are
+set up again. With no checkpoint reached, losing every heart restarts the whole game. Sprite:
+`game/tools/art/make_checkpoints.py`.
+
 ## Enemies
 
 A `walker` (a cave beetle) paces along the floor and turns around at walls, ramps and ledges. Land on it from above
@@ -133,7 +142,7 @@ and the clock, drawn from `game/tools/art/make_fireflies.py`.
 ## Sound
 
 Sound effects react to the game's events (jump, landing, coin, fruit, hit, slide, the three stages of a
-stalactite trap, stomping an enemy, game restart): `presentation::soundFor` maps each `GameEvent` to a sound and
+stalactite trap, stomping an enemy, reaching a checkpoint, game restart): `presentation::soundFor` maps each `GameEvent` to a sound and
 `infrastructure::AudioPlayer` plays `game/assets/sounds/<name>.wav`. The WAV files are synthesised by
 `game/tools/audio/make_sounds.py` (edit it and rerun to change them). If there is no audio device the game
 runs silently. Press `M` to mute. To hear one without the game: `afplay game/assets/sounds/coin.wav`.

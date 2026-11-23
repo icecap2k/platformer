@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "application/game_flow.h"
 #include "application/game_session.h"
 #include "infrastructure/sdl/texture.h"
 #include "presentation/firefly.h"
@@ -17,16 +18,23 @@ namespace presentation {
 class GameRenderer {
 public:
     // `assets_dir` must end with a path separator and contain sprites/rocks.png,
-    // sprites/sprites.png, sprites/decor.png, sprites/hazards.png, sprites/enemies.png, sprites/fireflies.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
+    // sprites/sprites.png, sprites/decor.png, sprites/hazards.png, sprites/enemies.png, sprites/fireflies.png, sprites/checkpoints.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
     GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir);
 
-    void draw(const application::GameSession& session);
+    // Draws the current screen: the title menu, or the game (frozen behind the pause menu
+    // while paused). `session` may be null only while the flow is on the title screen.
+    void draw(const application::GameSession* session, const application::GameFlow& flow);
 
 private:
+    void drawWorld(const application::GameSession& session, std::uint64_t time_ms);
+    void drawMenu(const application::GameFlow& flow, const std::string& heading, float heading_scale,
+                  float top) const;
+    void drawText(const std::string& text, float centre_x, float y, float scale, SDL_Color colour) const;
     void drawCave() const;
     void drawTiles(const domain::TileMap& map) const;
     void drawScenery(const domain::TileMap& map, std::uint64_t time_ms) const;
     void drawDrip(const domain::TileMap& map, int column, int row, std::uint64_t time_ms) const;
+    void drawCheckpoints(const application::GameSession& session, std::uint64_t time_ms) const;
     void drawFireflies(const application::GameSession& session, std::uint64_t time_ms);
     void drawHazards(const application::GameSession& session) const;
     void drawEnemies(const application::GameSession& session, std::uint64_t time_ms) const;
@@ -42,6 +50,7 @@ private:
     infrastructure::Texture hazards_;
     infrastructure::Texture enemies_;
     infrastructure::Texture fireflies_;
+    infrastructure::Texture checkpoints_;
     infrastructure::Texture cave_;
     // The fireflies' routes depend only on the room, so they are worked out once per room.
     std::string firefly_room_;

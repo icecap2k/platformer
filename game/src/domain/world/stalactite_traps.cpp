@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 
 namespace domain {
 
@@ -89,6 +90,12 @@ const StalactiteState& StalactiteTraps::state(const RoomId& room, std::size_t in
 
 StalactiteState& StalactiteTraps::state(const RoomId& room, std::size_t index) {
     return states_[{room, index}];
+}
+
+void StalactiteTraps::resetRoom(const RoomId& room) {
+    for (auto it = states_.begin(); it != states_.end();) {
+        it = it->first.first == room ? states_.erase(it) : std::next(it);
+    }
 }
 
 }  // namespace domain

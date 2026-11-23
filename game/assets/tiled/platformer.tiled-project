@@ -62,6 +62,17 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "color": "#40e0c8",
+      "drawFill": true,
+      "id": 6,
+      "members": [],
+      "name": "checkpoint",
+      "type": "class",
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

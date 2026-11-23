@@ -71,23 +71,72 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
       hazards_(renderer, assets_dir + "sprites/hazards.png"),
       enemies_(renderer, assets_dir + "sprites/enemies.png"),
       fireflies_(renderer, assets_dir + "sprites/fireflies.png"),
+      checkpoints_(renderer, assets_dir + "sprites/checkpoints.png"),
       cave_(renderer, assets_dir + "background/cave.png") {}
 
-void GameRenderer::draw(const application::GameSession& session) {
+void GameRenderer::draw(const application::GameSession* session, const application::GameFlow& flow) {
     const std::uint64_t time_ms = SDL_GetTicks();
+
+    if (flow.screen() == application::Screen::Title || session == nullptr) {
+        drawCave();
+        drawMenu(flow, "PLATFORMER", 3.0F, 60.0F);
+        drawText("ARROWS + ENTER      M: MUTE", 160.0F, 226.0F, 1.0F, SDL_Color{130, 130, 170, 255});
+        SDL_RenderPresent(renderer_);
+        return;
+    }
+
+    drawWorld(*session, time_ms);
+    if (flow.screen() == application::Screen::Paused) {
+        // Dim the frozen game and put the menu on top.
+        SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer_, 8, 6, 20, 170);
+        SDL_FRect whole{0.0F, 0.0F, 320.0F, 240.0F};
+        SDL_RenderFillRect(renderer_, &whole);
+        drawMenu(flow, "PAUSED", 3.0F, 70.0F);
+        drawText("P OR ESC: RESUME", 160.0F, 226.0F, 1.0F, SDL_Color{130, 130, 170, 255});
+    }
+    SDL_RenderPresent(renderer_);
+}
+
+void GameRenderer::drawWorld(const application::GameSession& session, std::uint64_t time_ms) {
 
     drawCave();
     drawTiles(session.map());
     drawScenery(session.map(), time_ms);
     drawFireflies(session, time_ms);
     drawHazards(session);
+    drawCheckpoints(session, time_ms);
     drawEnemies(session, time_ms);
     drawFruits(session, time_ms);
     drawCoins(session, time_ms);
     drawPlayer(session.player(), time_ms);
     drawHud(session, time_ms);
+}
 
-    SDL_RenderPresent(renderer_);
+// Text from SDL's built-in 8x8 font, centred on `centre_x`; `scale` enlarges it.
+void GameRenderer::drawText(const std::string& text, float centre_x, float y, float scale, SDL_Color colour) const {
+    SDL_SetRenderScale(renderer_, scale, scale);
+    SDL_SetRenderDrawColor(renderer_, colour.r, colour.g, colour.b, colour.a);
+    const float width = static_cast<float>(text.size()) * 8.0F;
+    SDL_RenderDebugText(renderer_, (centre_x - width * scale * 0.5F) / scale, y / scale, text.c_str());
+    SDL_SetRenderScale(renderer_, 1.0F, 1.0F);
+}
+
+// A heading and the items of the flow's menu below it; the selected one is bracketed and brighter.
+void GameRenderer::drawMenu(const application::GameFlow& flow, const std::string& heading, float heading_scale,
+                            float top) const {
+    drawText(heading, 160.0F + 2.0F, top + 2.0F, heading_scale, SDL_Color{20, 16, 40, 255});  // shadow
+    drawText(heading, 160.0F, top, heading_scale, SDL_Color{190, 255, 230, 255});
+
+    float y = top + 8.0F * heading_scale + 24.0F;
+    const auto items = flow.items();
+    for (std::size_t index = 0; index < items.size(); ++index) {
+        const bool selected = static_cast<int>(index) == flow.selected();
+        const std::string text = selected ? "> " + application::label(items[index]) + " <"
+                                          : application::label(items[index]);
+        drawText(text, 160.0F, y, 1.0F, selected ? SDL_Color{255, 232, 130, 255} : SDL_Color{150, 150, 190, 255});
+        y += 14.0F;
+    }
 }
 
 // The cave behind the level: one still picture of the whole screen.
@@ -175,6 +224,20 @@ void GameRenderer::drawDrip(const domain::TileMap& map, int column, int row,
         y = ground_y - kDecorSize;  // the splash frames end in their bottom row
     }
     decor_.draw(renderer_, source, SDL_FRect{x, y, kDecorSize, kDecorSize});
+}
+
+// Checkpoints: a dark crystal lantern until touched; the active one glows (two frames that pulse).
+void GameRenderer::drawCheckpoints(const application::GameSession& session, std::uint64_t time_ms) const {
+    constexpr float kSprite = 8.0F;
+    const domain::Room& room = session.currentRoom();
+    for (std::size_t index = 0; index < room.checkpoints().size(); ++index) {
+        const domain::AABB box = room.checkpoints()[index].bounds();
+        const bool active = session.lastCheckpoint() &&
+                            *session.lastCheckpoint() == std::make_pair(room.id(), index);
+        const int frame = active ? checkpointFrame(time_ms) : 0;
+        checkpoints_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kSprite, 0.0F, kSprite, kSprite},
+                          SDL_FRect{box.x, box.bottom() - kSprite, kSprite, kSprite});
+    }
 }
 
 // Fireflies: pure decoration, behind everything that matters (hazards, enemies, player).

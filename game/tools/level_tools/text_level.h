@@ -25,6 +25,7 @@ namespace level_tools {
 //   3  tile 3 of the tileset    4  tile 4 of the tileset (both solid, drawn as brick)
 //   C  coin on an empty tile    ^  spikes standing on an empty tile
 //   F  a healing fruit on an empty tile
+//   K  a checkpoint on an empty tile (it comes back there after losing every heart)
 //   E  a patrolling enemy (a walker) standing on the floor: put it on an empty tile with ground
 //      under it
 //   V  a stalactite trap hanging in an empty tile (put it under a ceiling)
@@ -49,6 +50,7 @@ struct TextLevel {
     std::vector<domain::FallingStalactite> stalactites;
     std::vector<domain::Fruit> fruits;
     std::vector<domain::Enemy> enemies;
+    std::vector<domain::Checkpoint> checkpoints;
     std::map<domain::Side, domain::RoomId> neighbors;
 };
 

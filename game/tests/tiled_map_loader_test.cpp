@@ -235,6 +235,26 @@ TEST_CASE("parseTiledRoom reads enemies") {
     }
 }
 
+TEST_CASE("parseTiledRoom reads checkpoints") {
+    const std::string text = R"({
+      "width": 4, "height": 2, "tilewidth": 8, "tileheight": 8, "infinite": false,
+      "layers": [
+        { "type": "objectgroup", "name": "objects", "objects": [
+            { "id": 1, "class": "checkpoint", "x": 8, "y": 0, "width": 8, "height": 8 },
+            { "id": 2, "type": "checkpoint", "x": 24, "y": 0 },
+            { "id": 3, "class": "coin", "x": 0, "y": 0, "width": 8, "height": 8 }
+        ] },
+        { "type": "tilelayer", "name": "ground", "width": 4, "height": 2, "data": [0,0,0,0, 1,1,1,1] }
+      ] })";
+    const auto room = parseTiledRoom("r", text);
+    REQUIRE(room.checkpoints().size() == 2);
+    CHECK(room.checkpoints()[0].x == 8.0F);
+    CHECK(room.checkpoints()[1].x == 24.0F);
+    CHECK(room.checkpoints()[1].size == 8.0F);  // no width: the default size
+    CHECK(room.coins().size() == 1);
+    CHECK(parseTiledRoom("r", kSmallMap).checkpoints().empty());
+}
+
 TEST_CASE("parseTiledRoom reads fruits") {
     SUBCASE("every object of class fruit becomes a fruit at its position") {
         const auto room = parseTiledRoom("r", kFruitMap);
@@ -348,6 +368,24 @@ TEST_CASE("the shipped rooms form a consistent world") {
                 CHECK_FALSE(map.isGround(column, row));
                 CHECK(map.isGround(column, row + 1));
                 CHECK(enemy.bounds.bottom() == static_cast<float>((row + 1) * ts));  // feet on the floor
+            }
+        }
+    }
+
+    SUBCASE("checkpoints: one in room_02 (after the spikes) and one in room_03, both resting on the floor") {
+        CHECK(graph.room("room_01").checkpoints().empty());
+        CHECK(graph.room("room_02").checkpoints().size() == 1);
+        CHECK(graph.room("room_03").checkpoints().size() == 1);
+        CHECK(graph.room("room_04").checkpoints().empty());
+        for (const std::string& name : kShippedRooms) {
+            const auto& map = graph.room(name).map();
+            const int ts = map.tileSize();
+            for (const auto& checkpoint : graph.room(name).checkpoints()) {
+                INFO(name << " checkpoint at " << checkpoint.x << "," << checkpoint.y);
+                const int column = static_cast<int>(checkpoint.x) / ts;
+                const int row = static_cast<int>(checkpoint.y) / ts;
+                CHECK_FALSE(map.isGround(column, row));
+                CHECK(map.isGround(column, row + 1));
             }
         }
     }

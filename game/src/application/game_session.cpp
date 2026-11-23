@@ -41,6 +41,19 @@ void GameSession::restart() {
     eaten_fruits_ = domain::PickupCollection{};
     traps_ = domain::StalactiteTraps{};
     enemies_ = domain::EnemyPatrols{};
+    last_checkpoint_.reset();
+}
+
+void GameSession::respawnAtCheckpoint() {
+    const domain::Room& room = world_.room(last_checkpoint_->first);
+    const domain::Checkpoint& checkpoint = room.checkpoints()[last_checkpoint_->second];
+    current_room_ = room.id();
+    player_ = domain::Player{};
+    player_.x = checkpoint.x + (checkpoint.size - player_.width) * 0.5F;
+    player_.y = checkpoint.y + checkpoint.size - player_.height;  // feet on the checkpoint's base
+    // What was waiting in that room is set up again; the rest of the world keeps its progress.
+    traps_.resetRoom(room.id());
+    enemies_.resetRoom(room.id());
 }
 
 bool GameSession::hurtPlayer(std::vector<GameEvent>& events, const domain::AABB& source) {
@@ -49,8 +62,13 @@ bool GameSession::hurtPlayer(std::vector<GameEvent>& events, const domain::AABB&
     if (player_.health > 0) {
         return false;
     }
-    restart();
-    events.push_back(GameRestarted{});
+    if (last_checkpoint_) {
+        respawnAtCheckpoint();
+        events.push_back(PlayerRespawned{current_room_});
+    } else {
+        restart();
+        events.push_back(GameRestarted{});
+    }
     return true;
 }
 
@@ -153,6 +171,15 @@ std::vector<GameEvent> GameSession::update(const domain::InputState& input) {
         eaten_fruits_.collect(here.id(), index);
         const int gained = domain::heal(player_, domain::kFruitHealing);
         events.push_back(FruitEaten{here.id(), index, player_.health, gained});
+    }
+
+    // Checkpoints: touching one that is not the active one makes it the new respawn point.
+    for (std::size_t index = 0; index < here.checkpoints().size(); ++index) {
+        const std::pair<domain::RoomId, std::size_t> id{here.id(), index};
+        if (last_checkpoint_ != id && player_.bounds().overlaps(here.checkpoints()[index].bounds())) {
+            last_checkpoint_ = id;
+            events.push_back(CheckpointReached{here.id(), index});
+        }
     }
 
     // Hazards: a hit costs a heart, throws the player back and gives a moment of

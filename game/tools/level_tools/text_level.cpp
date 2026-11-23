@@ -153,6 +153,12 @@ TextLevel parseTextLevel(const std::string& text) {
                         static_cast<float>(column) * size, static_cast<float>(row) * size, size, size}});
                     break;
                 }
+                case 'K': {
+                    const float size = static_cast<float>(level.tile_size);
+                    level.checkpoints.push_back(domain::Checkpoint{static_cast<float>(column) * size,
+                                                                   static_cast<float>(row) * size, size});
+                    break;
+                }
                 case 'E': {
                     const float size = static_cast<float>(level.tile_size);
                     level.enemies.push_back(domain::Enemy{domain::AABB{
@@ -174,7 +180,7 @@ TextLevel parseTextLevel(const std::string& text) {
                 default:
                     failAt(line_number, std::string("unknown character '") +
                                             cells[static_cast<std::size_t>(column)] +
-                                            "' (use . # B 3 4 / \\ ^ V C F E)");
+                                            "' (use . # B 3 4 / \\ ^ V C F E K)");
             }
             level.tiles[static_cast<std::size_t>(row * level.width + column)] = tile;
         }
@@ -185,7 +191,7 @@ TextLevel parseTextLevel(const std::string& text) {
 domain::Room toRoom(const domain::RoomId& id, const TextLevel& level) {
     return domain::Room(id, domain::TileMap(level.width, level.height, level.tile_size, level.tiles),
                         level.neighbors, level.coins, level.hazards, level.stalactites,
-                        level.fruits, level.enemies);
+                        level.fruits, level.enemies, level.checkpoints);
 }
 
 std::string toTiledJson(const TextLevel& level) {
@@ -199,6 +205,18 @@ std::string toTiledJson(const TextLevel& level) {
 
     json objects = json::array();
     int object_id = 1;
+    for (const domain::Checkpoint& checkpoint : level.checkpoints) {
+        objects.push_back({{"id", object_id++},
+                           {"name", "checkpoint"},
+                           {"type", ""},
+                           {"class", "checkpoint"},
+                           {"x", checkpoint.x},
+                           {"y", checkpoint.y},
+                           {"width", checkpoint.size},
+                           {"height", checkpoint.size},
+                           {"rotation", 0},
+                           {"visible", true}});
+    }
     for (const domain::Enemy& enemy : level.enemies) {
         objects.push_back({{"id", object_id++},
                            {"name", "walker"},
@@ -418,6 +436,18 @@ std::string toText(const domain::Room& room) {
                                      std::to_string(row) + " sits on a solid tile or another item");
         }
         cell = 'E';
+    }
+
+    for (const domain::Checkpoint& checkpoint : room.checkpoints()) {
+        const float size = static_cast<float>(map.tileSize());
+        const int column = std::clamp(static_cast<int>(std::lround(checkpoint.x / size)), 0, map.width() - 1);
+        const int row = std::clamp(static_cast<int>(std::lround(checkpoint.y / size)), 0, map.height() - 1);
+        char& cell = grid[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)];
+        if (cell != '.') {
+            throw std::runtime_error("a checkpoint at column " + std::to_string(column) + ", row " +
+                                     std::to_string(row) + " sits on a solid tile or another item");
+        }
+        cell = 'K';
     }
 
     for (const domain::Fruit& fruit : room.fruits()) {

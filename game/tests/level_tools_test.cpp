@@ -435,6 +435,21 @@ TEST_CASE("text <-> Tiled round trips") {
         CHECK_THROWS_WITH_AS(toText(odd), doctest::Contains("enemy"), std::runtime_error);
     }
 
+    SUBCASE("checkpoints (K) survive text -> tmj -> game and tmj -> text") {
+        const TextLevel level = parseTextLevel("---\n.K.C\n####\n");
+        REQUIRE(level.checkpoints.size() == 1);
+        CHECK(level.checkpoints[0].x == 8.0F);
+
+        const Room room = infrastructure::parseTiledRoom("r", toTiledJson(level));
+        REQUIRE(room.checkpoints().size() == 1);
+        CHECK(room.checkpoints()[0].x == 8.0F);
+
+        const TextLevel again = parseTextLevel(toText(room));
+        REQUIRE(again.checkpoints.size() == 1);
+        CHECK(again.checkpoints[0].x == 8.0F);
+        CHECK(again.tiles == level.tiles);
+    }
+
     SUBCASE("a fruit buried in a solid tile cannot be drawn as text") {
         const Room buried("b", domain::TileMap(2, 1, 8, {kTileGround, kTileGround}), {}, {}, {}, {},
                           {domain::Fruit{0.0F, 0.0F}});

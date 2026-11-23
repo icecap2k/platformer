@@ -19,6 +19,7 @@ Nada podía dañar al jugador. Se quiere una base reutilizable para pinchos, tra
 - Reaparecer en la sala actual con la salud llena (más suave) y pantalla de Game Over inmediata (adelanta la épica de menús): el autor eligió el reinicio total, más duro y clásico.
 
 ## Consecuencias
+- Matizado por el ADR-0015: con un checkpoint activo se reaparece en él; el reinicio total solo ocurre sin ninguno.
 - Si el reinicio total frustra, subir los **checkpoints** del backlog.
 - Eventos `PlayerHurt{room, health_left}` y `GameRestarted` listos para el sonido.
 - Los enemigos reutilizarán `applyDamage` sin cambiar el modelo.

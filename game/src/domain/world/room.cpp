@@ -7,7 +7,7 @@ namespace domain {
 Room::Room(RoomId id, TileMap map, std::map<Side, RoomId> neighbors, std::vector<Coin> coins,
            std::vector<Hazard> hazards,
            std::vector<FallingStalactite> stalactites, std::vector<Fruit> fruits,
-           std::vector<Enemy> enemies)
+           std::vector<Enemy> enemies, std::vector<Checkpoint> checkpoints)
     : id_(std::move(id)),
       map_(std::move(map)),
       neighbors_(std::move(neighbors)),
@@ -15,7 +15,8 @@ Room::Room(RoomId id, TileMap map, std::map<Side, RoomId> neighbors, std::vector
       hazards_(std::move(hazards)),
       stalactites_(std::move(stalactites)),
       fruits_(std::move(fruits)),
-      enemies_(std::move(enemies)) {}
+      enemies_(std::move(enemies)),
+      checkpoints_(std::move(checkpoints)) {}
 
 std::optional<RoomId> Room::neighbor(Side side) const {
     const auto found = neighbors_.find(side);

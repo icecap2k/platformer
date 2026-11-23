@@ -24,6 +24,8 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0012](0012-frutas-que-curan-y-recogibles.md) | Frutas que curan y recogibles | Aceptada |
 | [0013](0013-sonido-por-eventos.md) | Sonido por eventos y efectos sintetizados | Aceptada |
 | [0014](0014-enemigos-que-patrullan-y-se-pisan.md) | Enemigos que patrullan y se pisan | Aceptada |
+| [0015](0015-checkpoints.md) | Checkpoints y reaparición | Aceptada |
+| [0016](0016-pantalla-de-titulo-y-pausa.md) | Pantalla de título y pausa por encima de la partida | Aceptada |
 
 ## Plantilla
 
