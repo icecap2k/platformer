@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "application/game_flow.h"
 #include "application/game_session.h"
 #include "infrastructure/sdl/texture.h"
 #include "presentation/firefly.h"
@@ -20,9 +21,15 @@ public:
     // sprites/sprites.png, sprites/decor.png, sprites/hazards.png, sprites/enemies.png, sprites/fireflies.png, sprites/checkpoints.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
     GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir);
 
-    void draw(const application::GameSession& session);
+    // Draws the current screen: the title menu, or the game (frozen behind the pause menu
+    // while paused). `session` may be null only while the flow is on the title screen.
+    void draw(const application::GameSession* session, const application::GameFlow& flow);
 
 private:
+    void drawWorld(const application::GameSession& session, std::uint64_t time_ms);
+    void drawMenu(const application::GameFlow& flow, const std::string& heading, float heading_scale,
+                  float top) const;
+    void drawText(const std::string& text, float centre_x, float y, float scale, SDL_Color colour) const;
     void drawCave() const;
     void drawTiles(const domain::TileMap& map) const;
     void drawScenery(const domain::TileMap& map, std::uint64_t time_ms) const;

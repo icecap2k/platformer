@@ -1,6 +1,9 @@
 #pragma once
 
+#include <vector>
+
 #include "domain/input/input_state.h"
+#include "domain/input/menu_command.h"
 
 namespace infrastructure {
 
@@ -15,18 +18,23 @@ public:
     // Current state of the abstract actions (held keys).
     domain::InputState state() const;
 
-    // True once the window was closed or ESC was pressed.
-    // Quitting is an application concern, not a game action, so it is not
-    // part of InputState.
+    // True once the window was closed. (Esc is a menu command now: it pauses, resumes, or
+    // leaves from the title.) Quitting is an application concern, not a game action, so it
+    // is not part of InputState.
     bool quitRequested() const { return quit_requested_; }
 
     // True once each time the mute key (M) is pressed. Muting is an application
     // concern, like quitting, so it is not part of InputState.
     bool takeMuteToggle();
 
+    // The menu keys pressed since the last call, in order (Up/W, Down/S, Enter or Space,
+    // Esc, P). Each press counts once; holding a key does not repeat it.
+    std::vector<domain::MenuCommand> takeMenuCommands();
+
 private:
     bool quit_requested_ = false;
     bool mute_toggled_ = false;
+    std::vector<domain::MenuCommand> menu_commands_;
 };
 
 }  // namespace infrastructure

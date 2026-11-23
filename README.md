@@ -17,7 +17,8 @@ ADRs in [`docs/adr/`](docs/adr/) (start there for context) and the pending work 
 | Crouch | `Down` or `S` on firm ground (half height, slow, no jumping; it only stands up when there is room) |
 | Slide | `Down` or `S` while on a ramp (you slide down it; walking on a ramp does not slide) |
 | Mute / unmute | `M` |
-| Quit | `Esc` |
+| Pause / resume | `P` or `Esc` |
+| Menus | `Up`/`Down` (or `W`/`S`), `Enter` or `Space` to pick; `Esc` on the title quits |
 
 ## Build and run
 

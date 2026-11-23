@@ -50,6 +50,12 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 12 | **Checkpoints**: objeto `checkpoint` (símbolo `K`) que se toca y es donde reapareces con salud completa; se conservan monedas y frutas y se reponen enemigos y trampas de esa sala; sin checkpoint, reinicio total como antes; eventos `CheckpointReached` y `PlayerRespawned`, sonido `checkpoint`; `level_check` los comprueba; uno en `room_02` y otro en `room_03`; ADR-0015 y post 19 |
 
+## Hecho (E14 · Título y pausa)
+
+| # | Tarea |
+|---|---|
+| 11 | **Pantalla de título y pausa** (sin Game Over: ver ADR-0016): `GameFlow` por encima de `GameSession`, menús con la fuente de SDL, `P`/`Esc` pausan, "Volver al título" y "Salir", `Empezar` crea una partida limpia; `MenuCommand` como entrada de menús; ADR-0016 y post 20 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
@@ -60,7 +66,7 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 10 | ~~Sonido~~ — hecho en E11 (ver arriba). **Pendiente: escuchar y afinar los sonidos de oído** (no se pudo hacer al construirlos) | P1 | S | — |
 | 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
 | 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |
-| 11 | **Pantalla de título, pausa y Game Over** (estado por encima de `GameSession`) | P1 | M | — |
+| 40 | Menús: sonidos al moverse/elegir, opciones (volumen), mando y fuente propia con acentos | P3 | M | 18 |
 | 13 | **Rendimiento de `level_check`**: ya tarda ~40-65 s (61 s con la rampa) y crece con cada sala y cada estado nuevo; poda/ordenación o etiqueta de test lento | P1 | S | — |
 | 14 | **CI** en GitHub Actions (build + `ctest`) e instalar `gh` para abrir PRs desde la terminal | P1 | S | 13 |
 | 15 | **Verificar el proyecto de Tiled** abriendo `game/assets/tiled/platformer.tiled-project` y colocando un pincho a mano | P1 | S | — |
