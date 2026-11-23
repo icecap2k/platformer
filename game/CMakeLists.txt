@@ -130,6 +130,7 @@ if(PLATFORMER_BUILD_TESTS)
         tests/fruit_test.cpp
         tests/enemy_test.cpp
         tests/checkpoint_test.cpp
+        tests/exit_test.cpp
         tests/game_flow_test.cpp
         tests/sound_cues_test.cpp
         tests/sound_assets_test.cpp

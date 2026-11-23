@@ -18,7 +18,7 @@ namespace presentation {
 class GameRenderer {
 public:
     // `assets_dir` must end with a path separator and contain sprites/rocks.png,
-    // sprites/sprites.png, sprites/decor.png, sprites/hazards.png, sprites/enemies.png, sprites/fireflies.png, sprites/checkpoints.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
+    // sprites/sprites.png, sprites/decor.png, sprites/hazards.png, sprites/enemies.png, sprites/fireflies.png, sprites/checkpoints.png, sprites/exit.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
     GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir);
 
     // Draws the current screen: the title menu, or the game (frozen behind the pause menu
@@ -34,6 +34,7 @@ private:
     void drawTiles(const domain::TileMap& map) const;
     void drawScenery(const domain::TileMap& map, std::uint64_t time_ms) const;
     void drawDrip(const domain::TileMap& map, int column, int row, std::uint64_t time_ms) const;
+    void drawExits(const application::GameSession& session, std::uint64_t time_ms) const;
     void drawCheckpoints(const application::GameSession& session, std::uint64_t time_ms) const;
     void drawFireflies(const application::GameSession& session, std::uint64_t time_ms);
     void drawHazards(const application::GameSession& session) const;
@@ -51,6 +52,7 @@ private:
     infrastructure::Texture enemies_;
     infrastructure::Texture fireflies_;
     infrastructure::Texture checkpoints_;
+    infrastructure::Texture exit_;
     infrastructure::Texture cave_;
     // The fireflies' routes depend only on the room, so they are worked out once per room.
     std::string firefly_room_;

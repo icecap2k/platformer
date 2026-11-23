@@ -42,6 +42,7 @@ void GameSession::restart() {
     traps_ = domain::StalactiteTraps{};
     enemies_ = domain::EnemyPatrols{};
     last_checkpoint_.reset();
+    won_ = false;
 }
 
 void GameSession::respawnAtCheckpoint() {
@@ -131,6 +132,9 @@ bool GameSession::updateEnemies(std::vector<GameEvent>& events) {
 
 std::vector<GameEvent> GameSession::update(const domain::InputState& input) {
     std::vector<GameEvent> events;
+    if (won_) {
+        return events;
+    }
     const domain::Room& room = currentRoom();
 
     const bool was_on_ground = player_.on_ground;
@@ -179,6 +183,15 @@ std::vector<GameEvent> GameSession::update(const domain::InputState& input) {
         if (last_checkpoint_ != id && player_.bounds().overlaps(here.checkpoints()[index].bounds())) {
             last_checkpoint_ = id;
             events.push_back(CheckpointReached{here.id(), index});
+        }
+    }
+
+    // The exit: touching it wins the game, and the session stops there.
+    for (const domain::Exit& exit : here.exits()) {
+        if (player_.bounds().overlaps(exit.bounds())) {
+            won_ = true;
+            events.push_back(GameWon{collected_coins_.count(), world_.totalCoins()});
+            return events;
         }
     }
 

@@ -37,16 +37,24 @@ struct CheckpointStatus {
     bool touchable = false;
 };
 
+struct ExitStatus {
+    domain::RoomId room;
+    std::size_t index = 0;
+    domain::Exit exit;
+    bool touchable = false;
+};
+
 struct ReachabilityReport {
     std::map<domain::RoomId, bool> room_reachable;  // the player can enter it
     std::map<domain::RoomId, bool> room_standable;  // ... and stand on something in it
     std::vector<CoinStatus> coins;
     std::vector<FruitStatus> fruits;
     std::vector<CheckpointStatus> checkpoints;
+    std::vector<ExitStatus> exits;
     std::size_t states_explored = 0;
     bool truncated = false;
 
-    // True when every room can be reached and every coin, fruit and checkpoint touched.
+    // True when every room can be reached and every coin, fruit, checkpoint and exit touched.
     bool allOk() const;
 };
 

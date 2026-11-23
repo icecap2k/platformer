@@ -86,6 +86,10 @@ int checkpointFrame(std::uint64_t time_ms) {
     return 1 + static_cast<int>((time_ms / 350) % 2);
 }
 
+int exitFrame(std::uint64_t time_ms) {
+    return static_cast<int>((time_ms / 600) % 2);
+}
+
 int enemyFrame(std::uint64_t time_ms) {
     return static_cast<int>((time_ms / kEnemyFrameMs) % 2);
 }

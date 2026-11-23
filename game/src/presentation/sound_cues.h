@@ -24,6 +24,7 @@ enum class Sound {
     StalactiteCrash,    // it shatters
     Checkpoint,         // a checkpoint lights up
     Stomp,              // the player lands on an enemy
+    Win,                // the exit is reached
     Restart,            // all hearts lost: the game starts over
 };
 

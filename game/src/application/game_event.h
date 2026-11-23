@@ -78,6 +78,12 @@ struct CheckpointReached {
     std::size_t index;
 };
 
+// The player touched the exit of the cave: the game is won.
+struct GameWon {
+    int coins;        // collected
+    int total_coins;  // in the whole world
+};
+
 // The player lost its last heart and came back at the last checkpoint with full health.
 struct PlayerRespawned {
     domain::RoomId room;
@@ -89,6 +95,6 @@ struct GameRestarted {};
 using GameEvent = std::variant<RoomChanged, CoinCollected, FruitEaten, PlayerJumped, PlayerLanded,
                                SlideStarted, PlayerHurt, StalactiteWarned, StalactiteFell,
                                StalactiteShattered, EnemyStomped, CheckpointReached, PlayerRespawned,
-                               GameRestarted>;
+                               GameWon, GameRestarted>;
 
 }  // namespace application

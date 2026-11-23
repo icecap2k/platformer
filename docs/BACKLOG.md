@@ -63,6 +63,12 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 16 | **Jump buffering** (`kJumpBufferSteps = 6`, un salto pulsado justo antes de aterrizar sale al tocar suelo) y **sacudida de pantalla** al recibir daño (función sin estado de `invulnerable_steps`); `level_check` ignora el buffer a propósito; ADR-0017 y post 21 |
 | 10, 38, 15 | Comprobado por el autor: los sonidos suenan bien (incluidos `stomp` y `checkpoint`) y el proyecto de Tiled funciona |
 
+## Hecho (E16 · Meta y más salas)
+
+| # | Tarea |
+|---|---|
+| 20 | **Salida final y salas 05-09**: objeto `exit` (símbolo `X`), `GameWon`, pantalla de final con las monedas, sonido `win`, cinco salas nuevas (13 monedas, 7 escarabajos) generadas por `make_rooms_05_09.py`; `level_check` exige tocar la salida; ADR-0018 y post 22 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
@@ -77,7 +83,6 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 17 | Partículas: polvo al aterrizar, destello de moneda, **fragmentos al romperse la estalactita** | P2 | S | — |
 | 18 | **Mando** (`GamepadInputMapper`; decidir cómo combinar con el teclado) | P2 | M | — |
 | 19 | **Guardado de partida** (usar el `id` del objeto de Tiled, no el índice) | P2 | M | 8, 11 |
-| 20 | Más salas y progresión (room_05+, meta, final) | P2 | L | 9 |
 | 21 | Pinchos en techo y en paredes (orientación), plataformas de un solo sentido, puertas con llave, tiles nuevos | P2 | M | — |
 | 22 | Que `level_check` también tenga en cuenta las estalactitas (hoy se ignoran) o que se marque en el informe | P2 | M | 13 |
 | 23 | Reorganizar `domain/` por funcionalidad cuando lleguen los enemigos (`domain/enemies/`, …) | P2 | S | 9 |
@@ -93,4 +98,5 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 - Cada estado nuevo (salud, invulnerabilidad, estalactitas) agranda la búsqueda de `level_check`; ya pasó con el salto (tarea 13).
 - Generalizar los coleccionables (tarea 8) **antes** de duplicar código para las frutas.
 - Los enemigos tampoco están en `level_check`: un nivel podría exigir pisarlos o esquivarlos sin que el comprobador lo sepa.
+- `level_check` explora ~16 M de estados (límite 20 M): otra sala o mecánica puede pasarse; ver tarea 13.
 - Las estalactitas no están en el análisis de alcanzabilidad: un nivel podría ser "ganable" según `level_check` y exigir esquivarlas.

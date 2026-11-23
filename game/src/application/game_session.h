@@ -26,6 +26,7 @@ public:
                 float spawn_y);
 
     // Advances one step and returns what happened during it (usually nothing).
+    // Once the game is won it no longer advances (and returns nothing).
     std::vector<GameEvent> update(const domain::InputState& input);
 
     const domain::Player& player() const { return player_; }
@@ -37,6 +38,7 @@ public:
     int totalCoins() const { return world_.totalCoins(); }
     const domain::StalactiteTraps& stalactiteTraps() const { return traps_; }
     const domain::EnemyPatrols& enemyPatrols() const { return enemies_; }
+    bool won() const { return won_; }
 
     // The checkpoint where the player comes back (room, index in that room's list), if any was reached.
     const std::optional<std::pair<domain::RoomId, std::size_t>>& lastCheckpoint() const {
@@ -70,6 +72,7 @@ private:
     domain::StalactiteTraps traps_;
     domain::EnemyPatrols enemies_;
     std::optional<std::pair<domain::RoomId, std::size_t>> last_checkpoint_;
+    bool won_ = false;
 };
 
 }  // namespace application

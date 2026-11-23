@@ -54,6 +54,8 @@ void report(const application::GameEvent& event) {
         std::cout << "[event] checkpoint reached in " << reached->room << std::endl;
     } else if (const auto* respawned = std::get_if<application::PlayerRespawned>(&event)) {
         std::cout << "[event] no hearts left: back at the last checkpoint in " << respawned->room << std::endl;
+    } else if (const auto* won = std::get_if<application::GameWon>(&event)) {
+        std::cout << "[event] the exit! " << won->coins << "/" << won->total_coins << " coins" << std::endl;
     } else if (std::holds_alternative<application::GameRestarted>(event)) {
         std::cout << "[event] game over: starting again from the first room" << std::endl;
     } else if (const auto* coin = std::get_if<application::CoinCollected>(&event)) {
@@ -73,7 +75,8 @@ std::vector<std::string> soundNames() {
 
 domain::RoomGraph loadWorld() {
     std::vector<domain::Room> rooms;
-    for (const char* name : {"room_01", "room_02", "room_03", "room_04"}) {
+    for (const char* name : {"room_01", "room_02", "room_03", "room_04", "room_05", "room_06", "room_07",
+                              "room_08", "room_09"}) {
         rooms.push_back(infrastructure::loadTiledRoom(assetPath(std::string("tiled/") + name + ".tmj")));
     }
     return domain::RoomGraph(std::move(rooms));
@@ -118,6 +121,9 @@ int main() {
             for (int i = 0; i < game_steps; ++i) {
                 for (const application::GameEvent& event : session->update(input)) {
                     report(event);
+                    if (std::holds_alternative<application::GameWon>(event)) {
+                        flow.win();
+                    }
                     if (const auto sound = presentation::soundFor(event)) {
                         audio.play(presentation::soundName(*sound));
                     }

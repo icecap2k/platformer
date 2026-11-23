@@ -106,6 +106,34 @@ TEST_CASE("pausing and resuming") {
     }
 }
 
+TEST_CASE("winning shows the ending, with back to title and quit") {
+    GameFlow flow = playing();
+    flow.win();
+    CHECK(flow.screen() == Screen::Won);
+    CHECK(flow.items() == std::vector<MenuItem>{MenuItem::BackToTitle, MenuItem::Quit});
+    CHECK(flow.selected() == 0);
+
+    SUBCASE("P does nothing there") {
+        flow.handle(MenuCommand::Pause);
+        CHECK(flow.screen() == Screen::Won);
+    }
+    SUBCASE("Back to title, then Start asks for a fresh game") {
+        CHECK_FALSE(flow.handle(MenuCommand::Confirm));
+        CHECK(flow.screen() == Screen::Title);
+        CHECK(flow.handle(MenuCommand::Confirm));
+    }
+    SUBCASE("Esc also goes back to the title") {
+        flow.handle(MenuCommand::Back);
+        CHECK(flow.screen() == Screen::Title);
+        CHECK_FALSE(flow.quitRequested());
+    }
+    SUBCASE("Quit") {
+        flow.handle(MenuCommand::Down);
+        flow.handle(MenuCommand::Confirm);
+        CHECK(flow.quitRequested());
+    }
+}
+
 TEST_CASE("every menu item has a label") {
     for (const MenuItem item : {MenuItem::Start, MenuItem::Continue, MenuItem::BackToTitle, MenuItem::Quit}) {
         CHECK_FALSE(application::label(item).empty());

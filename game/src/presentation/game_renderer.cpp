@@ -74,6 +74,7 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
       enemies_(renderer, assets_dir + "sprites/enemies.png"),
       fireflies_(renderer, assets_dir + "sprites/fireflies.png"),
       checkpoints_(renderer, assets_dir + "sprites/checkpoints.png"),
+      exit_(renderer, assets_dir + "sprites/exit.png"),
       cave_(renderer, assets_dir + "background/cave.png") {}
 
 void GameRenderer::draw(const application::GameSession* session, const application::GameFlow& flow) {
@@ -100,6 +101,19 @@ void GameRenderer::draw(const application::GameSession* session, const applicati
     }
     drawWorld(*session, time_ms);
     SDL_SetRenderViewport(renderer_, nullptr);
+
+    if (flow.screen() == application::Screen::Won) {
+        // The ending: the cave, the result and a menu.
+        drawCave();
+        drawText("YOU ESCAPED", 160.0F + 2.0F, 52.0F + 2.0F, 3.0F, SDL_Color{20, 16, 40, 255});
+        drawText("YOU ESCAPED", 160.0F, 52.0F, 3.0F, SDL_Color{255, 240, 150, 255});
+        drawText("COINS " + std::to_string(session->collectedCoins().count()) + "/" +
+                     std::to_string(session->totalCoins()),
+                 160.0F, 98.0F, 1.0F, SDL_Color{255, 232, 130, 255});
+        drawMenu(flow, "", 1.0F, 118.0F - 8.0F - 24.0F);
+        SDL_RenderPresent(renderer_);
+        return;
+    }
     if (flow.screen() == application::Screen::Paused) {
         // Dim the frozen game and put the menu on top.
         SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
@@ -119,6 +133,7 @@ void GameRenderer::drawWorld(const application::GameSession& session, std::uint6
     drawScenery(session.map(), time_ms);
     drawFireflies(session, time_ms);
     drawHazards(session);
+    drawExits(session, time_ms);
     drawCheckpoints(session, time_ms);
     drawEnemies(session, time_ms);
     drawFruits(session, time_ms);
@@ -238,6 +253,16 @@ void GameRenderer::drawDrip(const domain::TileMap& map, int column, int row,
         y = ground_y - kDecorSize;  // the splash frames end in their bottom row
     }
     decor_.draw(renderer_, source, SDL_FRect{x, y, kDecorSize, kDecorSize});
+}
+
+// The cave exit: a glowing archway standing on the floor, centred on its hitbox.
+void GameRenderer::drawExits(const application::GameSession& session, std::uint64_t time_ms) const {
+    constexpr float kSprite = 16.0F;
+    for (const domain::Exit& exit : session.currentRoom().exits()) {
+        const domain::AABB box = exit.bounds();
+        exit_.draw(renderer_, SDL_FRect{static_cast<float>(exitFrame(time_ms)) * kSprite, 0.0F, kSprite, kSprite},
+                   SDL_FRect{box.x + box.width * 0.5F - kSprite * 0.5F, box.bottom() - kSprite, kSprite, kSprite});
+    }
 }
 
 // Checkpoints: a dark crystal lantern until touched; the active one glows (two frames that pulse).

@@ -21,6 +21,7 @@ TEST_CASE("soundFor maps every event to its sound") {
     CHECK(soundFor(GameEvent{EnemyStomped{"r", 0}}) == Sound::Stomp);
     CHECK(soundFor(GameEvent{CheckpointReached{"r", 0}}) == Sound::Checkpoint);
     CHECK(soundFor(GameEvent{PlayerRespawned{"r"}}) == Sound::Restart);
+    CHECK(soundFor(GameEvent{GameWon{5, 12}}) == Sound::Win);
     CHECK(soundFor(GameEvent{GameRestarted{}}) == Sound::Restart);
 
     SUBCASE("changing room is silent") {
@@ -45,13 +46,13 @@ TEST_CASE("every sound has a distinct file name") {
 }
 
 TEST_CASE("allSounds lists every sound once") {
-    CHECK(allSounds().size() == 12);
+    CHECK(allSounds().size() == 13);
     // Every sound an event can produce is in the list (so the player has loaded it).
     const std::vector<GameEvent> events = {PlayerJumped{},        PlayerLanded{2.0F},       CoinCollected{"r", 0, 1},
                                            FruitEaten{"r", 0, 3, 1}, PlayerHurt{"r", 1},     SlideStarted{},
                                            StalactiteWarned{"r", 0}, StalactiteFell{"r", 0}, StalactiteShattered{"r", 0},
                                            EnemyStomped{"r", 0}, CheckpointReached{"r", 0},
-                                           PlayerRespawned{"r"}, GameRestarted{}};
+                                           PlayerRespawned{"r"}, GameWon{1, 2}, GameRestarted{}};
     const auto sounds = allSounds();
     for (const GameEvent& event : events) {
         const auto sound = soundFor(event);

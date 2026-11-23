@@ -233,7 +233,8 @@ TEST_CASE("GameSession coins") {
 
 TEST_CASE("GameSession with the shipped rooms") {
     std::vector<Room> rooms;
-    for (const char* name : {"room_01", "room_02", "room_03", "room_04"}) {
+    for (const char* name : {"room_01", "room_02", "room_03", "room_04", "room_05", "room_06", "room_07", "room_08",
+                             "room_09"}) {
         rooms.push_back(infrastructure::loadTiledRoom(std::string(PLATFORMER_ASSETS_DIR) +
                                                       "/tiled/" + name + ".tmj"));
     }
@@ -590,7 +591,8 @@ TEST_CASE("GameSession announces jumps and landings") {
 
 TEST_CASE("GameSession announces the start of a slide") {
     std::vector<Room> rooms;
-    for (const char* name : {"room_01", "room_02", "room_03", "room_04"}) {
+    for (const char* name : {"room_01", "room_02", "room_03", "room_04", "room_05", "room_06", "room_07", "room_08",
+                             "room_09"}) {
         rooms.push_back(infrastructure::loadTiledRoom(std::string(PLATFORMER_ASSETS_DIR) + "/tiled/" + name + ".tmj"));
     }
     GameSession session(RoomGraph(std::move(rooms)), "room_01", 244.0F, 100.0F);  // above the top of the ramp (clear of the platform over it)
