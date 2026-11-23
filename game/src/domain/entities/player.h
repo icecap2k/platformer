@@ -24,6 +24,7 @@ struct Player {
 
     // Jump feel (see physics/player_physics.h).
     int coyote_steps = 0;     // steps left in which a jump is still allowed after leaving the ground
+    int jump_buffer_steps = 0;  // steps left in which a jump pressed too early is still remembered
     bool jump_held = false;   // was the jump button down on the previous step?
     bool crouching = false;   // the box is kCrouchHeight tall (it may be forced by a low ceiling)
 

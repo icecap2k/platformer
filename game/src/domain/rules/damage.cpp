@@ -17,6 +17,7 @@ void applyDamage(Player& player, int amount, int direction) {
     player.hurt_direction = direction < 0 ? -1 : 1;
     player.velocity_y = -kHurtHopSpeed;  // a small hop, much lower than a jump
     player.on_ground = false;
+    player.jump_buffer_steps = 0;  // a jump pressed just before the hit is forgotten
     player.coyote_steps = 0;  // no jumping off the ground it was just thrown from
     player.slide_steps = 0;   // a hit ends any slide
 }

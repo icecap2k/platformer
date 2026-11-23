@@ -26,6 +26,7 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0014](0014-enemigos-que-patrullan-y-se-pisan.md) | Enemigos que patrullan y se pisan | Aceptada |
 | [0015](0015-checkpoints.md) | Checkpoints y reaparición | Aceptada |
 | [0016](0016-pantalla-de-titulo-y-pausa.md) | Pantalla de título y pausa por encima de la partida | Aceptada |
+| [0017](0017-jump-buffering-y-sacudida-de-pantalla.md) | Jump buffering y sacudida de pantalla | Aceptada |
 
 ## Plantilla
 

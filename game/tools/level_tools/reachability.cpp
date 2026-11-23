@@ -157,6 +157,10 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
         for (const domain::InputState& input : inputs) {
             State next = current;
             domain::stepPlayer(next.player, input, room.map());
+            // Jump buffering (ADR-0017) cannot reach anything new: a remembered press equals pressing
+            // again on the landing step, which the search already tries. Forgetting it keeps the
+            // state space as small as before (remembering it multiplied it past the search limit).
+            next.player.jump_buffer_steps = 0;
             domain::confineToMap(next.player, room.map(), domain::openEdgesOf(room));
             if (const auto side = domain::exitedThrough(next.player, room.map())) {
                 const domain::RoomId target = *room.neighbor(*side);  // a copy: neighbor() returns by value

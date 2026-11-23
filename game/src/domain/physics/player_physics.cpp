@@ -239,13 +239,27 @@ StepResult stepPlayer(Player& player, const InputState& input, const TileMap& ma
     }
 
     // Jump: needs a fresh press (not held since last step) and ground, or the
-    // grace period after leaving it. Not while hurt or crouching.
-    if (!hurt && !player.crouching && input.jump && !player.jump_held && player.coyote_steps > 0) {
+    // grace period after leaving it. Not while hurt or crouching. A fresh press is
+    // remembered for kJumpBufferSteps, so pressing a moment BEFORE landing still jumps
+    // on landing.
+    if (input.jump && !player.jump_held) {
+        player.jump_buffer_steps = kJumpBufferSteps;
+    }
+    if (hurt) {
+        player.jump_buffer_steps = 0;
+    }
+    if (!hurt && !player.crouching && player.jump_buffer_steps > 0 && player.coyote_steps > 0) {
         player.velocity_y = -kJumpSpeed;
         player.coyote_steps = 0;  // spent: no double jump
+        player.jump_buffer_steps = 0;
         result.jumped = true;
-    } else if (!player.on_ground && player.coyote_steps > 0) {
-        --player.coyote_steps;
+    } else {
+        if (player.jump_buffer_steps > 0) {
+            --player.jump_buffer_steps;  // like coyote time: spent after the check
+        }
+        if (!player.on_ground && player.coyote_steps > 0) {
+            --player.coyote_steps;
+        }
     }
 
     // Variable height: letting go while rising cuts the jump short (but never

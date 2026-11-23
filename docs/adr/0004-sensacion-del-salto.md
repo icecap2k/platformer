@@ -16,7 +16,7 @@ En el dominio (`domain/physics/player_physics.{h,cpp}`, valores en pasos de 1/60
 - El coyote time empezó en 6 pasos y se bajó a 4 al probarlo.
 
 ## Alternativas descartadas
-- *Jump buffering* (recordar un salto pulsado justo antes de aterrizar): lo sugirió la revisión externa; está en el backlog, no se hizo.
+- *Jump buffering* (recordar un salto pulsado justo antes de aterrizar): lo sugirió la revisión externa; se descartó entonces y se añadió después, ver ADR-0017.
 
 ## Consecuencias
 - Estado nuevo en `Player` (`coyote_steps`, `jump_held`) que el comprobador de niveles debe incluir en su clave (ADR-0003).

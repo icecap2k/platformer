@@ -3,11 +3,13 @@
 #include <algorithm>
 #include <string>
 
+#include "domain/rules/damage.h"
 #include "presentation/animation.h"
 #include "presentation/autotile.h"
 #include "presentation/decoration.h"
 #include "presentation/drip.h"
 #include "presentation/firefly.h"
+#include "presentation/screen_shake.h"
 
 namespace presentation {
 
@@ -85,7 +87,19 @@ void GameRenderer::draw(const application::GameSession* session, const applicati
         return;
     }
 
+    // A hit shakes the world (and the HUD), not the pause menu: shift the whole picture by
+    // moving the viewport; the strip it uncovers is left black.
+    const bool shaking = flow.screen() == application::Screen::Playing;
+    const ShakeOffset shake = shaking ? screenShake(session->player().invulnerable_steps, domain::kInvulnerableSteps)
+                                      : ShakeOffset{};
+    if (shake.x != 0 || shake.y != 0) {
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
+        SDL_RenderClear(renderer_);
+        const SDL_Rect viewport{shake.x, shake.y, 320, 240};
+        SDL_SetRenderViewport(renderer_, &viewport);
+    }
     drawWorld(*session, time_ms);
+    SDL_SetRenderViewport(renderer_, nullptr);
     if (flow.screen() == application::Screen::Paused) {
         // Dim the frozen game and put the menu on top.
         SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
