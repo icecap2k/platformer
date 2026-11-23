@@ -67,8 +67,8 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
 | 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |
 | 40 | Menús: sonidos al moverse/elegir, opciones (volumen), mando y fuente propia con acentos | P3 | M | 18 |
-| 13 | **Rendimiento de `level_check`**: ya tarda ~40-65 s (61 s con la rampa) y crece con cada sala y cada estado nuevo; poda/ordenación o etiqueta de test lento | P1 | S | — |
-| 14 | **CI** en GitHub Actions (build + `ctest`) e instalar `gh` para abrir PRs desde la terminal | P1 | S | 13 |
+| 13 | **Rendimiento de `level_check`**: con la compilación por defecto tarda ~45 s, pero en **Release tarda ~4 s** (probado); decidir si `cmake` usa Release por defecto, y la poda sigue haciendo falta cuando crezca | P2 | S | — |
+| 14 | ~~CI en GitHub Actions~~ — hecho (`.github/workflows/ci.yml`: macOS, SDL3 con Homebrew, build Release y `ctest`; pasó en el PR #7). Pendiente: activar la protección de `main` exigiéndolo | P2 | S | — |
 | 15 | **Verificar el proyecto de Tiled** abriendo `game/assets/tiled/platformer.tiled-project` y colocando un pincho a mano | P1 | S | — |
 | 16 | **Jump buffering** (la revisión externa lo sugirió junto al coyote time) y *screen shake* al recibir daño | P2 | S | — |
 | 17 | Partículas: polvo al aterrizar, destello de moneda, **fragmentos al romperse la estalactita** | P2 | S | — |
