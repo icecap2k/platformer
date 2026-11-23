@@ -18,6 +18,11 @@ inline constexpr float kMaxFallSpeed = 6.0F;
 // many airborne steps.
 // (4 steps = about 0.07 s; it was 6.)
 inline constexpr int kCoyoteSteps = 4;
+// Jump buffering: a fresh jump press that cannot be used yet (still in the air, no
+// coyote time left) is remembered for this many steps, and the jump happens on the
+// first step the player could jump. (6 steps = 0.1 s.) Hurt or crouching players cannot
+// jump, and being hit forgets the press.
+inline constexpr int kJumpBufferSteps = 6;
 // Being hurt: the player is thrown back at this speed (pixels per step) for a
 // few steps, with a small hop (kHurtHopSpeed, applied by rules/damage.h).
 // 0.6 px/step for kHurtSteps steps is about 8 px (it was 1.2 = 17 px).

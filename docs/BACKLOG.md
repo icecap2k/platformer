@@ -56,21 +56,24 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 11 | **Pantalla de título y pausa** (sin Game Over: ver ADR-0016): `GameFlow` por encima de `GameSession`, menús con la fuente de SDL, `P`/`Esc` pausan, "Volver al título" y "Salir", `Empezar` crea una partida limpia; `MenuCommand` como entrada de menús; ADR-0016 y post 20 |
 
+## Hecho (E15 · Jump buffering y sacudida)
+
+| # | Tarea |
+|---|---|
+| 16 | **Jump buffering** (`kJumpBufferSteps = 6`, un salto pulsado justo antes de aterrizar sale al tocar suelo) y **sacudida de pantalla** al recibir daño (función sin estado de `invulnerable_steps`); `level_check` ignora el buffer a propósito; ADR-0017 y post 21 |
+| 10, 38, 15 | Comprobado por el autor: los sonidos suenan bien (incluidos `stomp` y `checkpoint`) y el proyecto de Tiled funciona |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
 |---|---|---|---|---|
 | 8 | ~~Frutas que curan~~ — hecho en E10 (ver arriba). Pendiente: un `Collectible` genérico con tipo cuando haya un tercer tipo de recogible | P3 | S | — |
 | 9 | ~~Enemigos básicos~~ — hecho en E12 (ver arriba). Pendiente: gravedad y rampas para enemigos, más tipos (voladores, perseguidores), otros comportamientos | P2 | M | — |
-| 38 | **Afinar de oído el sonido `stomp`** y el color del escarabajo (ya contrasta, pero falta oírlo) | P3 | S | — |
-| 10 | ~~Sonido~~ — hecho en E11 (ver arriba). **Pendiente: escuchar y afinar los sonidos de oído** (no se pudo hacer al construirlos) | P1 | S | — |
 | 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
 | 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |
 | 40 | Menús: sonidos al moverse/elegir, opciones (volumen), mando y fuente propia con acentos | P3 | M | 18 |
 | 13 | **Rendimiento de `level_check`**: con la compilación por defecto tarda ~45 s, pero en **Release tarda ~4 s** (probado); decidir si `cmake` usa Release por defecto, y la poda sigue haciendo falta cuando crezca | P2 | S | — |
 | 14 | ~~CI en GitHub Actions~~ — hecho (`.github/workflows/ci.yml`: macOS, SDL3 con Homebrew, build Release y `ctest`; pasó en el PR #7). Pendiente: activar la protección de `main` exigiéndolo | P2 | S | — |
-| 15 | **Verificar el proyecto de Tiled** abriendo `game/assets/tiled/platformer.tiled-project` y colocando un pincho a mano | P1 | S | — |
-| 16 | **Jump buffering** (la revisión externa lo sugirió junto al coyote time) y *screen shake* al recibir daño | P2 | S | — |
 | 17 | Partículas: polvo al aterrizar, destello de moneda, **fragmentos al romperse la estalactita** | P2 | S | — |
 | 18 | **Mando** (`GamepadInputMapper`; decidir cómo combinar con el teclado) | P2 | M | — |
 | 19 | **Guardado de partida** (usar el `id` del objeto de Tiled, no el índice) | P2 | M | 8, 11 |
