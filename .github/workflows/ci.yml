@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    # The game is developed on macOS and SDL3 comes from Homebrew there.
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SDL3
+        run: brew install sdl3
+
+      - name: Configure
+        run: cmake -S game -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      # Includes `shipped_levels_reachable` (about 45-65 s): it proves every shipped room, coin,
+      # fruit and checkpoint can be reached with the real physics.
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
