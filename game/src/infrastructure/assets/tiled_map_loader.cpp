@@ -178,6 +178,31 @@ std::vector<domain::Checkpoint> readCheckpoints(const json& map) {
     return checkpoints;
 }
 
+// Exits are rectangle objects of class "exit", read like coins.
+std::vector<domain::Exit> readExits(const json& map) {
+    std::vector<domain::Exit> exits;
+    for (const json& layer : map.at("layers")) {
+        if (layer.at("type").get<std::string>() != "objectgroup") {
+            continue;
+        }
+        for (const json& object : layer.at("objects")) {
+            const std::string kind = object.value("class", object.value("type", std::string()));
+            if (kind != "exit") {
+                continue;
+            }
+            domain::Exit exit;
+            exit.x = object.at("x").get<float>();
+            exit.y = object.at("y").get<float>();
+            const float width = object.value("width", 0.0F);
+            if (width > 0.0F) {
+                exit.size = width;
+            }
+            exits.push_back(exit);
+        }
+    }
+    return exits;
+}
+
 // Spikes are rectangle objects of class "spikes": the rectangle IS the hitbox.
 std::vector<domain::Hazard> readHazards(const json& map) {
     std::vector<domain::Hazard> hazards;
@@ -234,7 +259,7 @@ domain::Room parseTiledRoom(const std::string& room_id, const std::string& json_
         const json map = json::parse(json_text);
         return domain::Room(room_id, readTiles(map), readNeighbors(map), readCoins(map),
                             readHazards(map), readStalactites(map), readFruits(map), readEnemies(map),
-                            readCheckpoints(map));
+                            readCheckpoints(map), readExits(map));
     } catch (const json::exception& error) {
         throw std::runtime_error("Invalid Tiled map '" + room_id + "': " + error.what());
     } catch (const std::invalid_argument& error) {

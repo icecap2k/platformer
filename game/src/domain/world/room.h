@@ -8,6 +8,7 @@
 #include "domain/enemies/enemy.h"
 #include "domain/world/checkpoint.h"
 #include "domain/world/coin.h"
+#include "domain/world/exit.h"
 #include "domain/world/falling_stalactite.h"
 #include "domain/world/fruit.h"
 #include "domain/world/hazard.h"
@@ -26,7 +27,8 @@ public:
     Room(RoomId id, TileMap map, std::map<Side, RoomId> neighbors = {},
          std::vector<Coin> coins = {}, std::vector<Hazard> hazards = {},
          std::vector<FallingStalactite> stalactites = {}, std::vector<Fruit> fruits = {},
-         std::vector<Enemy> enemies = {}, std::vector<Checkpoint> checkpoints = {});
+         std::vector<Enemy> enemies = {}, std::vector<Checkpoint> checkpoints = {},
+         std::vector<Exit> exits = {});
 
     const RoomId& id() const { return id_; }
     const TileMap& map() const { return map_; }
@@ -37,6 +39,7 @@ public:
     const std::vector<Fruit>& fruits() const { return fruits_; }
     const std::vector<Enemy>& enemies() const { return enemies_; }
     const std::vector<Checkpoint>& checkpoints() const { return checkpoints_; }
+    const std::vector<Exit>& exits() const { return exits_; }
 
     std::optional<RoomId> neighbor(Side side) const;
 
@@ -50,6 +53,7 @@ private:
     std::vector<Fruit> fruits_;
     std::vector<Enemy> enemies_;
     std::vector<Checkpoint> checkpoints_;
+    std::vector<Exit> exits_;
 };
 
 }  // namespace domain

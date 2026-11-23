@@ -79,7 +79,8 @@ bool ReachabilityReport::allOk() const {
            std::all_of(fruits.begin(), fruits.end(),
                        [](const FruitStatus& fruit) { return fruit.touchable; }) &&
            std::all_of(checkpoints.begin(), checkpoints.end(),
-                       [](const CheckpointStatus& checkpoint) { return checkpoint.touchable; });
+                       [](const CheckpointStatus& checkpoint) { return checkpoint.touchable; }) &&
+           std::all_of(exits.begin(), exits.end(), [](const ExitStatus& exit) { return exit.touchable; });
 }
 
 ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
@@ -105,6 +106,10 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
         const auto& checkpoints = world.room(id).checkpoints();
         for (std::size_t index = 0; index < checkpoints.size(); ++index) {
             report.checkpoints.push_back(CheckpointStatus{id, index, checkpoints[index], false});
+        }
+        const auto& exits = world.room(id).exits();
+        for (std::size_t index = 0; index < exits.size(); ++index) {
+            report.exits.push_back(ExitStatus{id, index, exits[index], false});
         }
     }
 
@@ -145,6 +150,11 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
             if (checkpoint.room == room.id() && !checkpoint.touchable &&
                 current.player.bounds().overlaps(checkpoint.checkpoint.bounds())) {
                 checkpoint.touchable = true;
+            }
+        }
+        for (ExitStatus& exit : report.exits) {
+            if (exit.room == room.id() && !exit.touchable && current.player.bounds().overlaps(exit.exit.bounds())) {
+                exit.touchable = true;
             }
         }
         for (CoinStatus& coin : report.coins) {

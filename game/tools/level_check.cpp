@@ -100,6 +100,14 @@ int main(int argc, char** argv) {
             }
         }
 
+        if (!report.exits.empty()) {
+            std::cout << "\nExits:\n";
+            for (const level_tools::ExitStatus& exit : report.exits) {
+                std::cout << "  " << exit.room << " #" << exit.index << " at (" << exit.exit.x << ", " << exit.exit.y
+                          << ")  " << (exit.touchable ? "OK" : "CANNOT BE TOUCHED") << '\n';
+            }
+        }
+
         // Enemies are not part of the search (ADR-0014): say so, so nobody trusts it for them.
         if (enemy_count > 0) {
             std::cout << "\nEnemies: " << enemy_count

@@ -78,7 +78,8 @@ const std::string kWalkerMap = R"({
   ]
 })";
 
-const std::string kShippedRooms[] = {"room_01", "room_02", "room_03", "room_04"};
+const std::string kShippedRooms[] = {"room_01", "room_02", "room_03", "room_04", "room_05",
+                                     "room_06", "room_07", "room_08", "room_09"};
 
 std::string roomPath(const std::string& name) {
     return std::string(PLATFORMER_ASSETS_DIR) + "/tiled/" + name + ".tmj";
@@ -255,6 +256,24 @@ TEST_CASE("parseTiledRoom reads checkpoints") {
     CHECK(parseTiledRoom("r", kSmallMap).checkpoints().empty());
 }
 
+TEST_CASE("parseTiledRoom reads exits") {
+    const std::string text = R"({
+      "width": 4, "height": 2, "tilewidth": 8, "tileheight": 8, "infinite": false,
+      "layers": [
+        { "type": "objectgroup", "name": "objects", "objects": [
+            { "id": 1, "class": "exit", "x": 8, "y": 0, "width": 8, "height": 8 },
+            { "id": 2, "type": "exit", "x": 24, "y": 0 },
+            { "id": 3, "class": "coin", "x": 0, "y": 0, "width": 8, "height": 8 }
+        ] },
+        { "type": "tilelayer", "name": "ground", "width": 4, "height": 2, "data": [0,0,0,0, 1,1,1,1] }
+      ] })";
+    const auto room = parseTiledRoom("r", text);
+    REQUIRE(room.exits().size() == 2);
+    CHECK(room.exits()[0].x == 8.0F);
+    CHECK(room.exits()[1].size == 8.0F);  // no width: the default size
+    CHECK(parseTiledRoom("r", kSmallMap).exits().empty());
+}
+
 TEST_CASE("parseTiledRoom reads fruits") {
     SUBCASE("every object of class fruit becomes a fruit at its position") {
         const auto room = parseTiledRoom("r", kFruitMap);
@@ -311,7 +330,7 @@ TEST_CASE("the shipped rooms form a consistent world") {
         CHECK(graph.room("room_02").coins().empty());
         CHECK(graph.room("room_03").coins().size() == 1);
         CHECK(graph.room("room_04").coins().size() == 1);
-        CHECK(graph.totalCoins() == 3);
+        CHECK(graph.totalCoins() == 13);
     }
 
     SUBCASE("room_01 climbs to its plateau by a 5 tile ramp that rests on solid ground") {
@@ -386,6 +405,39 @@ TEST_CASE("the shipped rooms form a consistent world") {
                 const int row = static_cast<int>(checkpoint.y) / ts;
                 CHECK_FALSE(map.isGround(column, row));
                 CHECK(map.isGround(column, row + 1));
+            }
+        }
+    }
+
+    SUBCASE("the world has nine rooms and exactly one exit, in the last one") {
+        CHECK(graph.size() == 9);
+        int exits = 0;
+        for (const std::string& name : kShippedRooms) {
+            exits += static_cast<int>(graph.room(name).exits().size());
+        }
+        CHECK(exits == 1);
+        CHECK(graph.room("room_09").exits().size() == 1);
+    }
+
+    SUBCASE("every neighbour link points at a room that exists") {
+        for (const std::string& name : kShippedRooms) {
+            for (const auto& [side, other] : graph.room(name).neighbors()) {
+                INFO(name << " -> " << other);
+                CHECK(graph.contains(other));
+            }
+        }
+    }
+
+    SUBCASE("exits and everything else placed on a floor in the new rooms: nothing is buried or floating") {
+        for (const std::string& name : kShippedRooms) {
+            const auto& room = graph.room(name);
+            const int ts = room.map().tileSize();
+            for (const auto& exit : room.exits()) {
+                INFO(name << " exit at " << exit.x << "," << exit.y);
+                const int column = static_cast<int>(exit.x) / ts;
+                const int row = static_cast<int>(exit.y) / ts;
+                CHECK_FALSE(room.map().isGround(column, row));
+                CHECK(room.map().isGround(column, row + 1));
             }
         }
     }

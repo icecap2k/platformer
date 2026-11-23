@@ -17,6 +17,11 @@
    "name": "west",
    "type": "string",
    "value": "room_02"
+  },
+  {
+   "name": "east",
+   "type": "string",
+   "value": "room_05"
   }
  ],
  "layers": [

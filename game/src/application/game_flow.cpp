@@ -22,6 +22,8 @@ std::vector<MenuItem> GameFlow::items() const {
             return {MenuItem::Start, MenuItem::Quit};
         case Screen::Paused:
             return {MenuItem::Continue, MenuItem::BackToTitle, MenuItem::Quit};
+        case Screen::Won:
+            return {MenuItem::BackToTitle, MenuItem::Quit};
         case Screen::Playing:
             return {};
     }
@@ -49,6 +51,10 @@ bool GameFlow::choose(MenuItem item) {
             return false;
     }
     return false;
+}
+
+void GameFlow::win() {
+    openMenu(Screen::Won);
 }
 
 bool GameFlow::handle(domain::MenuCommand command) {
@@ -79,6 +85,8 @@ bool GameFlow::handle(domain::MenuCommand command) {
         case MenuCommand::Back:
             if (screen_ == Screen::Paused) {
                 screen_ = Screen::Playing;  // Esc steps out of the pause menu...
+            } else if (screen_ == Screen::Won) {
+                openMenu(Screen::Title);    // ...and out of the ending to the title
             } else {
                 quit_requested_ = true;     // ...and out of the game from the title
             }

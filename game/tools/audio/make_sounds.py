@@ -154,6 +154,22 @@ def checkpoint():
     return mix(*tracks)
 
 
+def win():
+    """A short fanfare: a rising arpeggio ending on a held chord note."""
+    notes = [392, 494, 587, 784]  # G4 B4 D5 G5
+    tracks = []
+    for index, hz in enumerate(notes):
+        phase = [0.0]
+        last = index == len(notes) - 1
+
+        def voice(t, d, hz=hz, phase=phase):
+            phase[0] += hz / RATE
+            body = 0.5 * square(phase[0], 0.5) + 0.5 * triangle(phase[0])
+            return 0.45 * body * envelope(t, d, 0.006, 1.3)
+        tracks.append(delayed(render(0.7 if last else 0.18, voice), 0.15 * index))
+    return mix(*tracks)
+
+
 def hurt():
     noise = Noise(23)
     phase = [0.0]
@@ -236,6 +252,7 @@ SOUNDS = {
     "fruit": fruit,
     "stomp": stomp,
     "checkpoint": checkpoint,
+    "win": win,
     "hurt": hurt,
     "slide": slide,
     "stalactite_warning": stalactite_warning,

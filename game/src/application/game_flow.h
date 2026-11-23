@@ -14,6 +14,7 @@ enum class Screen {
     Title,    // the first screen: start or quit
     Playing,  // the game runs
     Paused,   // the game is frozen behind a menu
+    Won,      // the player reached the exit
 };
 
 enum class MenuItem {
@@ -39,6 +40,9 @@ public:
     // Reacts to one command. Returns true when a NEW game has to be started (the player
     // picked Start): the caller creates a fresh GameSession.
     bool handle(domain::MenuCommand command);
+
+    // The game was won: shows the ending (call it when the session reports GameWon).
+    void win();
 
 private:
     void openMenu(Screen screen);

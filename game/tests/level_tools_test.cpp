@@ -450,6 +450,20 @@ TEST_CASE("text <-> Tiled round trips") {
         CHECK(again.tiles == level.tiles);
     }
 
+    SUBCASE("exits (X) survive text -> tmj -> game and tmj -> text") {
+        const TextLevel level = parseTextLevel("---\n.X.C\n####\n");
+        REQUIRE(level.exits.size() == 1);
+        CHECK(level.exits[0].x == 8.0F);
+
+        const Room room = infrastructure::parseTiledRoom("r", toTiledJson(level));
+        REQUIRE(room.exits().size() == 1);
+
+        const TextLevel again = parseTextLevel(toText(room));
+        REQUIRE(again.exits.size() == 1);
+        CHECK(again.exits[0].x == 8.0F);
+        CHECK(again.tiles == level.tiles);
+    }
+
     SUBCASE("a fruit buried in a solid tile cannot be drawn as text") {
         const Room buried("b", domain::TileMap(2, 1, 8, {kTileGround, kTileGround}), {}, {}, {}, {},
                           {domain::Fruit{0.0F, 0.0F}});
