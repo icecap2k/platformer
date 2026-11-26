@@ -33,6 +33,7 @@ Lo que se dibuja después **tapa** a lo anterior (algoritmo del pintor):
 <!-- src: game/src/presentation/game_renderer.cpp -->
 ```cpp
     drawCave();
+    drawBackdrop(session.currentRoom(), time_ms);
     drawTiles(session.map());
     drawScenery(session.currentRoom(), time_ms);
     drawFireflies(session, time_ms);
@@ -44,10 +45,9 @@ Lo que se dibuja después **tapa** a lo anterior (algoritmo del pintor):
     drawFruits(session, time_ms);
     drawCoins(session, time_ms);
     drawPlayer(session.player(), time_ms);
-    drawHud(session, time_ms);
 ```
 
-Fondo, escenario, adornos, objetos, jugador y, encima de todo, el marcador.
+Fondo y setas lejanas, escenario, adornos, objetos y jugador. El marcador y la pausa se pintan después, encima.
 
 ## Lo que se ve no es lo que choca
 
@@ -68,6 +68,44 @@ El dibujo se coloca **respecto a la caja**, casi siempre centrado y apoyado en s
                                 box.bottom() - kPlayerSpriteHeight + kPlayerSoleOverhang,
                                 kPlayerSpriteWidth, kPlayerSpriteHeight};
 ```
+
+## Transiciones con *easing*
+
+Al cambiar de sala la anterior **se desliza** y la nueva entra por el lado por el que sales; al cambiar de
+pantalla (título, juego, final) o al reaparecer, la nueva **se funde** sobre la anterior.
+
+Para tener las dos imágenes a la vez, la escena no se pinta directamente en pantalla, sino en una textura
+(`RenderTarget`). Cuando hay un cambio, se intercambian: la que se estaba viendo se guarda como "anterior".
+
+<!-- src: game/src/presentation/game_renderer.cpp -->
+```cpp
+    scene_->begin();
+    drawScene(session, flow, time_ms);
+    scene_->end();
+```
+
+El **easing** hace que el movimiento arranque y frene suave en vez de ir a velocidad constante. Es una función
+que convierte el tiempo transcurrido (de 0 a 1) en el avance (de 0 a 1):
+
+<!-- src: game/src/presentation/transition.cpp -->
+```cpp
+float easeInOut(float t) {
+    t = std::clamp(t, 0.0F, 1.0F);
+    if (t < 0.5F) {
+        return 4.0F * t * t * t;
+    }
+    const float rest = 2.0F - 2.0F * t;
+    return 1.0F - rest * rest * rest * 0.5F;
+}
+```
+
+Al principio `t³` crece muy despacio; en la segunda mitad se usa la misma curva al revés. Mientras dura la
+transición (450 ms el deslizamiento, 600 ms el fundido) **el juego se detiene**: ver [El bucle](../bucle/).
+
+## La pantalla de título
+
+Se dibuja aparte (`drawTitle`): la imagen del autor a pantalla completa, el nombre sobre el cielo y el menú sobre
+un panel oscuro a la izquierda, para no tapar a la protagonista.
 
 ## Texto y menús
 

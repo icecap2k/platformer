@@ -93,6 +93,30 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 44 | **Documentación del proyecto** en lugar del blog por épica: 28 páginas por temas, código citado comprobado (`pnpm check`), ADR publicados y posts archivados en `docs/historial/`; ADR-0022 |
 
+## Hecho (E20 · Fondo)
+
+| # | Tarea |
+|---|---|
+| 46 | **Fondo más oscuro con degradado** y **setas luminosas animadas** detrás de la roca (`backdrop.h`); ADR-0023 |
+
+## Hecho (E21 · Protagonista)
+
+| # | Tarea |
+|---|---|
+| 47 | **Nueva protagonista** según imagen de referencia (pelo blanco animado, chaqueta negra, camiseta gris, pantalones rojos); ADR-0024 |
+
+## Hecho (E22 · Pantalla de título)
+
+| # | Tarea |
+|---|---|
+| 48 | **Pantalla de título con el dibujo del autor** (`make_title_screen.py`); ADR-0025 |
+
+## Hecho (E23 · Transiciones)
+
+| # | Tarea |
+|---|---|
+| 49 | **Transiciones con easing**: deslizamiento entre salas y fundido entre pantallas y al reaparecer; ADR-0026 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |

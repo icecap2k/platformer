@@ -8,7 +8,8 @@ const target = new URL('../public/img/sheets/', import.meta.url);
 mkdirSync(target, { recursive: true });
 for (const file of ['sprites/hero.png', 'sprites/rocks.png', 'sprites/sprites.png', 'sprites/enemies.png',
   'sprites/orbs.png', 'sprites/exit.png', 'sprites/decor.png', 'sprites/hazards.png', 'sprites/checkpoints.png',
-  'sprites/fireflies.png', 'background/cave.png']) {
+  'sprites/fireflies.png', 'sprites/glow_mushrooms.png', 'background/cave.png',
+  'background/title.png']) {
   copyFileSync(new URL(file, assets), new URL(file.split('/').pop(), target));
 }
 console.log(`images copied to ${fileURLToPath(target)}`);

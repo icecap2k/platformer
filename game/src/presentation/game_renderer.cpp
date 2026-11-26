@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
+#include <variant>
 
 #include "domain/rules/damage.h"
 #include "presentation/animation.h"
@@ -15,7 +17,10 @@ namespace presentation {
 
 namespace {
 
-// The hero (hero.png) is drawn bigger than its 8x16 collision box, centred on it.
+constexpr int kScreenWidth = 320;  // the logical screen everything is drawn on
+constexpr int kScreenHeight = 240;
+
+// The heroine (hero.png) is drawn bigger than its 8x16 collision box, centred on it.
 constexpr float kOrbCell = 26.0F;  // a cell of orbs.png: one row per colour, the silhouette after the frames
 constexpr float kPlayerSpriteWidth = 32.0F;
 constexpr float kPlayerSpriteHeight = 28.0F;
@@ -75,46 +80,77 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
       checkpoints_(renderer, assets_dir + "sprites/checkpoints.png"),
       exit_(renderer, assets_dir + "sprites/exit.png"),
       orbs_(renderer, assets_dir + "sprites/orbs.png"),
-      cave_(renderer, assets_dir + "background/cave.png") {}
+      mushrooms_(renderer, assets_dir + "sprites/glow_mushrooms.png"),
+      cave_(renderer, assets_dir + "background/cave.png"),
+      title_(renderer, assets_dir + "background/title.png") {
+    // The off screen pictures have as many real pixels as the window shows.
+    int width = 0;
+    int height = 0;
+    SDL_GetRenderOutputSize(renderer_, &width, &height);
+    const int scale = std::max(1, std::min(width / kScreenWidth, height / kScreenHeight));
+    scene_ = std::make_unique<infrastructure::RenderTarget>(renderer_, kScreenWidth, kScreenHeight, scale);
+    previous_scene_ = std::make_unique<infrastructure::RenderTarget>(renderer_, kScreenWidth, kScreenHeight, scale);
+}
+
+void GameRenderer::onEvent(const application::GameEvent& event) {
+    if (const auto* changed = std::get_if<application::RoomChanged>(&event)) {
+        pending_ = Change{TransitionKind::Slide, changed->from};
+    } else if (std::holds_alternative<application::PlayerRespawned>(event) ||
+               std::holds_alternative<application::GameRestarted>(event)) {
+        pending_ = Change{TransitionKind::Fade, {}};  // a jump to somewhere else, not a walk
+    }
+}
+
+bool GameRenderer::inTransition() const {
+    return pending_.kind != TransitionKind::None || transition_.active(SDL_GetTicks());
+}
+
+void GameRenderer::startPendingTransition(const application::GameSession* session, std::uint64_t time_ms) {
+    if (pending_.kind == TransitionKind::None) {
+        return;
+    }
+    std::swap(scene_, previous_scene_);  // what was on screen is what we leave
+    std::optional<domain::Side> exited;
+    if (pending_.kind == TransitionKind::Slide && session != nullptr) {
+        // The player left through the edge opposite to the one that leads back.
+        for (const auto& [side, neighbor] : session->currentRoom().neighbors()) {
+            if (neighbor == pending_.left_room) {
+                exited = domain::opposite(side);
+            }
+        }
+    }
+    if (exited) {
+        transition_.startSlide(*exited, time_ms);
+    } else {
+        transition_.startFade(time_ms);
+    }
+    pending_ = Change{};
+}
 
 void GameRenderer::draw(const application::GameSession* session, const application::GameFlow& flow) {
+    using application::Screen;
     const std::uint64_t time_ms = SDL_GetTicks();
 
-    if (flow.screen() == application::Screen::Title || session == nullptr) {
-        drawCave();
-        drawMenu(flow, "PLATFORMER", 3.0F, 60.0F);
-        drawText("ARROWS + ENTER      M: MUTE", 160.0F, 226.0F, 1.0F, SDL_Color{130, 130, 170, 255});
-        SDL_RenderPresent(renderer_);
-        return;
+    // Pausing only puts a menu on top of the game; any other change of screen fades.
+    const auto in_game = [](Screen screen) { return screen == Screen::Playing || screen == Screen::Paused; };
+    if (last_screen_ && *last_screen_ != flow.screen() && !(in_game(*last_screen_) && in_game(flow.screen()))) {
+        pending_ = Change{TransitionKind::Fade, {}};
     }
+    last_screen_ = flow.screen();
+    startPendingTransition(session, time_ms);
 
-    // A hit shakes the world (and the HUD), not the pause menu: shift the whole picture by
-    // moving the viewport; the strip it uncovers is left black.
-    const bool shaking = flow.screen() == application::Screen::Playing;
-    const ShakeOffset shake = shaking ? screenShake(session->player().invulnerable_steps, domain::kInvulnerableSteps)
-                                      : ShakeOffset{};
-    if (shake.x != 0 || shake.y != 0) {
-        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
-        SDL_RenderClear(renderer_);
-        const SDL_Rect viewport{shake.x, shake.y, 320, 240};
-        SDL_SetRenderViewport(renderer_, &viewport);
-    }
-    drawWorld(*session, time_ms);
-    SDL_SetRenderViewport(renderer_, nullptr);
+    scene_->begin();
+    drawScene(session, flow, time_ms);
+    scene_->end();
 
-    if (flow.screen() == application::Screen::Won) {
-        // The ending: the cave, the result and a menu.
-        drawCave();
-        drawText("YOU ESCAPED", 160.0F + 2.0F, 52.0F + 2.0F, 3.0F, SDL_Color{20, 16, 40, 255});
-        drawText("YOU ESCAPED", 160.0F, 52.0F, 3.0F, SDL_Color{255, 240, 150, 255});
-        drawText("COINS " + std::to_string(session->collectedCoins().count()) + "/" +
-                     std::to_string(session->totalCoins()),
-                 160.0F, 98.0F, 1.0F, SDL_Color{255, 232, 130, 255});
-        drawMenu(flow, "", 1.0F, 118.0F - 8.0F - 24.0F);
-        SDL_RenderPresent(renderer_);
-        return;
+    SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
+    SDL_RenderClear(renderer_);
+    composeScene(time_ms);
+
+    if (session != nullptr && in_game(flow.screen())) {
+        drawHud(*session, time_ms);
     }
-    if (flow.screen() == application::Screen::Paused) {
+    if (flow.screen() == Screen::Paused) {
         // Dim the frozen game and put the menu on top.
         SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(renderer_, 8, 6, 20, 170);
@@ -126,9 +162,61 @@ void GameRenderer::draw(const application::GameSession* session, const applicati
     SDL_RenderPresent(renderer_);
 }
 
+void GameRenderer::drawScene(const application::GameSession* session, const application::GameFlow& flow,
+                             std::uint64_t time_ms) {
+    SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
+    SDL_RenderClear(renderer_);
+
+    if (flow.screen() == application::Screen::Title || session == nullptr) {
+        drawTitle(flow);
+        return;
+    }
+    if (flow.screen() == application::Screen::Won) {
+        // The ending: the cave, the result and a menu.
+        drawCave();
+        drawText("YOU ESCAPED", 160.0F + 2.0F, 52.0F + 2.0F, 3.0F, SDL_Color{20, 16, 40, 255});
+        drawText("YOU ESCAPED", 160.0F, 52.0F, 3.0F, SDL_Color{255, 240, 150, 255});
+        drawText("COINS " + std::to_string(session->collectedCoins().count()) + "/" +
+                     std::to_string(session->totalCoins()),
+                 160.0F, 98.0F, 1.0F, SDL_Color{255, 232, 130, 255});
+        drawMenu(flow, "", 1.0F, 118.0F - 8.0F - 24.0F);
+        return;
+    }
+
+    // A hit shakes the world, not the HUD or the menus: shift the picture by moving the
+    // viewport; the strip it uncovers is left black.
+    const bool shaking = flow.screen() == application::Screen::Playing;
+    const ShakeOffset shake = shaking ? screenShake(session->player().invulnerable_steps, domain::kInvulnerableSteps)
+                                      : ShakeOffset{};
+    if (shake.x != 0 || shake.y != 0) {
+        const SDL_Rect viewport{shake.x, shake.y, kScreenWidth, kScreenHeight};
+        SDL_SetRenderViewport(renderer_, &viewport);
+    }
+    drawWorld(*session, time_ms);
+    SDL_SetRenderViewport(renderer_, nullptr);
+}
+
+// Puts the scene on the screen: on its own, or sliding or fading from the previous one.
+void GameRenderer::composeScene(std::uint64_t time_ms) const {
+    constexpr float kWidth = static_cast<float>(kScreenWidth);
+    constexpr float kHeight = static_cast<float>(kScreenHeight);
+    const SDL_FRect whole{0.0F, 0.0F, kWidth, kHeight};
+    if (!transition_.active(time_ms)) {
+        scene_->draw(whole);
+    } else if (transition_.kind() == TransitionKind::Slide) {
+        const SlideOffsets at = transition_.slide(time_ms, kWidth, kHeight);
+        previous_scene_->draw(SDL_FRect{at.old_x, at.old_y, kWidth, kHeight});
+        scene_->draw(SDL_FRect{at.new_x, at.new_y, kWidth, kHeight});
+    } else {
+        previous_scene_->draw(whole);
+        scene_->draw(whole, transition_.progress(time_ms));
+    }
+}
+
 void GameRenderer::drawWorld(const application::GameSession& session, std::uint64_t time_ms) {
 
     drawCave();
+    drawBackdrop(session.currentRoom(), time_ms);
     drawTiles(session.map());
     drawScenery(session.currentRoom(), time_ms);
     drawFireflies(session, time_ms);
@@ -140,7 +228,6 @@ void GameRenderer::drawWorld(const application::GameSession& session, std::uint6
     drawFruits(session, time_ms);
     drawCoins(session, time_ms);
     drawPlayer(session.player(), time_ms);
-    drawHud(session, time_ms);
 }
 
 // Text from SDL's built-in 8x8 font, centred on `centre_x`; `scale` enlarges it.
@@ -154,9 +241,9 @@ void GameRenderer::drawText(const std::string& text, float centre_x, float y, fl
 
 // A heading and the items of the flow's menu below it; the selected one is bracketed and brighter.
 void GameRenderer::drawMenu(const application::GameFlow& flow, const std::string& heading, float heading_scale,
-                            float top) const {
-    drawText(heading, 160.0F + 2.0F, top + 2.0F, heading_scale, SDL_Color{20, 16, 40, 255});  // shadow
-    drawText(heading, 160.0F, top, heading_scale, SDL_Color{190, 255, 230, 255});
+                            float top, float centre_x) const {
+    drawText(heading, centre_x + 2.0F, top + 2.0F, heading_scale, SDL_Color{20, 16, 40, 255});  // shadow
+    drawText(heading, centre_x, top, heading_scale, SDL_Color{190, 255, 230, 255});
 
     float y = top + 8.0F * heading_scale + 24.0F;
     const auto items = flow.items();
@@ -164,14 +251,52 @@ void GameRenderer::drawMenu(const application::GameFlow& flow, const std::string
         const bool selected = static_cast<int>(index) == flow.selected();
         const std::string text = selected ? "> " + application::label(items[index]) + " <"
                                           : application::label(items[index]);
-        drawText(text, 160.0F, y, 1.0F, selected ? SDL_Color{255, 232, 130, 255} : SDL_Color{150, 150, 190, 255});
+        drawText(text, centre_x, y, 1.0F, selected ? SDL_Color{255, 232, 130, 255} : SDL_Color{150, 150, 190, 255});
         y += 14.0F;
     }
+}
+
+// The title screen: the author's picture, the name over its sky and the menu on a dim panel over the
+// rocks on the left, away from the heroine. The picture is three times the logical screen, so it
+// keeps its detail in the window.
+void GameRenderer::drawTitle(const application::GameFlow& flow) const {
+    constexpr float kMenuCentre = 76.0F;
+    title_.draw(renderer_, SDL_FRect{0.0F, 0.0F, 960.0F, 720.0F}, SDL_FRect{0.0F, 0.0F, 320.0F, 240.0F});
+
+    drawText("PLATFORMER", 160.0F + 2.0F, 14.0F + 2.0F, 3.0F, SDL_Color{10, 8, 24, 255});
+    drawText("PLATFORMER", 160.0F, 14.0F, 3.0F, SDL_Color{236, 240, 255, 255});
+
+    SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer_, 8, 6, 20, 180);
+    const SDL_FRect panel{kMenuCentre - 48.0F, 150.0F, 96.0F, 36.0F};
+    SDL_RenderFillRect(renderer_, &panel);
+    const SDL_FRect footer{0.0F, 222.0F, 320.0F, 18.0F};
+    SDL_RenderFillRect(renderer_, &footer);
+
+    drawMenu(flow, "", 1.0F, 156.0F - 8.0F - 24.0F, kMenuCentre);
+    drawText("ARROWS + ENTER      M: MUTE", 160.0F, 227.0F, 1.0F, SDL_Color{190, 190, 220, 255});
 }
 
 // The cave behind the level: one still picture of the whole screen.
 void GameRenderer::drawCave() const {
     cave_.draw(renderer_, SDL_FRect{0.0F, 0.0F, 320.0F, 240.0F}, SDL_FRect{0.0F, 0.0F, 320.0F, 240.0F});
+}
+
+// The glowing mushrooms far behind the level (see backdrop.h), between the cave and the rock.
+void GameRenderer::drawBackdrop(const domain::Room& room, std::uint64_t time_ms) {
+    if (backdrop_room_ != room.id()) {
+        backdrop_room_ = room.id();
+        backdrop_ = backdropFor(room);
+    }
+    constexpr float kWidth = static_cast<float>(kMushroomCellWidth);
+    constexpr float kHeight = static_cast<float>(kMushroomCellHeight);
+    for (const BackdropMushroom& mushroom : backdrop_) {
+        const SDL_FRect source{static_cast<float>(mushroomFrame(mushroom, time_ms)) * kWidth,
+                               static_cast<float>(static_cast<int>(mushroom.type)) * kHeight, kWidth, kHeight};
+        mushrooms_.draw(renderer_, source,
+                        SDL_FRect{mushroom.x - kWidth * 0.5F, mushroom.base_y - kHeight, kWidth, kHeight},
+                        mushroom.mirrored);
+    }
 }
 
 // The outline is part of the rock art (it follows the pointed tips), so there is
@@ -419,9 +544,9 @@ void GameRenderer::drawPlayer(const domain::Player& player, std::uint64_t time_m
     const std::uint64_t since_landing = has_landed_ ? time_ms - landed_at_ms_ : kNotLanding;
     const PlayerPose pose = playerPose(player, time_ms, since_landing);
 
-    // One column per pose, one row per moment of the hood's wave.
+    // One column per pose, one row per moment of the hair's wave.
     const SDL_FRect source{static_cast<float>(static_cast<int>(pose)) * kPlayerSpriteWidth,
-                           static_cast<float>(hoodFlutter(pose, time_ms)) * kPlayerSpriteHeight,
+                           static_cast<float>(hairFlutter(pose, time_ms)) * kPlayerSpriteHeight,
                            kPlayerSpriteWidth, kPlayerSpriteHeight};
     const domain::AABB box = player.bounds();
     const SDL_FRect destination{box.x + (box.width - kPlayerSpriteWidth) * 0.5F,

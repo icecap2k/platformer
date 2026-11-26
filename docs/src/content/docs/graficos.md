@@ -10,11 +10,24 @@ summary: Las hojas de sprites y por qué el arte se genera con programas.
 Una sola imagen con muchos dibujos en una **rejilla**. Para pintar uno se calcula su rectángulo:
 `x = columna * ancho`, `y = fila * alto`.
 
-### El protagonista (`hero.png`)
+### La protagonista (`hero.png`)
 
-Celdas de 32×28: **17 columnas** (poses) y **4 filas** (la punta de la capucha ondeando).
+Celdas de 32×28: **19 columnas** (poses) y **4 filas** (la melena ondeando).
 
-![Hoja del protagonista](/img/sheets/hero.png)
+![Hoja de la protagonista](/img/sheets/hero.png)
+
+La **cabeza** está dibujada a mano como arte ASCII, a partir de una imagen de referencia: cada letra es un color.
+
+<!-- src: game/tools/art/make_hero_sprites.py -->
+```python
+HEAD = [
+    "............",
+    "....HWHHH...",
+    "...HrHHHHH..",
+```
+
+Brazos, piernas y el mechón que ondea se colocan **según la pose**, y al final un contorno negro rodea toda la
+figura.
 
 ### Escarabajo (`enemies.png`)
 
@@ -47,7 +60,7 @@ Monedas (fila y = 18), corazones (y = 26) y frutas (y = 34).
 
 ## El arte es código
 
-Ninguna imagen se pinta a mano. Cada una la genera un script de Python de `game/tools/art/`, usando solo la
+Las imágenes del juego no se pintan a mano (salvo el título, más abajo). Cada una la genera un script de Python de `game/tools/art/`, usando solo la
 biblioteca estándar.
 
 | Script | Genera |
@@ -62,7 +75,9 @@ biblioteca estándar.
 | `make_rock_tiles.py` | `rocks.png` y la paleta de Tiled |
 | `make_cave_decor.py` | `decor.png` |
 | `make_cave_background.py` | `background/cave.png` |
+| `make_glow_mushrooms.py` | `glow_mushrooms.png` (setas luminosas del fondo) |
 | `make_fireflies.py` | `fireflies.png` |
+| `make_title_screen.py` | `background/title.png`, a partir de un dibujo |
 
 ```bash
 python3 game/tools/art/make_orbs.py                        # regenera la imagen
@@ -71,6 +86,20 @@ cmake --build build                                        # copia los assets ju
 ```
 
 > **Regla:** se edita el script, nunca el PNG.
+
+## La excepción: la pantalla de título
+
+![Pantalla de título](/img/sheets/title.png)
+
+Esta imagen no la genera un programa: es un dibujo del autor, guardado en `game/art_sources/title.jpg`. El script
+solo **recorta** la parte 4:3 y la **redimensiona** a 960×720, tres veces la pantalla lógica, para que en la
+ventana se vea con todo su detalle:
+
+<!-- src: game/tools/art/make_title_screen.py -->
+```python
+LEFT = 250          # where the 4:3 slice starts, in pixels of the source
+WIDTH, HEIGHT = 960, 720
+```
 
 ## Dos formas de dibujar con código
 

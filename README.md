@@ -107,10 +107,11 @@ Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4
 
 ## Player art
 
-The hero, a small figure in a big blue hood, is drawn in code by `game/tools/art/make_hero_sprites.py`
-(Python, standard library only) into `game/assets/sprites/hero.png`: 32x28 cells, one column per pose
-(17: idle, run, rise, apex, fall, land, hurt, slide, crouch) and one row per moment of the wave of the
-hood's tip (4). The drawing is bigger than the 8x16 collision box, which did not change.
+The heroine (a small chunky figure with long white hair and a red clip, a black jacket over a grey t-shirt and
+red trousers) is made by `game/tools/art/make_hero_sprites.py` (Python, standard library only) into
+`game/assets/sprites/hero.png`: 32x28 cells, one column per pose (19: idle, an 8-frame run, rise, apex, fall, land, hurt,
+slide, crouch) and one row per moment of the wave of her hair (4). The drawing is bigger than the 8x16
+collision box.
 
 ```bash
 python3 game/tools/art/make_hero_sprites.py
@@ -202,15 +203,22 @@ python3 game/tools/art/make_cave_decor.py
 python3 game/tools/art/make_cave_decor.py --preview preview.png   # enlarged, does not write the sheet
 ```
 
+## Title screen
+
+The title picture, `game/assets/background/title.png` (960x720, three times the logical screen), is the author's own
+drawing (`game/art_sources/title.jpg`), cut and resized by `game/tools/art/make_title_screen.py` (macOS, uses
+`sips`).
+
 ## Cave background
 
-The still cave behind the level is `game/assets/background/cave.png` (320x240), drawn by
-`game/tools/art/make_cave_background.py`. It is painted in three layers (far, middle, near) that
-are saved as one composite.
+The cave behind the level is a still picture, `game/assets/background/cave.png` (320x240): a dark gradient with
+distant rocks, drawn by `game/tools/art/make_cave_background.py`. In front of it, behind the rock, big glowing
+mushrooms pulse and shed spores (`presentation/backdrop.h`, drawn by `game/tools/art/make_glow_mushrooms.py`).
 
 ```bash
 python3 game/tools/art/make_cave_background.py
 python3 game/tools/art/make_cave_background.py --preview preview.png   # does not write the image
+python3 game/tools/art/make_glow_mushrooms.py
 ```
 
 ## Third-party code

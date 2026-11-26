@@ -78,6 +78,8 @@ const { sections } = await navigation();
         frame.style.display = 'block';
         img.replaceWith(frame);
         frame.append(img);
+        // A full screen picture (the title) is already big: fit it to the page instead.
+        if (img.src.endsWith('title.png')) { img.style.width = '100%'; img.style.imageRendering = 'auto'; continue; }
         const enlarge = () => { img.style.width = `${img.naturalWidth * Math.max(2, Math.min(6, Math.floor(1100 / img.naturalWidth)))}px`; };
         if (img.complete) enlarge(); else img.addEventListener('load', enlarge);
       }

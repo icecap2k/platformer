@@ -1,6 +1,6 @@
 # ADR-0019: Nuevo protagonista y gráficos más grandes que su hitbox
 
-- Estado: Aceptada
+- Estado: Aceptada (el diseño del protagonista, sustituido por ADR-0024)
 - Fecha: 2026-11-26
 
 ## Contexto

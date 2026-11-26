@@ -28,10 +28,14 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0016](0016-pantalla-de-titulo-y-pausa.md) | Pantalla de título y pausa por encima de la partida | Aceptada |
 | [0017](0017-jump-buffering-y-sacudida-de-pantalla.md) | Jump buffering y sacudida de pantalla | Aceptada |
 | [0018](0018-salida-final-y-salas-5-a-9.md) | Salida final y salas 05 a 09 | Aceptada (tamaño de la salida, sustituido por 0019; la condición de victoria, por 0021) |
-| [0019](0019-graficos-mas-grandes-y-nuevo-protagonista.md) | Nuevo protagonista y gráficos más grandes que su hitbox | Aceptada |
+| [0019](0019-graficos-mas-grandes-y-nuevo-protagonista.md) | Nuevo protagonista y gráficos más grandes que su hitbox | Aceptada (el diseño del protagonista, sustituido por 0024) |
 | [0020](0020-pinchos-altos-y-decoracion-grande.md) | Pinchos altos hundidos y decoración grande de fondo | Aceptada |
 | [0021](0021-orbes-que-abren-la-salida.md) | Tres orbes que abren la salida | Aceptada |
 | [0022](0022-documentacion-del-proyecto.md) | Documentación del proyecto en lugar de un blog por épica | Aceptada |
+| [0023](0023-fondo-oscuro-y-setas-luminosas.md) | Fondo más oscuro y setas luminosas animadas | Aceptada |
+| [0024](0024-nueva-protagonista.md) | La protagonista de pelo blanco | Aceptada |
+| [0025](0025-pantalla-de-titulo-con-imagen.md) | Pantalla de título con un dibujo del autor | Aceptada |
+| [0026](0026-transiciones-con-easing.md) | Transiciones con easing entre salas y pantallas | Aceptada |
 
 ## Plantilla
 

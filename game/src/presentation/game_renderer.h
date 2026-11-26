@@ -2,14 +2,19 @@
 
 #include <SDL3/SDL.h>
 
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "application/game_flow.h"
 #include "application/game_session.h"
+#include "infrastructure/sdl/render_target.h"
 #include "infrastructure/sdl/texture.h"
+#include "presentation/backdrop.h"
 #include "presentation/decoration.h"
 #include "presentation/firefly.h"
+#include "presentation/transition.h"
 
 namespace presentation {
 
@@ -19,19 +24,38 @@ namespace presentation {
 class GameRenderer {
 public:
     // `assets_dir` must end with a path separator and contain sprites/rocks.png,
-    // sprites/sprites.png, sprites/hero.png, sprites/decor.png, sprites/hazards.png, sprites/enemies.png, sprites/fireflies.png, sprites/checkpoints.png, sprites/exit.png, sprites/orbs.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
+    // sprites/sprites.png, sprites/hero.png, sprites/decor.png, sprites/hazards.png, sprites/enemies.png, sprites/fireflies.png, sprites/checkpoints.png, sprites/exit.png, sprites/orbs.png, sprites/glow_mushrooms.png, background/cave.png and background/title.png. Throws std::runtime_error if they cannot be loaded.
     GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir);
 
     // Draws the current screen: the title menu, or the game (frozen behind the pause menu
     // while paused). `session` may be null only while the flow is on the title screen.
+    // Changing room or screen is drawn as an eased transition from the previous picture.
     void draw(const application::GameSession* session, const application::GameFlow& flow);
 
+    // Tell it what happens in the game, so it knows how to go from one room to the next.
+    void onEvent(const application::GameEvent& event);
+
+    // True while a transition is on its way: the game should not advance meanwhile.
+    bool inTransition() const;
+
 private:
+    // The change asked for and not started yet (it starts with the next picture drawn).
+    struct Change {
+        TransitionKind kind = TransitionKind::None;
+        domain::RoomId left_room;  // for a slide: the room the player came from
+    };
+
+    void startPendingTransition(const application::GameSession* session, std::uint64_t time_ms);
+    // The picture behind the HUD: the title, the ending or the room.
+    void drawScene(const application::GameSession* session, const application::GameFlow& flow, std::uint64_t time_ms);
+    void composeScene(std::uint64_t time_ms) const;
     void drawWorld(const application::GameSession& session, std::uint64_t time_ms);
     void drawMenu(const application::GameFlow& flow, const std::string& heading, float heading_scale,
-                  float top) const;
+                  float top, float centre_x = 160.0F) const;
     void drawText(const std::string& text, float centre_x, float y, float scale, SDL_Color colour) const;
     void drawCave() const;
+    void drawTitle(const application::GameFlow& flow) const;
+    void drawBackdrop(const domain::Room& room, std::uint64_t time_ms);
     void drawTiles(const domain::TileMap& map) const;
     void drawScenery(const domain::Room& room, std::uint64_t time_ms);
     void drawDrip(const domain::TileMap& map, const Prop& prop, float top, std::uint64_t time_ms) const;
@@ -57,13 +81,24 @@ private:
     infrastructure::Texture checkpoints_;
     infrastructure::Texture exit_;
     infrastructure::Texture orbs_;
+    infrastructure::Texture mushrooms_;
     infrastructure::Texture cave_;
+    infrastructure::Texture title_;
+    // The scene is drawn off screen, and the one before the last change is kept to move away from.
+    std::unique_ptr<infrastructure::RenderTarget> scene_;
+    std::unique_ptr<infrastructure::RenderTarget> previous_scene_;
+    Transition transition_;
+    Change pending_;
+    std::optional<application::Screen> last_screen_;
     // The fireflies' routes depend only on the room, so they are worked out once per room.
     std::string firefly_room_;
     std::vector<FireflyRoute> firefly_routes_;
     // When the open exit came on screen (its portcullis rises from then on); empty room = not on screen.
     std::string gate_room_;
     std::uint64_t gate_open_since_ms_ = 0;
+    // Same for the mushrooms far behind.
+    std::string backdrop_room_;
+    std::vector<BackdropMushroom> backdrop_;
     // Same for the scenery.
     std::string scenery_room_;
     std::vector<Prop> scenery_;

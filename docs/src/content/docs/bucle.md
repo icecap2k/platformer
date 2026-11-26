@@ -36,16 +36,23 @@ jugando); y por último un dibujo:
 
 <!-- src: game/src/main.cpp -->
 ```cpp
-            const int game_steps = flow.screen() == application::Screen::Playing && session ? steps : 0;
+            // While paused (or on the title) the clock still runs, but no step is taken.
+            // Nor while the picture is moving to another room or screen.
+            const bool playing = flow.screen() == application::Screen::Playing && session && !renderer.inTransition();
+            const int game_steps = playing ? steps : 0;
             for (int i = 0; i < game_steps; ++i) {
                 for (const application::GameEvent& event : session->update(input)) {
                     report(event);
+                    renderer.onEvent(event);
                     if (std::holds_alternative<application::GameWon>(event)) {
                         flow.win();
                     }
                     if (const auto sound = presentation::soundFor(event)) {
                         audio.play(presentation::soundName(*sound));
                     }
+                }
+                if (renderer.inTransition()) {
+                    break;  // the rest of this frame's steps would happen off screen
                 }
             }
 
@@ -55,7 +62,8 @@ jugando); y por último un dibujo:
 Fíjate en el reparto:
 
 1. `session->update(input)` aplica las reglas y **devuelve lo que ha pasado** (eventos).
-2. `main` reacciona: lo escribe en la consola, cambia de pantalla si se ha ganado y reproduce un sonido.
+2. `main` reacciona: lo escribe en la consola, avisa al renderer, cambia de pantalla si se ha ganado y reproduce
+   un sonido. Si empieza una [transición](../renderizado/), la simulación espera a que termine.
 3. `renderer.draw` **solo lee** el estado y lo pinta. Nunca cambia las reglas.
 
 El dibujado va sincronizado con la pantalla (*vsync*), que evita tirones; los pasos de simulación siguen siendo
