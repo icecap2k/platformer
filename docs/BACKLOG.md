@@ -87,10 +87,17 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 43 | **Tres orbes** animados que abren la salida (silueta a trazos al cogerlos, marcador, sonidos `orb` y `gate`, reja que sube); `level_check` exige tocarlos; ADR-0021 y post 25 |
 
+## Hecho (Documentación)
+
+| # | Tarea |
+|---|---|
+| 44 | **Documentación del proyecto** en lugar del blog por épica: 28 páginas por temas, código citado comprobado (`pnpm check`), ADR publicados y posts archivados en `docs/historial/`; ADR-0022 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
 |---|---|---|---|---|
+| 45 | Ejecutar `pnpm check` de la documentación en el CI | P3 | S | — |
 | 8 | ~~Frutas que curan~~ — hecho en E10 (ver arriba). Pendiente: un `Collectible` genérico con tipo cuando haya un tercer tipo de recogible | P3 | S | — |
 | 9 | ~~Enemigos básicos~~ — hecho en E12 (ver arriba). Pendiente: gravedad y rampas para enemigos, más tipos (voladores, perseguidores), otros comportamientos | P2 | M | — |
 | 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
@@ -108,7 +115,6 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 25 | Remapeo de teclas y accesibilidad (daltonismo, reducir parpadeo) | P3 | S | 18 |
 | 33 | **Enseñar a `level_check` a agacharse y deslizarse** (hoy no pulsa abajo: un nivel que exija agacharse se daría por inalcanzable) | P2 | M | — |
 | 31 | Rampas: pinchos y enemigos sobre una rampa, rampas de techo y de otros ángulos, y el hundimiento de 4 px del pie delantero | P3 | M | 9 |
-| 26 | Actualizar los posts 10 y 12 del blog, que quedaron con detalles anteriores a los cambios de arte y de pinchos | P3 | S | — |
 
 ## Riesgos e ideas a vigilar
 

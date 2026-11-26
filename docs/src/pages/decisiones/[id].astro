@@ -1,0 +1,19 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { base } from '../../nav';
+
+export async function getStaticPaths() {
+  const records = await getCollection('adr');
+  return records.map((record) => ({ params: { id: record.id }, props: { record } }));
+}
+
+const { record } = Astro.props;
+// Records link to each other by file name (so the links work on GitHub too): point them at their pages.
+const html = (record.rendered?.html ?? '').replace(/href="(\d{4}-[^"#]+)\.md"/g, `href="${base}decisiones/$1/"`);
+const title = record.body?.match(/^# (.+)$/m)?.[1] ?? record.id;
+---
+<Base title={title} current="decisiones">
+  <p><a href={`${base}decisiones/`}>← Todas las decisiones</a></p>
+  <Fragment set:html={html} />
+</Base>

@@ -1,6 +1,9 @@
 ---
-interface Props { title: string }
-const { title } = Astro.props;
+import { base, navigation } from '../nav';
+
+interface Props { title: string; current?: string }
+const { title, current } = Astro.props;
+const { sections } = await navigation();
 ---
 <!doctype html>
 <html lang="es">
@@ -9,17 +12,75 @@ const { title } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title} · Platformer</title>
     <style is:global>
-      :root { color-scheme: light dark; }
-      body { font-family: system-ui, sans-serif; max-width: 46rem; margin: 0 auto; padding: 1.5rem; line-height: 1.65; }
-      header { border-bottom: 1px solid #8884; margin-bottom: 2rem; padding-bottom: .5rem; }
-      header a { font-weight: 700; text-decoration: none; }
-      pre { padding: 1rem; overflow-x: auto; border-radius: 6px; }
-      code { font-size: .9em; }
-      .epic { font-size: .8rem; opacity: .7; text-transform: uppercase; letter-spacing: .05em; }
+      :root { color-scheme: light dark; --line: #8884; --soft: #8881; --accent: light-dark(#1d5fd1, #86b7ff); }
+      * { box-sizing: border-box; }
+      body { font-family: system-ui, sans-serif; margin: 0; line-height: 1.65; }
+      a { color: var(--accent); }
+      .page { display: grid; grid-template-columns: 17rem minmax(0, 1fr); max-width: 76rem; margin: 0 auto; }
+      nav { border-right: 1px solid var(--line); padding: 1.2rem 1rem 3rem; font-size: .93rem;
+            position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+      nav .home { font-weight: 700; font-size: 1.05rem; text-decoration: none; }
+      nav h2 { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; opacity: .65; margin: 1.3rem 0 .3rem; }
+      nav ul { list-style: none; margin: 0; padding: 0; }
+      nav li a { display: block; padding: .15rem .5rem; border-radius: 5px; text-decoration: none; color: inherit; }
+      nav li a:hover { background: var(--soft); }
+      nav li a[aria-current="page"] { background: var(--soft); color: var(--accent); font-weight: 600; }
+      main { padding: 2rem 2.2rem 4rem; max-width: 54rem; width: 100%; }
+      h1 { line-height: 1.2; margin-top: 0; }
+      h2 { margin-top: 2.4rem; border-bottom: 1px solid var(--line); padding-bottom: .25rem; }
+      h3 { margin-top: 1.8rem; }
+      pre { padding: 1rem; overflow-x: auto; border-radius: 8px; font-size: .85rem; line-height: 1.5; }
+      :not(pre) > code { background: var(--soft); padding: .08em .35em; border-radius: 4px; font-size: .88em; }
+      table { border-collapse: collapse; display: block; overflow-x: auto; margin: 1rem 0; }
+      th, td { border: 1px solid var(--line); padding: .35rem .7rem; text-align: left; vertical-align: top; }
+      th { background: var(--soft); }
+      blockquote { margin: 1.2rem 0; padding: .1rem 1rem; border-left: 4px solid var(--accent); background: var(--soft); }
+      /* sprite sheets: enlarged without blurring, on the colour of the cave */
+      img { max-width: 100%; height: auto; image-rendering: pixelated; }
+      img[src*="/img/"] { background: #1e1b38; border-radius: 8px; padding: 8px; display: block; max-width: none;
+                          box-sizing: content-box; }
+      .sheet { overflow-x: auto; margin: 1rem 0; }
+      .lead { font-size: 1.08rem; opacity: .8; margin-top: -.4rem; }
+      .pager { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+      .pager a:last-child { margin-left: auto; text-align: right; }
+      @media (max-width: 52rem) {
+        .page { display: block; }
+        nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+        main { padding: 1.2rem; }
+      }
     </style>
   </head>
   <body>
-    <header><a href={import.meta.env.BASE_URL}>🎮 Platformer · Diario de desarrollo</a></header>
-    <slot />
+    <div class="page">
+      <nav aria-label="Documentación">
+        <a class="home" href={base}>🎮 Platformer</a>
+        {sections.map((section) => (
+          <>
+            <h2>{section.title}</h2>
+            <ul>
+              {section.pages.map((p) => (
+                <li><a href={`${base}${p.id}/`} aria-current={current === p.id ? 'page' : undefined}>{p.data.title}</a></li>
+              ))}
+            </ul>
+          </>
+        ))}
+        <h2>Referencia</h2>
+        <ul><li><a href={`${base}decisiones/`} aria-current={current === 'decisiones' ? 'page' : undefined}>Decisiones (ADR)</a></li></ul>
+      </nav>
+      <main><slot /></main>
+    </div>
+    <script is:inline>
+      // The sprite sheets are tiny: enlarge each one by a whole number (so pixels stay square), and
+      // let the wide ones scroll sideways.
+      for (const img of document.querySelectorAll('img[src^="/img/"]')) {
+        const frame = document.createElement('span');
+        frame.className = 'sheet';
+        frame.style.display = 'block';
+        img.replaceWith(frame);
+        frame.append(img);
+        const enlarge = () => { img.style.width = `${img.naturalWidth * Math.max(2, Math.min(6, Math.floor(1100 / img.naturalWidth)))}px`; };
+        if (img.complete) enlarge(); else img.addEventListener('load', enlarge);
+      }
+    </script>
   </body>
 </html>

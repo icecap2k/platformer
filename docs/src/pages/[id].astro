@@ -1,0 +1,25 @@
+---
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { base, navigation } from '../nav';
+
+export async function getStaticPaths() {
+  const { flat } = await navigation();
+  return flat.map((page, index) => ({
+    params: { id: page.id },
+    props: { page, previous: flat[index - 1], next: flat[index + 1] },
+  }));
+}
+
+const { page, previous, next } = Astro.props;
+const { Content } = await render(page);
+---
+<Base title={page.data.title} current={page.id}>
+  <h1>{page.data.title}</h1>
+  <p class="lead">{page.data.summary}</p>
+  <Content />
+  <div class="pager">
+    {previous && <a href={`${base}${previous.id}/`}>← {previous.data.title}</a>}
+    {next && <a href={`${base}${next.id}/`}>{next.data.title} →</a>}
+  </div>
+</Base>
