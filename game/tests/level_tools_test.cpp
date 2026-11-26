@@ -415,17 +415,17 @@ TEST_CASE("text <-> Tiled round trips") {
     SUBCASE("enemies (E) survive text -> tmj -> game and tmj -> text") {
         const TextLevel level = parseTextLevel("---\n.E.C\n####\n");
         REQUIRE(level.enemies.size() == 1);
-        CHECK(level.enemies[0].bounds.x == 8.0F);
-        CHECK(level.enemies[0].bounds.width == 8.0F);
+        CHECK(level.enemies[0].bounds.x == 4.0F);
+        CHECK(level.enemies[0].bounds.width == 16.0F);
         CHECK(level.coins.size() == 1);
 
         const Room room = infrastructure::parseTiledRoom("r", toTiledJson(level));
         REQUIRE(room.enemies().size() == 1);
-        CHECK(room.enemies()[0].bounds.x == 8.0F);
+        CHECK(room.enemies()[0].bounds.x == 4.0F);
 
         const TextLevel again = parseTextLevel(toText(room));
         REQUIRE(again.enemies.size() == 1);
-        CHECK(again.enemies[0].bounds.x == 8.0F);
+        CHECK(again.enemies[0].bounds.x == 4.0F);
         CHECK(again.tiles == level.tiles);
     }
 

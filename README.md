@@ -99,20 +99,23 @@ same `domain` library as the game, so they always use the real physics.
 ./build/level_to_text game/assets/tiled/room_02.tmj room_02.txt
 ```
 
-Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin, `F` healing fruit, `E` enemy, `K` checkpoint, `X` exit, `^` spikes, `V` stalactite trap, `/` and `\` ramps; header lines
+Text format: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin, `F` healing fruit, `E` enemy (two tiles big, standing on the bottom of its tile), `K` checkpoint, `X` exit, `^` spikes, `V` stalactite trap, `/` and `\` ramps; header lines
 `north/south/east/west: room_id`).
 
 ## Player art
 
-The player frames (14: idle, run, rise, apex, fall, land) are drawn in code by
-`game/tools/art/make_player_sprites.py` (Python, standard library only). Edit the
-frame definitions and run it to regenerate `game/assets/sprites/sprites.png`; the
-coin frames in the same sheet are preserved.
+The hero, a small figure in a big blue hood, is drawn in code by `game/tools/art/make_hero_sprites.py`
+(Python, standard library only) into `game/assets/sprites/hero.png`: 32x28 cells, one column per pose
+(17: idle, run, rise, apex, fall, land, hurt, slide, crouch) and one row per moment of the wave of the
+hood's tip (4). The drawing is bigger than the 8x16 collision box, which did not change.
 
 ```bash
-python3 game/tools/art/make_player_sprites.py
-python3 game/tools/art/make_player_sprites.py --preview preview.png   # enlarged, does not touch the sheet
+python3 game/tools/art/make_hero_sprites.py
+python3 game/tools/art/make_hero_sprites.py --preview preview.png   # enlarged, does not write the sheet
 ```
+
+The coins, the HUD hearts and the healing fruit are in `game/assets/sprites/sprites.png`, drawn by
+`game/tools/art/make_sprites.py` (the coin frames are preserved from the sheet on disk).
 
 ## Health and hazards
 
@@ -120,8 +123,7 @@ The player has 3 hearts. A hit (spikes, a falling stalactite) costs one, throws 
 and gives 1.5 s of invulnerability (the sprite blinks). With no hearts left the whole game restarts. Every hit goes
 through `domain::applyDamage` (`domain/rules/damage.h`), so future enemies feel the same. `level_check` treats
 touching spikes as deadly, so it only approves routes that avoid them (stalactites are not modelled).
-The hazard sprites come from `game/tools/art/make_hazards.py`, the hearts and the hurt frame from
-`make_player_sprites.py`.
+The hazard sprites come from `game/tools/art/make_hazards.py`, the hearts from `make_sprites.py`.
 
 ## Checkpoints
 

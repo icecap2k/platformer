@@ -69,6 +69,12 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 20 | **Salida final y salas 05-09**: objeto `exit` (símbolo `X`), `GameWon`, pantalla de final con las monedas, sonido `win`, cinco salas nuevas (13 monedas, 7 escarabajos) generadas por `make_rooms_05_09.py`; `level_check` exige tocar la salida; ADR-0018 y post 22 |
 
+## Hecho (E17 · Cambio de gráficos)
+
+| # | Tarea |
+|---|---|
+| 41 | **Nuevo protagonista** (capucha azul que ondea, `make_hero_sprites.py`, misma hitbox), **escarabajos de 16×16** (dibujo y hitbox, 4 pasos), checkpoint y salida más grandes, frutas flotando un tile sobre el suelo; ADR-0019 y post 23 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
@@ -99,4 +105,5 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 - Generalizar los coleccionables (tarea 8) **antes** de duplicar código para las frutas.
 - Los enemigos tampoco están en `level_check`: un nivel podría exigir pisarlos o esquivarlos sin que el comprobador lo sepa.
 - `level_check` explora ~16 M de estados (límite 20 M): otra sala o mecánica puede pasarse; ver tarea 13.
+- Con los escarabajos de 16×16 (ADR-0019) falta jugar las salas 03-09 de principio a fin y ajustar la dificultad.
 - Las estalactitas no están en el análisis de alcanzabilidad: un nivel podría ser "ganable" según `level_check` y exigir esquivarlas.

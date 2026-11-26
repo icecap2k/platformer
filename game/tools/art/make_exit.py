@@ -4,7 +4,7 @@
     python3 game/tools/art/make_exit.py
     python3 game/tools/art/make_exit.py --preview preview.png   # 10x enlarged, does not write the sheet
 
-Two 16x16 frames: a rough stone archway with daylight pouring in; the light brightens and dims
+Two 22x32 frames: a rough stone archway with daylight pouring in; the light brightens and dims
 between the frames. The renderer centres it on the exit's hitbox and sits it on the floor.
 """
 
@@ -12,62 +12,56 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from make_player_sprites import write_png  # noqa: E402
+from make_sprites import write_png  # noqa: E402
 
 OUT = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "exit.png"
 OUTLINE = (28, 20, 32, 255)
 STONE = (120, 116, 140, 255)
 STONE_DARK = (84, 80, 108, 255)
 
-ARCH = [
-    "....OOOOOOOO....",
-    "..OOsssssssOOO..",
-    ".OssdLLLLLLdssO.",
-    ".OsdLLLLLLLLdsO.",
-    "OsdLLLLLLLLLLdsO",
-    "OsdLLLLLLLLLLdsO",
-    "OsdLLLLLLLLLLdsO",
-    "OsdLLLLLLLLLLdsO",
-    "OsdLLLLLLLLLLdsO",
-    "OsdLLLLLLLLLLdsO",
-    "OsdLLLLLLLLLLdsO",
-    "OsdLLLLLLLLLLdsO",
-    "OsdLLLLLLLLLLdsO",
-    "OsdLLLLLLLLLLdsO",
-    "OsddLLLLLLLLddsO",
-    "OOOOOOOOOOOOOOOO",
+WIDTH, HEIGHT = 22, 32
+ARCH_TOP = [
+    "......OOOOOOOOOO......",
+    "...OOOssssssssssOOO...",
+    "..OssddLLLLLLLLddssO..",
+    ".OsddLLLLLLLLLLLLddsO.",
 ]
+ARCH_SIDE = "OsdLLLLLLLLLLLLLLLLdsO"
+ARCH_BOTTOM = ["OsddLLLLLLLLLLLLLLddsO", "O" * WIDTH]
+ARCH = ARCH_TOP + [ARCH_SIDE] * (HEIGHT - len(ARCH_TOP) - len(ARCH_BOTTOM)) + ARCH_BOTTOM
+JOINTS = (9, 17, 25)  # rows where a seam between two blocks of the pillars shows
 
 
 def frame(bright):
     light = (255, 250, 200, 255) if bright else (236, 232, 170, 255)
     light_edge = (255, 232, 140, 255) if bright else (222, 206, 120, 255)
-    rows = [[(0, 0, 0, 0)] * 16 for _ in range(16)]
+    rows = [[(0, 0, 0, 0)] * WIDTH for _ in range(HEIGHT)]
     for y, art_row in enumerate(ARCH):
-        assert len(art_row) == 16, f"row {y} must have 16 characters"
+        assert len(art_row) == WIDTH, f"row {y} must have {WIDTH} characters"
         for x, char in enumerate(art_row):
             if char == ".":
                 continue
-            colour = {"O": OUTLINE, "s": STONE, "d": STONE_DARK, "L": light}[char]
-            rows[y][x] = colour
-    # a softer edge on the light, and a few brighter "rays" near the middle
-    for y in range(2, 15):
-        for x in (3, 12):
+            rows[y][x] = {"O": OUTLINE, "s": STONE, "d": STONE_DARK, "L": light}[char]
+    for y in JOINTS:
+        for x in (1, 2, WIDTH - 3, WIDTH - 2):
+            rows[y][x] = STONE_DARK
+    for y in range(2, HEIGHT - 1):                   # a softer edge on the light
+        for x in (3, WIDTH - 4):
             if rows[y][x] == light:
                 rows[y][x] = light_edge
-    if bright:
-        for y in range(6, 14):
-            rows[y][7] = (255, 255, 235, 255)
-            rows[y][8] = (255, 255, 235, 255)
+    if bright:                                       # brighter rays near the middle
+        for y in range(8, HEIGHT - 4):
+            for x in range(WIDTH // 2 - 2, WIDTH // 2 + 2):
+                rows[y][x] = (255, 255, 235, 255)
     return rows
 
 
 def render():
-    sheet = [[(0, 0, 0, 0)] * 32 for _ in range(16)]
+    sheet = [[(0, 0, 0, 0)] * (2 * WIDTH) for _ in range(HEIGHT)]
     for index, bright in enumerate([False, True]):
         for y, row in enumerate(frame(bright)):
             for x, colour in enumerate(row):
-                sheet[y][index * 16 + x] = colour
+                sheet[y][index * WIDTH + x] = colour
     return sheet
 
 

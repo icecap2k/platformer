@@ -1235,15 +1235,15 @@
     },
     {
      "class": "walker",
-     "height": 8.0,
+     "height": 16.0,
      "id": 2,
      "name": "walker",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 8.0,
-     "x": 32.0,
-     "y": 208.0
+     "width": 16.0,
+     "x": 28.0,
+     "y": 200.0
     },
     {
      "class": "fruit",
@@ -1255,7 +1255,7 @@
      "visible": true,
      "width": 8.0,
      "x": 264.0,
-     "y": 208.0
+     "y": 200.0
     },
     {
      "class": "coin",

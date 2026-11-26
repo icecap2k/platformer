@@ -49,7 +49,7 @@ def room_05():
     r.fill(30, 30, 25, 26, "B")          # a low wall that stops it
     r.put(28, 26, "C")
     r.put(35, 26, "K")
-    r.put(22, 26, "F")
+    r.put(22, 25, "F")
     return r.text("west: room_04\neast: room_06\n")
 
 
@@ -62,7 +62,7 @@ def room_06():
     r.platform(6, 11, 23); r.put(8, 22, "C")
     r.platform(16, 21, 19); r.put(18, 18, "E")
     r.platform(6, 11, 15); r.put(8, 14, "C")
-    r.platform(16, 21, 11); r.put(18, 10, "F")
+    r.platform(16, 21, 11); r.put(18, 9, "F")
     r.platform(26, 31, 7); r.put(28, 6, "C")
     r.platform(33, 38, 3)                # the top step: jump north from it
     return r.text("west: room_05\nnorth: room_07\n")
@@ -80,7 +80,7 @@ def room_07():
     r.put(15, 18, "V")
     r.put(10, 26, "E")
     r.fill(20, 20, 25, 26, "B")
-    r.put(28, 26, "F")
+    r.put(28, 25, "F")
     r.put(4, 26, "C")
     return r.text("south: room_06\nwest: room_08\n")
 
@@ -100,7 +100,7 @@ def room_08():
     r.fill(7, 9, 26, 26, "^")
     r.put(4, 26, "E")
     r.put(1, 26, "C")
-    r.put(33, 26, "F")
+    r.put(33, 25, "F")
     return r.text("east: room_07\nwest: room_09\n")
 
 

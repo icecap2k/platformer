@@ -33,6 +33,22 @@ const std::map<std::string, Side>& sideNames() {
     return names;
 }
 
+// Enemies are two tiles big: centred on the symbol's tile and standing on
+// its bottom edge.
+domain::AABB largeItemAt(int column, int row, int tile_size) {
+    const float tile = static_cast<float>(tile_size);
+    return domain::AABB{static_cast<float>(column) * tile - tile * 0.5F, static_cast<float>(row - 1) * tile,
+                        tile * 2.0F, tile * 2.0F};
+}
+
+// The tile a large item is anchored to: the one under the middle of its bottom edge.
+int anchorColumn(float x, float width, int tile_size) {
+    return static_cast<int>(std::floor((x + width * 0.5F) / static_cast<float>(tile_size)));
+}
+int anchorRow(float y, float height, int tile_size) {
+    return static_cast<int>(std::floor((y + height - 0.5F) / static_cast<float>(tile_size)));
+}
+
 }  // namespace
 
 TextLevel parseTextLevel(const std::string& text) {
@@ -162,19 +178,18 @@ TextLevel parseTextLevel(const std::string& text) {
                 case 'K': {
                     const float size = static_cast<float>(level.tile_size);
                     level.checkpoints.push_back(domain::Checkpoint{static_cast<float>(column) * size,
-                                                                   static_cast<float>(row) * size, size});
+                                                                 static_cast<float>(row) * size, size});
                     break;
                 }
                 case 'E': {
-                    const float size = static_cast<float>(level.tile_size);
-                    level.enemies.push_back(domain::Enemy{domain::AABB{
-                        static_cast<float>(column) * size, static_cast<float>(row) * size, size, size}});
+                    const domain::AABB box = largeItemAt(column, row, level.tile_size);
+                    level.enemies.push_back(domain::Enemy{box});
                     break;
                 }
                 case 'F': {
                     const float size = static_cast<float>(level.tile_size);
                     level.fruits.push_back(domain::Fruit{static_cast<float>(column) * size,
-                                                         static_cast<float>(row) * size, size});
+                                                       static_cast<float>(row) * size, size});
                     break;
                 }
                 case 'C': {
@@ -437,17 +452,16 @@ std::string toText(const domain::Room& room) {
     }
 
     for (const domain::Enemy& enemy : room.enemies()) {
-        const float size = static_cast<float>(map.tileSize());
-        const int column = static_cast<int>(std::lround(enemy.bounds.x / size));
-        const int row = static_cast<int>(std::lround(enemy.bounds.y / size));
-        const bool is_tile = column >= 0 && column < map.width() && row >= 0 && row < map.height() &&
-                             enemy.bounds.x == static_cast<float>(column) * size &&
-                             enemy.bounds.y == static_cast<float>(row) * size &&
-                             enemy.bounds.width == size && enemy.bounds.height == size;
-        if (!is_tile) {
+        const int column = anchorColumn(enemy.bounds.x, enemy.bounds.width, map.tileSize());
+        const int row = anchorRow(enemy.bounds.y, enemy.bounds.height, map.tileSize());
+        const domain::AABB exact = largeItemAt(column, row, map.tileSize());
+        const bool is_symbol = column >= 0 && column < map.width() && row >= 0 && row < map.height() &&
+                               enemy.bounds.x == exact.x && enemy.bounds.y == exact.y &&
+                               enemy.bounds.width == exact.width && enemy.bounds.height == exact.height;
+        if (!is_symbol) {
             throw std::runtime_error("an enemy at (" + std::to_string(enemy.bounds.x) + ", " +
                                      std::to_string(enemy.bounds.y) +
-                                     ") is not exactly one tile, so it has no text symbol");
+                                     ") does not match the E symbol's two-tile box, so it has no text symbol");
         }
         char& cell = grid[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)];
         if (cell != '.') {

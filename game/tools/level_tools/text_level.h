@@ -21,6 +21,8 @@ namespace level_tools {
 // Header (above the line "---"): `north`, `south`, `east`, `west` = id of the
 // neighbouring room; `tile_size` = pixels per tile (default 8).
 // Grid (below it), one character per tile:
+//   E is TWO tiles big (16 px with the default tiles): centred on its tile and standing on
+//   its bottom edge.
 //   .  empty        #  ground (tile 1)        B  brick (tile 2)
 //   3  tile 3 of the tileset    4  tile 4 of the tileset (both solid, drawn as brick)
 //   C  coin on an empty tile    ^  spikes standing on an empty tile

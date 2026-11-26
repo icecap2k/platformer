@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include <cmath>
+
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -77,6 +79,21 @@ const std::string kWalkerMap = R"({
     { "type": "tilelayer", "name": "ground", "width": 4, "height": 2, "data": [0,0,0,0, 1,1,1,1] }
   ]
 })";
+
+// Is the box clear of blocks and ramps, resting exactly on top of ground under its middle?
+bool standsOnGround(const domain::TileMap& map, const domain::AABB& box) {
+    const float size = static_cast<float>(map.tileSize());
+    for (int row = static_cast<int>(std::floor(box.top() / size)); row * size < box.bottom(); ++row) {
+        for (int column = static_cast<int>(std::floor(box.left() / size)); column * size < box.right(); ++column) {
+            if (map.isGround(column, row)) {
+                return false;
+            }
+        }
+    }
+    const int below = static_cast<int>(std::lround(box.bottom() / size));
+    const int middle = static_cast<int>(std::floor((box.x + box.width * 0.5F) / size));
+    return box.bottom() == static_cast<float>(below) * size && map.isGround(middle, below);
+}
 
 const std::string kShippedRooms[] = {"room_01", "room_02", "room_03", "room_04", "room_05",
                                      "room_06", "room_07", "room_08", "room_09"};
@@ -357,17 +374,25 @@ TEST_CASE("the shipped rooms form a consistent world") {
         CHECK(graph.room("room_04").fruits().size() == 1);
     }
 
-    SUBCASE("no fruit is buried inside a solid tile, and each rests on something") {
+    SUBCASE("every fruit floats one tile above the ground") {
         for (const std::string& name : kShippedRooms) {
             const auto& room = graph.room(name);
-            const auto& map = room.map();
-            const int ts = map.tileSize();
             for (const auto& fruit : room.fruits()) {
                 INFO(name << " fruit at " << fruit.x << "," << fruit.y);
-                const int column = static_cast<int>(fruit.x) / ts;
-                const int row = static_cast<int>(fruit.y) / ts;
-                CHECK_FALSE(map.isGround(column, row));
-                CHECK(map.isGround(column, row + 1));  // it is not left floating in the air
+                domain::AABB resting = fruit.bounds();
+                CHECK_FALSE(standsOnGround(room.map(), resting));  // it is in the air...
+                resting.y += static_cast<float>(room.map().tileSize());
+                CHECK(standsOnGround(room.map(), resting));        // ...exactly one tile up
+            }
+        }
+    }
+
+    SUBCASE("walkers are two tiles big") {
+        for (const std::string& name : kShippedRooms) {
+            for (const auto& enemy : graph.room(name).enemies()) {
+                INFO(name << " enemy at " << enemy.bounds.x << "," << enemy.bounds.y);
+                CHECK(enemy.bounds.width == 16.0F);
+                CHECK(enemy.bounds.height == 16.0F);
             }
         }
     }
@@ -378,15 +403,9 @@ TEST_CASE("the shipped rooms form a consistent world") {
         CHECK(graph.room("room_03").enemies().size() == 1);
         CHECK(graph.room("room_04").enemies().size() == 1);
         for (const std::string& name : kShippedRooms) {
-            const auto& map = graph.room(name).map();
-            const int ts = map.tileSize();
             for (const auto& enemy : graph.room(name).enemies()) {
                 INFO(name << " enemy at " << enemy.bounds.x << "," << enemy.bounds.y);
-                const int column = static_cast<int>(enemy.bounds.x) / ts;
-                const int row = static_cast<int>(enemy.bounds.y) / ts;
-                CHECK_FALSE(map.isGround(column, row));
-                CHECK(map.isGround(column, row + 1));
-                CHECK(enemy.bounds.bottom() == static_cast<float>((row + 1) * ts));  // feet on the floor
+                CHECK(standsOnGround(graph.room(name).map(), enemy.bounds));  // feet on the floor
             }
         }
     }

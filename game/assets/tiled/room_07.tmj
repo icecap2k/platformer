@@ -1223,15 +1223,15 @@
    "objects": [
     {
      "class": "walker",
-     "height": 8.0,
+     "height": 16.0,
      "id": 1,
      "name": "walker",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 8.0,
-     "x": 80.0,
-     "y": 208.0
+     "width": 16.0,
+     "x": 76.0,
+     "y": 200.0
     },
     {
      "class": "fruit",
@@ -1243,7 +1243,7 @@
      "visible": true,
      "width": 8.0,
      "x": 224.0,
-     "y": 208.0
+     "y": 200.0
     },
     {
      "class": "coin",

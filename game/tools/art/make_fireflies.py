@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from make_player_sprites import write_png  # noqa: E402
+from make_sprites import write_png  # noqa: E402
 
 OUT = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "fireflies.png"
 BODY = (214, 255, 120, 255)
