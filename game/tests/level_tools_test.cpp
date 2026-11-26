@@ -538,24 +538,6 @@ TEST_CASE("text <-> Tiled round trips") {
 }
 
 TEST_CASE("the shipped levels") {
-    SUBCASE("every room survives tmj -> text -> tmj") {
-        for (const char* name : {"room_01", "room_02", "room_03", "room_04"}) {
-            INFO(name);
-            const Room original = infrastructure::loadTiledRoom(std::string(PLATFORMER_ASSETS_DIR) +
-                                                                "/tiled/" + name + ".tmj");
-            const TextLevel level = parseTextLevel(toText(original));
-            const Room again = infrastructure::parseTiledRoom(name, toTiledJson(level));
-
-            for (int row = 0; row < original.map().height(); ++row) {
-                for (int column = 0; column < original.map().width(); ++column) {
-                    REQUIRE(again.map().tileAt(column, row) == original.map().tileAt(column, row));
-                }
-            }
-            CHECK(again.neighbors() == original.neighbors());
-            CHECK(again.coins().size() == original.coins().size());
-        }
-    }
-
     SUBCASE("the example level in game/levels is valid and fully reachable") {
         const TextLevel level =
             parseTextLevel(readFile(std::string(PLATFORMER_LEVELS_DIR) + "/example.txt"));

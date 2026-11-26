@@ -13,7 +13,7 @@ struct ReachabilityOptions {
     float spawn_x = 40.0F;  // same defaults as the game's main.cpp
     float spawn_y = 60.0F;
     // Safety cap on the search; a report that hits it is marked truncated.
-    std::size_t max_states = 20'000'000;
+    std::size_t max_states = 40'000'000;  // each state costs about 50 bytes of memory
 };
 
 struct CoinStatus {

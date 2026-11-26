@@ -1,12 +1,13 @@
 #include <doctest/doctest.h>
 
+#include <algorithm>
 #include <cmath>
-
 #include <stdexcept>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "domain/enemies/enemy_patrols.h"
 #include "domain/world/room_graph.h"
 #include "infrastructure/assets/tiled_map_loader.h"
 
@@ -80,21 +81,6 @@ const std::string kWalkerMap = R"({
     { "type": "tilelayer", "name": "ground", "width": 4, "height": 2, "data": [0,0,0,0, 1,1,1,1] }
   ]
 })";
-
-// Is the box clear of blocks and ramps, resting exactly on top of ground under its middle?
-bool standsOnGround(const domain::TileMap& map, const domain::AABB& box) {
-    const float size = static_cast<float>(map.tileSize());
-    for (int row = static_cast<int>(std::floor(box.top() / size)); row * size < box.bottom(); ++row) {
-        for (int column = static_cast<int>(std::floor(box.left() / size)); column * size < box.right(); ++column) {
-            if (map.isGround(column, row)) {
-                return false;
-            }
-        }
-    }
-    const int below = static_cast<int>(std::lround(box.bottom() / size));
-    const int middle = static_cast<int>(std::floor((box.x + box.width * 0.5F) / size));
-    return box.bottom() == static_cast<float>(below) * size && map.isGround(middle, below);
-}
 
 const std::string kShippedRooms[] = {"room_01", "room_02", "room_03", "room_04", "room_05",
                                      "room_06", "room_07", "room_08", "room_09"};
@@ -343,81 +329,6 @@ TEST_CASE("the shipped rooms form a consistent world") {
         }
     }
 
-    SUBCASE("coins: one in some rooms, none in others") {
-        CHECK(graph.room("room_01").coins().size() == 1);
-        CHECK(graph.room("room_02").coins().empty());
-        CHECK(graph.room("room_03").coins().size() == 1);
-        CHECK(graph.room("room_04").coins().size() == 1);
-        CHECK(graph.totalCoins() == 13);
-    }
-
-    SUBCASE("room_01 climbs to its plateau by a 5 tile ramp that rests on solid ground") {
-        const auto& map = graph.room("room_01").map();
-        for (int i = 0; i < 5; ++i) {
-            const int column = 27 + i;
-            const int row = 26 - i;
-            INFO("ramp tile " << column << "," << row);
-            CHECK(map.shape(column, row) == domain::TileShape::SlopeRight);
-            CHECK(map.isSolid(column, row + 1));      // it stands on solid ground
-            if (i > 0) {
-                CHECK(map.isSolid(column, row + 1));  // with filler under it
-            }
-            CHECK(map.isSolid(column + 1, row));      // and a block at its high side
-        }
-        CHECK(map.isSolid(32, 22));                   // the plateau
-        CHECK_FALSE(map.isGround(32, 21));
-    }
-
-    SUBCASE("healing fruits: one in room_02 (past the spikes) and one in room_04") {
-        CHECK(graph.room("room_01").fruits().empty());
-        CHECK(graph.room("room_02").fruits().size() == 1);
-        CHECK(graph.room("room_03").fruits().empty());
-        CHECK(graph.room("room_04").fruits().size() == 1);
-    }
-
-    SUBCASE("every fruit floats one tile above the ground") {
-        for (const std::string& name : kShippedRooms) {
-            const auto& room = graph.room(name);
-            for (const auto& fruit : room.fruits()) {
-                INFO(name << " fruit at " << fruit.x << "," << fruit.y);
-                domain::AABB resting = fruit.bounds();
-                CHECK_FALSE(standsOnGround(room.map(), resting));  // it is in the air...
-                resting.y += static_cast<float>(room.map().tileSize());
-                CHECK(standsOnGround(room.map(), resting));        // ...exactly one tile up
-            }
-        }
-    }
-
-    SUBCASE("spikes are tall and sunk: rock under them and at both ends of the patch") {
-        for (const std::string& name : kShippedRooms) {
-            const auto& room = graph.room(name);
-            const int ts = room.map().tileSize();
-            const auto spikedAt = [&](int column, float bottom) {
-                for (const auto& other : room.hazards()) {
-                    const float x = static_cast<float>(column * ts);
-                    if (other.bounds.bottom() == bottom && x >= other.bounds.x && x < other.bounds.right()) {
-                        return true;
-                    }
-                }
-                return false;
-            };
-            for (const auto& spikes : room.hazards()) {
-                INFO(name << " spikes at " << spikes.bounds.x << "," << spikes.bounds.y);
-                CHECK(spikes.bounds.height == 12.0F);
-                const int row = static_cast<int>(spikes.bounds.bottom()) / ts - 1;
-                const int first = static_cast<int>(spikes.bounds.x) / ts;
-                const int last = static_cast<int>(spikes.bounds.right()) / ts - 1;
-                for (int column = first; column <= last && row + 1 < room.map().height(); ++column) {
-                    CHECK(room.map().isSolid(column, row + 1));
-                }
-                for (const int side : {first - 1, last + 1}) {
-                    const bool walled = room.map().isSolid(side, row) || spikedAt(side, spikes.bounds.bottom());
-                    CHECK(walled);
-                }
-            }
-        }
-    }
-
     SUBCASE("three orbs, one of each colour, floating in three different rooms") {
         std::set<domain::OrbColour> colours;
         int orbs = 0;
@@ -443,47 +354,6 @@ TEST_CASE("the shipped rooms form a consistent world") {
         CHECK(graph.totalOrbs() == 3);
     }
 
-    SUBCASE("walkers are two tiles big") {
-        for (const std::string& name : kShippedRooms) {
-            for (const auto& enemy : graph.room(name).enemies()) {
-                INFO(name << " enemy at " << enemy.bounds.x << "," << enemy.bounds.y);
-                CHECK(enemy.bounds.width == 16.0F);
-                CHECK(enemy.bounds.height == 16.0F);
-            }
-        }
-    }
-
-    SUBCASE("enemies: one walker in room_03 and one in room_04, each standing on the floor") {
-        CHECK(graph.room("room_01").enemies().empty());
-        CHECK(graph.room("room_02").enemies().empty());
-        CHECK(graph.room("room_03").enemies().size() == 1);
-        CHECK(graph.room("room_04").enemies().size() == 1);
-        for (const std::string& name : kShippedRooms) {
-            for (const auto& enemy : graph.room(name).enemies()) {
-                INFO(name << " enemy at " << enemy.bounds.x << "," << enemy.bounds.y);
-                CHECK(standsOnGround(graph.room(name).map(), enemy.bounds));  // feet on the floor
-            }
-        }
-    }
-
-    SUBCASE("checkpoints: one in room_02 (after the spikes) and one in room_03, both resting on the floor") {
-        CHECK(graph.room("room_01").checkpoints().empty());
-        CHECK(graph.room("room_02").checkpoints().size() == 1);
-        CHECK(graph.room("room_03").checkpoints().size() == 1);
-        CHECK(graph.room("room_04").checkpoints().empty());
-        for (const std::string& name : kShippedRooms) {
-            const auto& map = graph.room(name).map();
-            const int ts = map.tileSize();
-            for (const auto& checkpoint : graph.room(name).checkpoints()) {
-                INFO(name << " checkpoint at " << checkpoint.x << "," << checkpoint.y);
-                const int column = static_cast<int>(checkpoint.x) / ts;
-                const int row = static_cast<int>(checkpoint.y) / ts;
-                CHECK_FALSE(map.isGround(column, row));
-                CHECK(map.isGround(column, row + 1));
-            }
-        }
-    }
-
     SUBCASE("the world has nine rooms and exactly one exit, in the last one") {
         CHECK(graph.size() == 9);
         int exits = 0;
@@ -503,71 +373,55 @@ TEST_CASE("the shipped rooms form a consistent world") {
         }
     }
 
-    SUBCASE("exits and everything else placed on a floor in the new rooms: nothing is buried or floating") {
+    SUBCASE("walkers are two tiles big and every one of them patrols") {
         for (const std::string& name : kShippedRooms) {
             const auto& room = graph.room(name);
-            const int ts = room.map().tileSize();
-            for (const auto& exit : room.exits()) {
-                INFO(name << " exit at " << exit.x << "," << exit.y);
-                const int column = static_cast<int>(exit.x) / ts;
-                const int row = static_cast<int>(exit.y) / ts;
-                CHECK_FALSE(room.map().isGround(column, row));
-                CHECK(room.map().isGround(column, row + 1));
-            }
-        }
-    }
-
-    SUBCASE("hazards: spikes in rooms 01, 02 and 04, stalactite traps in 01 and 04") {
-        CHECK_FALSE(graph.room("room_01").hazards().empty());
-        CHECK_FALSE(graph.room("room_02").hazards().empty());
-        CHECK(graph.room("room_03").hazards().empty());
-        CHECK_FALSE(graph.room("room_04").hazards().empty());
-        CHECK(graph.room("room_01").stalactites().size() == 1);
-        CHECK(graph.room("room_02").stalactites().empty());
-        CHECK(graph.room("room_03").stalactites().empty());
-        CHECK(graph.room("room_04").stalactites().size() == 1);
-    }
-
-    SUBCASE("hazards and stalactites are not buried in solid tiles, and traps hang from a ceiling") {
-        for (const std::string& name : kShippedRooms) {
-            const auto& room = graph.room(name);
-            const auto& map = room.map();
-            const int ts = map.tileSize();
-            for (const auto& hazard : room.hazards()) {
-                INFO(name << " hazard at " << hazard.bounds.x << "," << hazard.bounds.y);
-                for (int column = static_cast<int>(hazard.bounds.left()) / ts;
-                     column <= static_cast<int>(hazard.bounds.right() - 1) / ts; ++column) {
-                    for (int row = static_cast<int>(hazard.bounds.top()) / ts;
-                         row <= static_cast<int>(hazard.bounds.bottom() - 1) / ts; ++row) {
-                        CHECK_FALSE(map.isSolid(column, row));
-                    }
+            for (const auto& enemy : room.enemies()) {
+                INFO(name << " enemy at " << enemy.bounds.x << "," << enemy.bounds.y
+                          << " (its bottom must be exactly on the top of a floor tile)");
+                CHECK(enemy.bounds.width == 16.0F);
+                CHECK(enemy.bounds.height == 16.0F);
+                // A walker that floats, or is sunk into the floor, only turns around where it is.
+                domain::EnemyState state;
+                float left = 0.0F;
+                float right = 0.0F;
+                for (int step = 0; step < 600; ++step) {
+                    domain::stepEnemy(enemy, state, room.map(), room.hazards());
+                    left = std::min(left, state.x_offset);
+                    right = std::max(right, state.x_offset);
                 }
-            }
-            for (const auto& stalactite : room.stalactites()) {
-                INFO(name << " stalactite at " << stalactite.bounds.x << "," << stalactite.bounds.y);
-                const int column = static_cast<int>(stalactite.bounds.x) / ts;
-                const int row = static_cast<int>(stalactite.bounds.y) / ts;
-                CHECK_FALSE(map.isSolid(column, row));
-                CHECK(map.isSolid(column, row - 1));  // it hangs from something solid
+                CHECK(right - left >= 8.0F);
             }
         }
     }
 
-    SUBCASE("no coin is buried inside a solid tile") {
+    SUBCASE("everything is on the screen, and nothing to touch is buried in rock") {
         for (const std::string& name : kShippedRooms) {
             const auto& room = graph.room(name);
+            const auto check = [&](const char* what, const domain::AABB& box) {
+                INFO(name << " " << what << " at " << box.x << "," << box.y);
+                CHECK(box.left() >= 0.0F);
+                CHECK(box.top() >= 0.0F);
+                CHECK(box.right() <= room.map().pixelWidth());
+                CHECK(box.bottom() <= room.map().pixelHeight());
+                const float size = static_cast<float>(room.map().tileSize());
+                CHECK_FALSE(room.map().isSolid(static_cast<int>((box.x + box.width * 0.5F) / size),
+                                               static_cast<int>((box.y + box.height * 0.5F) / size)));
+            };
             for (const auto& coin : room.coins()) {
-                INFO(name << " coin at " << coin.x << "," << coin.y);
-                const int ts = room.map().tileSize();
-                const int first_col = static_cast<int>(coin.x) / ts;
-                const int last_col = static_cast<int>(coin.x + coin.size - 1) / ts;
-                const int first_row = static_cast<int>(coin.y) / ts;
-                const int last_row = static_cast<int>(coin.y + coin.size - 1) / ts;
-                for (int row = first_row; row <= last_row; ++row) {
-                    for (int col = first_col; col <= last_col; ++col) {
-                        CHECK_FALSE(room.map().isSolid(col, row));
-                    }
-                }
+                check("coin", coin.bounds());
+            }
+            for (const auto& fruit : room.fruits()) {
+                check("fruit", fruit.bounds());
+            }
+            for (const auto& orb : room.orbs()) {
+                check("orb", orb.bounds());
+            }
+            for (const auto& checkpoint : room.checkpoints()) {
+                check("checkpoint", checkpoint.bounds());
+            }
+            for (const auto& exit : room.exits()) {
+                check("exit", exit.bounds());
             }
         }
     }

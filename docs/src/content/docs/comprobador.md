@@ -13,7 +13,7 @@ summary: Cómo level_check demuestra que un nivel se puede completar.
 
 ```bash
 ./build/level_check game/assets/tiled room_01
-./build/level_from_text game/levels/room_05.txt game/assets/tiled/room_05.tmj
+./build/level_from_text game/levels/example.txt example.tmj
 ./build/level_to_text game/assets/tiled/room_02.tmj room_02.txt
 ```
 
@@ -53,7 +53,8 @@ Las rutas que tocan pinchos se descartan.
 ./build/level_check game/assets/tiled room_09 20 190
 ```
 
-- Tiene un límite de 20 millones de estados y hoy explora unos 16: un mundo más grande puede superarlo.
+- Tiene un límite de 40 millones de estados y hoy explora unos 24 (en torno a 1,2 GB de memoria): si las salas
+  crecen mucho, puede superarlo y dar la comprobación por incompleta.
 
 Es mucho más rápido si compilas en modo *Release* (`-DCMAKE_BUILD_TYPE=Release`).
 

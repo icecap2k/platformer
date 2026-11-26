@@ -117,6 +117,12 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 49 | **Transiciones con easing**: deslizamiento entre salas y fundido entre pantallas y al reaparecer; ADR-0026 |
 
+## Hecho (E24 · Salas en Tiled)
+
+| # | Tarea |
+|---|---|
+| 50 | **Salas rediseñadas por el autor en Tiled** (14 monedas, 10 escarabajos); Tiled como original, pruebas de reglas en lugar de diseño, límite de `level_check` en 40 M; ADR-0027 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
@@ -146,6 +152,6 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 - Cada estado nuevo (salud, invulnerabilidad, estalactitas) agranda la búsqueda de `level_check`; ya pasó con el salto (tarea 13).
 - Generalizar los coleccionables (tarea 8) **antes** de duplicar código para las frutas.
 - Los enemigos tampoco están en `level_check`: un nivel podría exigir pisarlos o esquivarlos sin que el comprobador lo sepa.
-- `level_check` explora ~16 M de estados (límite 20 M): otra sala o mecánica puede pasarse; ver tarea 13.
+- `level_check` explora ~24 M de estados (límite 40 M, ~1,2 GB): otra sala o mecánica puede pasarse; ver tarea 13.
 - `level_check` comprueba cada orbe por separado, no el orden: al añadir salas, lanzarlo también desde la salida (ADR-0021).
 - Las estalactitas no están en el análisis de alcanzabilidad: un nivel podría ser "ganable" según `level_check` y exigir esquivarlas.
