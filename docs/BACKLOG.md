@@ -123,6 +123,12 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 50 | **Salas rediseñadas por el autor en Tiled** (14 monedas, 10 escarabajos); Tiled como original, pruebas de reglas en lugar de diseño, límite de `level_check` en 40 M; ADR-0027 |
 
+## Hecho (E25 · Comprobador)
+
+| # | Tarea |
+|---|---|
+| 13 | **Rendimiento de `level_check`**: de 15 s y 1,2 GB a 7 s y 550 MB, para cuando todo está encontrado (`--full`), límite de 60 M y Release por defecto; ADR-0028 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
@@ -133,7 +139,6 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
 | 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |
 | 40 | Menús: sonidos al moverse/elegir, opciones (volumen), mando y fuente propia con acentos | P3 | M | 18 |
-| 13 | **Rendimiento de `level_check`**: con la compilación por defecto tarda ~45 s, pero en **Release tarda ~4 s** (probado); decidir si `cmake` usa Release por defecto, y la poda sigue haciendo falta cuando crezca | P2 | S | — |
 | 14 | ~~CI en GitHub Actions~~ — hecho (`.github/workflows/ci.yml`: macOS, SDL3 con Homebrew, build Release y `ctest`; pasó en el PR #7). Pendiente: activar la protección de `main` exigiéndolo | P2 | S | — |
 | 17 | Partículas: polvo al aterrizar, destello de moneda, **fragmentos al romperse la estalactita** | P2 | S | — |
 | 18 | **Mando** (`GamepadInputMapper`; decidir cómo combinar con el teclado) | P2 | M | — |
@@ -152,6 +157,6 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 - Cada estado nuevo (salud, invulnerabilidad, estalactitas) agranda la búsqueda de `level_check`; ya pasó con el salto (tarea 13).
 - Generalizar los coleccionables (tarea 8) **antes** de duplicar código para las frutas.
 - Los enemigos tampoco están en `level_check`: un nivel podría exigir pisarlos o esquivarlos sin que el comprobador lo sepa.
-- `level_check` explora ~24 M de estados (límite 40 M, ~1,2 GB): otra sala o mecánica puede pasarse; ver tarea 13.
+- `level_check` explora ~24 M de estados (límite 60 M): si hiciera falta más, el siguiente paso es repartir la búsqueda entre núcleos (ADR-0028).
 - `level_check` comprueba cada orbe por separado, no el orden: al añadir salas, lanzarlo también desde la salida (ADR-0021).
 - Las estalactitas no están en el análisis de alcanzabilidad: un nivel podría ser "ganable" según `level_check` y exigir esquivarlas.

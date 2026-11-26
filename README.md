@@ -92,7 +92,8 @@ Built with the game (`build/level_check`, `build/level_from_text`, `build/level_
 same `domain` library as the game, so they always use the real physics.
 
 ```bash
-# Prove that every room and coin can be reached (also runs as a CTest test)
+# Prove that every room and coin can be reached (also runs as a CTest test). It stops once
+# everything is found; --full explores every situation anyway
 ./build/level_check game/assets/tiled room_01
 
 # Draw a level as text, then turn it into a Tiled map the game loads

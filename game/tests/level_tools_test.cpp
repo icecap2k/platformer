@@ -139,8 +139,29 @@ TEST_CASE("analyzeReachability") {
     SUBCASE("the state limit stops the search and says so") {
         ReachabilityOptions options = startAt("a");
         options.max_states = 50;
-        const auto report = analyzeReachability(oneRoom({}), options);
+        const auto report = analyzeReachability(oneRoom({Coin{100.0F, 100.0F}}), options);  // out of reach
         CHECK(report.truncated);
+        CHECK_FALSE(report.stopped_early);
+    }
+
+    SUBCASE("it stops as soon as everything is found, with the same answer") {
+        const auto world = oneRoom({Coin{100.0F, 208.0F}});
+        const auto quick = analyzeReachability(world, startAt("a"));
+        ReachabilityOptions everything = startAt("a");
+        everything.stop_when_all_found = false;
+        const auto full = analyzeReachability(world, everything);
+
+        CHECK(quick.stopped_early);
+        CHECK_FALSE(full.stopped_early);
+        CHECK(quick.allOk());
+        CHECK(full.allOk());
+        CHECK(quick.states_explored < full.states_explored);
+    }
+
+    SUBCASE("something out of reach makes it explore everything") {
+        const auto report = analyzeReachability(oneRoom({Coin{100.0F, 100.0F}}), startAt("a"));
+        CHECK_FALSE(report.stopped_early);
+        CHECK_FALSE(report.truncated);
     }
 }
 

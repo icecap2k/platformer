@@ -13,7 +13,10 @@ struct ReachabilityOptions {
     float spawn_x = 40.0F;  // same defaults as the game's main.cpp
     float spawn_y = 60.0F;
     // Safety cap on the search; a report that hits it is marked truncated.
-    std::size_t max_states = 40'000'000;  // each state costs about 50 bytes of memory
+    std::size_t max_states = 60'000'000;
+    // Stop as soon as every room has been entered and stood in and everything touched: the
+    // answer cannot change any more. Switch it off to explore every reachable situation.
+    bool stop_when_all_found = true;
 };
 
 struct CoinStatus {
@@ -61,15 +64,17 @@ struct ReachabilityReport {
     std::vector<OrbStatus> orbs;
     std::size_t states_explored = 0;
     bool truncated = false;
+    bool stopped_early = false;  // everything was found, so the rest was not explored
 
     // True when every room can be reached and every coin, fruit, checkpoint, orb and exit touched.
     bool allOk() const;
 };
 
-// Exhaustively explores everything a player can do (left/right/none x
-// jump/no jump, every simulation step) using the REAL game physics and room
-// rules, starting at `start_room` / spawn. Because the physics is
-// deterministic, the answer is a proof, not a guess.
+// Explores everything a player can do (left/right/none x jump/no jump, every
+// simulation step) using the REAL game physics and room rules, starting at
+// `start_room` / spawn. Because the physics is deterministic, the answer is a
+// proof, not a guess: "touchable" comes with a real sequence of inputs, and
+// "cannot be touched" means the whole search ran out without finding one.
 //
 // Throws std::invalid_argument if `start_room` is not in the graph.
 ReachabilityReport analyzeReachability(const domain::RoomGraph& world,

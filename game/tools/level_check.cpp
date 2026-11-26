@@ -1,6 +1,8 @@
 // level_check: proves that every room and every coin of a world can be reached.
 //
-//   level_check <folder with .tmj files> [start_room] [spawn_x spawn_y]
+//   level_check [--full] <folder with .tmj files> [start_room] [spawn_x spawn_y]
+//
+// It stops as soon as everything has been found; --full explores every situation anyway.
 //
 // Exit code: 0 = everything reachable, 1 = something is not, 2 = bad input.
 #include <algorithm>
@@ -15,13 +17,18 @@
 namespace {
 
 void printUsage() {
-    std::cerr << "usage: level_check <folder with .tmj files> [start_room] [spawn_x spawn_y]\n"
+    std::cerr << "usage: level_check [--full] <folder with .tmj files> [start_room] [spawn_x spawn_y]\n"
                  "  start_room defaults to room_01, spawn to 40 60 (the game's values)\n";
 }
 
 }  // namespace
 
 int main(int argc, char** argv) {
+    const bool full = argc > 1 && std::string(argv[1]) == "--full";
+    if (full) {  // take the flag out, so the rest is read as without it
+        ++argv;
+        --argc;
+    }
     if (argc != 2 && argc != 3 && argc != 5) {
         printUsage();
         return 2;
@@ -53,6 +60,7 @@ int main(int argc, char** argv) {
 
         level_tools::ReachabilityOptions options;
         options.start_room = argc >= 3 ? argv[2] : "room_01";
+        options.stop_when_all_found = !full;
         if (argc == 5) {
             options.spawn_x = std::stof(argv[3]);
             options.spawn_y = std::stof(argv[4]);
@@ -64,7 +72,8 @@ int main(int argc, char** argv) {
                   << "Start: " << options.start_room << " at (" << options.spawn_x << ", "
                   << options.spawn_y << ")\n"
                   << "Explored " << report.states_explored << " states"
-                  << (report.truncated ? " (STOPPED EARLY: search limit reached)" : "") << "\n\n";
+                  << (report.truncated ? " (INCOMPLETE: search limit reached)" : "")
+                  << (report.stopped_early ? " (everything found)" : "") << "\n\n";
 
         std::cout << "Rooms:\n";
         for (const auto& [id, reachable] : report.room_reachable) {
