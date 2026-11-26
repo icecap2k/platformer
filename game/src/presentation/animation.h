@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "domain/entities/player.h"
+#include "domain/world/orb.h"
 
 namespace presentation {
 
@@ -63,8 +64,29 @@ bool isVisibleWhileFading(int steps_left);
 // Frame (1..2) of an active checkpoint's glow (frame 0 is the unlit one).
 int checkpointFrame(std::uint64_t time_ms);
 
-// Frame (0..1) of the cave exit: its light brightens and dims.
+// Frame (0..kOrbFrames - 1) of an orb: it swells and shrinks once while its bubbles rise. Each
+// colour is a third of the loop apart, so they do not beat together. The column after the last
+// frame in orbs.png is the dashed silhouette left where an orb was taken.
+inline constexpr int kOrbFrames = 12;
+int orbFrame(domain::OrbColour colour, std::uint64_t time_ms);
+
+// How many pixels (-2..2) an orb floats up or down: a slow, smooth bob.
+int orbBob(domain::OrbColour colour, std::uint64_t time_ms);
+
+// Frame (0..1) of the open cave exit: its light brightens and dims.
 int exitFrame(std::uint64_t time_ms);
+
+// The exit's portcullis (frames of exit.png). Closed while orbs are missing. Once it is open, the
+// first time it is seen after entering its room it stays shut for kGateDelayMs, rises through
+// kGateFrames frames and then shows the open exit.
+inline constexpr int kExitClosedFrame = 2;
+inline constexpr int kGateFirstFrame = 3;
+inline constexpr int kGateFrames = 12;
+inline constexpr std::uint64_t kGateDelayMs = 350;
+inline constexpr std::uint64_t kGateFrameMs = 100;
+
+// Which frame of exit.png to draw. `ms_open` = how long the open exit has been on screen.
+int exitSpriteFrame(bool open, std::uint64_t ms_open, std::uint64_t time_ms);
 
 // Frame (0..kEnemyWalkFrames - 1) of the walking enemy: the cycle of its legs. The frame
 // after those in the sheet is the squashed one.

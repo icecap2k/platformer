@@ -80,6 +80,7 @@ bool ReachabilityReport::allOk() const {
                        [](const FruitStatus& fruit) { return fruit.touchable; }) &&
            std::all_of(checkpoints.begin(), checkpoints.end(),
                        [](const CheckpointStatus& checkpoint) { return checkpoint.touchable; }) &&
+           std::all_of(orbs.begin(), orbs.end(), [](const OrbStatus& orb) { return orb.touchable; }) &&
            std::all_of(exits.begin(), exits.end(), [](const ExitStatus& exit) { return exit.touchable; });
 }
 
@@ -106,6 +107,10 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
         const auto& checkpoints = world.room(id).checkpoints();
         for (std::size_t index = 0; index < checkpoints.size(); ++index) {
             report.checkpoints.push_back(CheckpointStatus{id, index, checkpoints[index], false});
+        }
+        const auto& orbs = world.room(id).orbs();
+        for (std::size_t index = 0; index < orbs.size(); ++index) {
+            report.orbs.push_back(OrbStatus{id, index, orbs[index], false});
         }
         const auto& exits = world.room(id).exits();
         for (std::size_t index = 0; index < exits.size(); ++index) {
@@ -150,6 +155,11 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
             if (checkpoint.room == room.id() && !checkpoint.touchable &&
                 current.player.bounds().overlaps(checkpoint.checkpoint.bounds())) {
                 checkpoint.touchable = true;
+            }
+        }
+        for (OrbStatus& orb : report.orbs) {
+            if (orb.room == room.id() && !orb.touchable && current.player.bounds().overlaps(orb.orb.bounds())) {
+                orb.touchable = true;
             }
         }
         for (ExitStatus& exit : report.exits) {

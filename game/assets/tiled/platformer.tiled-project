@@ -84,6 +84,23 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "color": "#ff9040",
+      "drawFill": true,
+      "id": 8,
+      "members": [
+        {
+          "name": "colour",
+          "type": "string",
+          "value": "red"
+        }
+      ],
+      "name": "orb",
+      "type": "class",
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

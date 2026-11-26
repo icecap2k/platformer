@@ -16,6 +16,7 @@ namespace presentation {
 namespace {
 
 // The hero (hero.png) is drawn bigger than its 8x16 collision box, centred on it.
+constexpr float kOrbCell = 26.0F;  // a cell of orbs.png: one row per colour, the silhouette after the frames
 constexpr float kPlayerSpriteWidth = 32.0F;
 constexpr float kPlayerSpriteHeight = 28.0F;
 // The sprite is aligned by its feet (a crouching player has a box half as tall): its
@@ -28,7 +29,6 @@ constexpr float kHeartSize = 8.0F;
 constexpr float kFruitSheetY = 34.0F;   // the glowing berry frames sit below the hearts
 constexpr float kFruitFrameSize = 16.0F;  // the berry is 8x8, in the middle of its halo
 
-constexpr float kDecorSize = 8.0F;
 
 // A cell outside the map counts as filled, so no outline is drawn along the
 // edges of the screen (the world continues into the next room there). Inside the
@@ -74,6 +74,7 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
       fireflies_(renderer, assets_dir + "sprites/fireflies.png"),
       checkpoints_(renderer, assets_dir + "sprites/checkpoints.png"),
       exit_(renderer, assets_dir + "sprites/exit.png"),
+      orbs_(renderer, assets_dir + "sprites/orbs.png"),
       cave_(renderer, assets_dir + "background/cave.png") {}
 
 void GameRenderer::draw(const application::GameSession* session, const application::GameFlow& flow) {
@@ -129,10 +130,11 @@ void GameRenderer::drawWorld(const application::GameSession& session, std::uint6
 
     drawCave();
     drawTiles(session.map());
-    drawScenery(session.map(), time_ms);
+    drawScenery(session.currentRoom(), time_ms);
     drawFireflies(session, time_ms);
     drawHazards(session);
     drawExits(session, time_ms);
+    drawOrbs(session, time_ms);
     drawCheckpoints(session, time_ms);
     drawEnemies(session, time_ms);
     drawFruits(session, time_ms);
@@ -188,79 +190,104 @@ void GameRenderer::drawTiles(const domain::TileMap& map) const {
     }
 }
 
-// Vegetation growing out of the tiles: it sticks out of the solid area, on
-// top of blocks and hanging below them (never on ramps).
-void GameRenderer::drawScenery(const domain::TileMap& map, std::uint64_t time_ms) const {
-    const float size = static_cast<float>(map.tileSize());
-    for (int row = 0; row < map.height(); ++row) {
-        for (int column = 0; column < map.width(); ++column) {
-            if (!map.isSolid(column, row)) {
-                continue;
-            }
-            const float x = static_cast<float>(column) * size;
-            const float y = static_cast<float>(row) * size;
-
-            if (row > 0 && !map.isGround(column, row - 1)) {
-                const int frame = standingDecoration(column, row);
-                if (frame != kNoDecoration) {
-                    decor_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kDecorSize, 0.0F, kDecorSize, kDecorSize},
-                                SDL_FRect{x, y - size + 1.0F, kDecorSize, kDecorSize});
-                }
-            }
-            if (row + 1 < map.height() && !map.isGround(column, row + 1)) {
-                const int frame = hangingDecoration(column, row);
-                if (frame != kNoDecoration) {
-                    decor_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kDecorSize, 0.0F, kDecorSize, kDecorSize},
-                                SDL_FRect{x, y + size - 1.0F, kDecorSize, kDecorSize});
-                    if (frame == kDecorStalactite) {
-                        drawDrip(map, column, row, time_ms);
-                    }
-                }
-            }
+// The scenery of the room (see decoration.h): it sticks out of the rock, one pixel into it so
+// that its outline merges with the rock's. The clusters of stalactites drip.
+void GameRenderer::drawScenery(const domain::Room& room, std::uint64_t time_ms) {
+    if (scenery_room_ != room.id()) {
+        scenery_room_ = room.id();
+        scenery_ = sceneryFor(room);
+    }
+    const float size = static_cast<float>(room.map().tileSize());
+    for (const Prop& prop : scenery_) {
+        const PropShape shape = propShape(prop.type);
+        const float width = static_cast<float>(shape.width) * size;
+        const float height = static_cast<float>(shape.height) * size;
+        SDL_FRect destination{static_cast<float>(prop.column) * size, static_cast<float>(prop.row) * size,
+                              width, height};
+        if (shape.attach == Attach::Floor) {
+            destination.y += 1.0F;
+        } else if (shape.attach == Attach::Ceiling) {
+            destination.y -= 1.0F;
+        } else {
+            destination.x += prop.mirrored ? 1.0F : -1.0F;
+        }
+        const SDL_FRect source{static_cast<float>(static_cast<int>(prop.type) * kPropCellSize), 0.0F, width, height};
+        decor_.draw(renderer_, source, destination, prop.mirrored);
+        if (prop.type == PropType::StalactiteCluster) {
+            drawDrip(room.map(), prop, destination.y, time_ms);
         }
     }
 }
 
-// The water drop of the stalactite hanging from the tile at (column, row): it
-// forms at the tip, falls until it meets the first solid tile below (or the
-// bottom of the screen) and splashes there. Only decoration: nothing in the
-// game reacts to it.
-void GameRenderer::drawDrip(const domain::TileMap& map, int column, int row,
+// The water drop of a stalactite cluster whose top is at `top`: it forms at the longest tip, falls
+// until it meets the first solid tile below (or the bottom of the screen) and splashes there. Only
+// decoration: nothing in the game reacts to it.
+void GameRenderer::drawDrip(const domain::TileMap& map, const Prop& prop, float top,
                             std::uint64_t time_ms) const {
-    constexpr float kDropTopInSprite = 5.0F;  // where the drop starts, inside the stalactite frame
+    constexpr float kDrop = 8.0F;             // the drop frames are 8x8
+    constexpr float kDropTopInFrame = 5.0F;   // where the drop starts inside its frame
+    constexpr float kDropCentreInFrame = 4.0F;
     constexpr float kDropHeight = 2.0F;
 
     const float size = static_cast<float>(map.tileSize());
-    int ground_row = row + 1;
-    while (ground_row < map.height() && !map.isGround(column, ground_row)) {
+    const float x = static_cast<float>(prop.column) * size + static_cast<float>(kDripTipX) - kDropCentreInFrame;
+    const float forming_y = top + static_cast<float>(kDripTipY) - kDropTopInFrame;
+    const int tip_column = prop.column + kDripTipX / map.tileSize();
+    int ground_row = prop.row + propShape(prop.type).height;
+    while (ground_row < map.height() && !map.isGround(tip_column, ground_row)) {
         ++ground_row;
     }
     const float ground_y = static_cast<float>(ground_row) * size;
-    const float sprite_y = static_cast<float>(row) * size + size - 1.0F;
-    const float fall_distance = ground_y - (sprite_y + kDropTopInSprite + kDropHeight);
+    const float fall_distance = ground_y - (forming_y + kDropTopInFrame + kDropHeight);
 
-    const Drip drip = dripAt(column, row, fall_distance, time_ms);
+    const Drip drip = dripAt(prop.column, prop.row, fall_distance, time_ms);
     if (drip.phase == DripPhase::None) {
         return;
     }
-    const float x = static_cast<float>(column) * size;
-    const SDL_FRect source{static_cast<float>(drip.frame) * kDecorSize, 0.0F, kDecorSize, kDecorSize};
-    float y = sprite_y;  // forming: right under the stalactite's tip
+    float y = forming_y;
     if (drip.phase == DripPhase::Falling) {
         y += drip.fall_offset;
     } else if (drip.phase == DripPhase::Splash) {
-        y = ground_y - kDecorSize;  // the splash frames end in their bottom row
+        y = ground_y - kDrop;  // the splash frames end in their bottom row
     }
-    decor_.draw(renderer_, source, SDL_FRect{x, y, kDecorSize, kDecorSize});
+    const SDL_FRect source{static_cast<float>(drip.frame) * kDrop, static_cast<float>(kPropCellSize), kDrop, kDrop};
+    decor_.draw(renderer_, source, SDL_FRect{x, y, kDrop, kDrop});
 }
 
-// The cave exit: a glowing archway standing on the floor, centred on its hitbox.
-void GameRenderer::drawExits(const application::GameSession& session, std::uint64_t time_ms) const {
+// The orbs of the room, floating and beating; where one has been taken, its dashed silhouette.
+void GameRenderer::drawOrbs(const application::GameSession& session, std::uint64_t time_ms) const {
+    const domain::Room& room = session.currentRoom();
+    for (std::size_t index = 0; index < room.orbs().size(); ++index) {
+        const domain::Orb& orb = room.orbs()[index];
+        const bool taken = session.collectedOrbs().isCollected(room.id(), index);
+        const int column = taken ? kOrbFrames : orbFrame(orb.colour, time_ms);
+        const float bob = taken ? 0.0F : static_cast<float>(orbBob(orb.colour, time_ms));
+        const SDL_FRect source{static_cast<float>(column) * kOrbCell,
+                               static_cast<float>(static_cast<int>(orb.colour)) * kOrbCell, kOrbCell, kOrbCell};
+        // The cell is bigger than the hitbox (the ball swells and glows): centred on it.
+        const float margin = (kOrbCell - orb.size) * 0.5F;
+        orbs_.draw(renderer_, source, SDL_FRect{orb.x - margin, orb.y - margin + bob, kOrbCell, kOrbCell});
+    }
+}
+
+// The cave exit: an archway standing on the floor, centred on its hitbox. A portcullis shuts it
+// until every orb is taken; walking into its room with all of them, it rises.
+void GameRenderer::drawExits(const application::GameSession& session, std::uint64_t time_ms) {
     constexpr float kWidth = 22.0F;
     constexpr float kHeight = 32.0F;
-    for (const domain::Exit& exit : session.currentRoom().exits()) {
+    const domain::Room& room = session.currentRoom();
+    const bool on_screen = session.exitOpen() && !room.exits().empty();
+    if (!on_screen) {
+        gate_room_.clear();  // leaving the room: the next visit raises it again
+    } else if (gate_room_ != room.id()) {
+        gate_room_ = room.id();
+        gate_open_since_ms_ = time_ms;
+    }
+    const std::uint64_t ms_open = on_screen ? time_ms - gate_open_since_ms_ : 0;
+    for (const domain::Exit& exit : room.exits()) {
         const domain::AABB box = exit.bounds();
-        exit_.draw(renderer_, SDL_FRect{static_cast<float>(exitFrame(time_ms)) * kWidth, 0.0F, kWidth, kHeight},
+        const int frame = exitSpriteFrame(session.exitOpen(), ms_open, time_ms);
+        exit_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kWidth, 0.0F, kWidth, kHeight},
                    SDL_FRect{box.x + (box.width - kWidth) * 0.5F, box.bottom() - kHeight, kWidth, kHeight});
     }
 }
@@ -294,20 +321,21 @@ void GameRenderer::drawFireflies(const application::GameSession& session, std::u
     }
 }
 
-// Spikes: the hazard's rectangle is the hitbox, and the 8x8 spike sprite is
+// Spikes: the hazard's rectangle is the hitbox, and the 8x16 spike sprite is
 // repeated along it. The sprite is drawn one pixel lower than the rectangle's
-// bottom edge: its last row is a dark line that merges with the floor's top
-// outline, so the teeth look embedded in the floor.
+// bottom edge: its last row is a dark line that merges with the outline of the
+// rock below, so the points look stuck in the ground.
 void GameRenderer::drawHazards(const application::GameSession& session) const {
     constexpr float kSprite = 8.0F;
-    constexpr float kEmbed = 1.0F;  // how many pixels the sprite sinks into the floor
+    constexpr float kSpikeHeight = 16.0F;
+    constexpr float kEmbed = 1.0F;  // how many pixels the sprite sinks into the ground
     const domain::Room& room = session.currentRoom();
     for (const domain::Hazard& hazard : room.hazards()) {
         const domain::AABB& box = hazard.bounds;
         for (float x = box.x; x < box.right(); x += kSprite) {
             const float width = std::min(kSprite, box.right() - x);
-            hazards_.draw(renderer_, SDL_FRect{0.0F, 0.0F, width, kSprite},
-                          SDL_FRect{x, box.bottom() - kSprite + kEmbed, width, kSprite});
+            hazards_.draw(renderer_, SDL_FRect{0.0F, 0.0F, width, kSpikeHeight},
+                          SDL_FRect{x, box.bottom() - kSpikeHeight + kEmbed, width, kSpikeHeight});
         }
     }
 
@@ -414,6 +442,21 @@ void GameRenderer::drawHud(const application::GameSession& session, std::uint64_
                              std::to_string(session.totalCoins());
     SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
     SDL_RenderDebugText(renderer_, 18.0F, 5.0F, text.c_str());
+
+    // The orbs, top centre: a small ball for each one taken, its dashed silhouette until then.
+    if (session.totalOrbs() > 0) {
+        constexpr float kIcon = 11.0F;
+        constexpr float kIconRow = 3.0F * kOrbCell;  // the icons are below the three rows of cells
+        constexpr float kGap = 3.0F;
+        constexpr int kColours = 3;
+        const float first = (320.0F - kColours * kIcon - (kColours - 1) * kGap) * 0.5F;
+        for (int colour = 0; colour < kColours; ++colour) {
+            const bool taken = session.hasTakenOrb(static_cast<domain::OrbColour>(colour));
+            const int column = taken ? colour : kColours + colour;
+            orbs_.draw(renderer_, SDL_FRect{static_cast<float>(column) * kIcon, kIconRow, kIcon, kIcon},
+                       SDL_FRect{first + static_cast<float>(colour) * (kIcon + kGap), 3.0F, kIcon, kIcon});
+        }
+    }
 
     // Hearts, top right: full ones, then empty ones for the hearts lost.
     constexpr float kHeartGap = 1.0F;

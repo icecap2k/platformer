@@ -78,6 +78,20 @@ struct CheckpointReached {
     std::size_t index;
 };
 
+// An orb was taken. `collected` includes it; when it reaches `total` the exit is open.
+struct OrbCollected {
+    domain::RoomId room;
+    std::size_t orb_index;
+    domain::OrbColour colour;
+    int collected;
+    int total;
+};
+
+// The open exit came into view (the player entered its room with every orb): its portcullis rises.
+struct GateOpened {
+    domain::RoomId room;
+};
+
 // The player touched the exit of the cave: the game is won.
 struct GameWon {
     int coins;        // collected
@@ -95,6 +109,6 @@ struct GameRestarted {};
 using GameEvent = std::variant<RoomChanged, CoinCollected, FruitEaten, PlayerJumped, PlayerLanded,
                                SlideStarted, PlayerHurt, StalactiteWarned, StalactiteFell,
                                StalactiteShattered, EnemyStomped, CheckpointReached, PlayerRespawned,
-                               GameWon, GameRestarted>;
+                               OrbCollected, GateOpened, GameWon, GameRestarted>;
 
 }  // namespace application

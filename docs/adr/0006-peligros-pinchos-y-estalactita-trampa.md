@@ -1,6 +1,6 @@
 # ADR-0006: Peligros: pinchos y estalactita trampa
 
-- Estado: Aceptada
+- Estado: Aceptada (el dibujo y el tamaño de los pinchos, sustituidos por ADR-0020)
 - Fecha: 2026-11-19
 
 ## Contexto

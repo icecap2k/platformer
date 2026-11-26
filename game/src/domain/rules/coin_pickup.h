@@ -34,4 +34,8 @@ std::vector<std::size_t> coinsTouchedBy(const Player& player, const Room& room,
 std::vector<std::size_t> fruitsTouchedBy(const Player& player, const Room& room,
                                          const PickupCollection& collection);
 
+// Same for the orbs of the room (indices into room.orbs()).
+std::vector<std::size_t> orbsTouchedBy(const Player& player, const Room& room,
+                                       const PickupCollection& collection);
+
 }  // namespace domain

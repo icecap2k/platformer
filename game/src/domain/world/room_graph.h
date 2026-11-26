@@ -26,6 +26,7 @@ public:
 
     // Number of coins in the whole world (collected or not).
     int totalCoins() const;
+    int totalOrbs() const;
 
 private:
     std::map<RoomId, Room> rooms_;

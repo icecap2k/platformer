@@ -100,6 +100,14 @@ int main(int argc, char** argv) {
             }
         }
 
+        if (!report.orbs.empty()) {
+            std::cout << "\nOrbs (all of them are needed to open the exit):\n";
+            for (const level_tools::OrbStatus& orb : report.orbs) {
+                std::cout << "  " << orb.room << " #" << orb.index << " at (" << orb.orb.x << ", " << orb.orb.y
+                          << ")  " << (orb.touchable ? "OK" : "CANNOT BE TOUCHED") << '\n';
+            }
+        }
+
         if (!report.exits.empty()) {
             std::cout << "\nExits:\n";
             for (const level_tools::ExitStatus& exit : report.exits) {

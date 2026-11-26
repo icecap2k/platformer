@@ -24,16 +24,16 @@ enum class DripPhase {
 
 struct Drip {
     DripPhase phase = DripPhase::None;
-    int frame = 0;             // frame of assets/sprites/decor.png to draw
+    int frame = 0;             // frame of the drop row of assets/sprites/decor.png to draw
     float fall_offset = 0.0F;  // while Falling: pixels the drop has fallen
 };
 
-// Frames of the drop animation in decor.png (see decoration.h).
-inline constexpr int kDripFormingSmall = 8;
-inline constexpr int kDripFormingLarge = 9;
-inline constexpr int kDripFalling = 10;
-inline constexpr int kDripSplashA = 11;
-inline constexpr int kDripSplashB = 12;
+// Frames of the drop animation: 8x8 each, in the row below the props of decor.png.
+inline constexpr int kDripFormingSmall = 0;
+inline constexpr int kDripFormingLarge = 1;
+inline constexpr int kDripFalling = 2;
+inline constexpr int kDripSplashA = 3;
+inline constexpr int kDripSplashB = 4;
 
 inline constexpr float kMinFallDistance = 8.0F;  // closer to the ground than this: no drop
 

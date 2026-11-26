@@ -203,6 +203,46 @@ std::vector<domain::Exit> readExits(const json& map) {
     return exits;
 }
 
+// Orbs are rectangle objects of class "orb" with a string property "colour": red, green or yellow.
+std::vector<domain::Orb> readOrbs(const json& map) {
+    static const std::map<std::string, domain::OrbColour> kColours = {
+        {"red", domain::OrbColour::Red}, {"green", domain::OrbColour::Green}, {"yellow", domain::OrbColour::Yellow}};
+    std::vector<domain::Orb> orbs;
+    for (const json& layer : map.at("layers")) {
+        if (layer.at("type").get<std::string>() != "objectgroup") {
+            continue;
+        }
+        for (const json& object : layer.at("objects")) {
+            const std::string kind = object.value("class", object.value("type", std::string()));
+            if (kind != "orb") {
+                continue;
+            }
+            std::string colour;
+            if (object.contains("properties")) {
+                for (const json& property : object.at("properties")) {
+                    if (property.at("name").get<std::string>() == "colour") {
+                        colour = property.at("value").get<std::string>();
+                    }
+                }
+            }
+            const auto found = kColours.find(colour);
+            if (found == kColours.end()) {
+                throw std::invalid_argument("an 'orb' object needs a 'colour' property: red, green or yellow");
+            }
+            domain::Orb orb;
+            orb.x = object.at("x").get<float>();
+            orb.y = object.at("y").get<float>();
+            const float width = object.value("width", 0.0F);
+            if (width > 0.0F) {
+                orb.size = width;
+            }
+            orb.colour = found->second;
+            orbs.push_back(orb);
+        }
+    }
+    return orbs;
+}
+
 // Spikes are rectangle objects of class "spikes": the rectangle IS the hitbox.
 std::vector<domain::Hazard> readHazards(const json& map) {
     std::vector<domain::Hazard> hazards;
@@ -259,7 +299,7 @@ domain::Room parseTiledRoom(const std::string& room_id, const std::string& json_
         const json map = json::parse(json_text);
         return domain::Room(room_id, readTiles(map), readNeighbors(map), readCoins(map),
                             readHazards(map), readStalactites(map), readFruits(map), readEnemies(map),
-                            readCheckpoints(map), readExits(map));
+                            readCheckpoints(map), readExits(map), readOrbs(map));
     } catch (const json::exception& error) {
         throw std::runtime_error("Invalid Tiled map '" + room_id + "': " + error.what());
     } catch (const std::invalid_argument& error) {

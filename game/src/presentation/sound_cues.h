@@ -24,6 +24,8 @@ enum class Sound {
     StalactiteCrash,    // it shatters
     Checkpoint,         // a checkpoint lights up
     Stomp,              // the player lands on an enemy
+    Orb,                // one of the orbs is taken
+    Gate,               // the portcullis of the exit rises
     Win,                // the exit is reached
     Restart,            // all hearts lost: the game starts over
 };

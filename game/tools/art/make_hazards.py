@@ -4,11 +4,10 @@
     python3 game/tools/art/make_hazards.py
     python3 game/tools/art/make_hazards.py --preview preview.png   # 10x enlarged, does not write the sheet
 
-Frame 0 (8x8): a patch of floor spikes, sawtooth style (drawn programmatically). Frame 1 (8x8): the stalactite trap, paler than
-the scenery's stalactites and cracked, so it reads as loose. The tips start 3 px below the top of the
-frame, matching the hitbox of a `^` tile (see tools/level_tools/text_level.h):
-the renderer repeats this frame along a hazard's rectangle, with its bottom
-edge on the rectangle's bottom edge.
+At x = 0 (8x16): a patch of floor spikes. At x = 8 (8x8, top): the stalactite trap, paler than
+the scenery's stalactites and cracked, so it reads as loose. A `^` tile's hitbox is 12 px tall (see
+tools/level_tools/text_level.h), shorter than the points, so brushing the tips is forgiven: the
+renderer repeats the spikes along a hazard's rectangle, aligned to its bottom edge.
 """
 
 import sys
@@ -20,25 +19,35 @@ from make_sprites import write_png  # noqa: E402
 OUT = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "hazards.png"
 OUTLINE = (28, 20, 32, 255)
 
-# Sawtooth spikes: one pointed tooth per tile (6 px tall, stepping out to 6 px
-# wide), so a patch of several tiles makes a zig-zag. Row 7 is a dark line that
-# merges with the floor's top outline: the renderer draws the sprite 1 px lower
-# than the hazard rectangle's bottom edge, so the teeth look embedded in the floor.
+# Tall spikes: in each tile one long stone point with a shorter one beside it, so a patch
+# makes an irregular zig-zag. The lower half normally sits inside a one-tile trench in the
+# floor (see ADR-0020). The renderer draws the sprite 1 px lower than the hazard rectangle's
+# bottom edge, so the dark last row merges with the outline of the rock below.
 SPIKE_ART = [
-    "...OO...",
-    "..OaaO..",
-    "..OabO..",
-    ".OaabdO.",
-    ".OaabdO.",
-    "OaabbddO",
-    "OaabbddO",
+    "..O.....",
+    ".OaO....",
+    ".OaO....",
+    ".OabO...",
+    ".OabO...",
+    "OaabO.O.",
+    "OaabOOaO",
+    "OaabdOaO",
+    "OaabdOab",
+    "OaabdOab",
+    "OabbdOab",
+    "OabbdabO",
+    "OabbdabO",
+    "ObbddbdO",
+    "OdddddbO",
     "OOOOOOOO",
 ]
 SPIKE_PALETTE = {"a": (246, 248, 255, 255), "b": (188, 200, 232, 255), "d": (118, 130, 176, 255)}
+SPIKE_HEIGHT = 16
 
 
 def spikes_sprite():
-    rows = [[(0, 0, 0, 0)] * 8 for _ in range(8)]
+    rows = [[(0, 0, 0, 0)] * 8 for _ in range(SPIKE_HEIGHT)]
+    assert len(SPIKE_ART) == SPIKE_HEIGHT
     for y, art_row in enumerate(SPIKE_ART):
         assert len(art_row) == 8, f"row {y} must have 8 characters"
         for x, char in enumerate(art_row):
@@ -62,7 +71,7 @@ TRAP = [
 
 
 def render():
-    sheet = [[(0, 0, 0, 0)] * 16 for _ in range(8)]
+    sheet = [[(0, 0, 0, 0)] * 16 for _ in range(SPIKE_HEIGHT)]
     for y, row in enumerate(spikes_sprite()):
         for x, colour in enumerate(row):
             sheet[y][x] = colour

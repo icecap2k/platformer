@@ -39,10 +39,24 @@ void GameSession::restart() {
     player_.y = spawn_y_;
     collected_coins_ = domain::CoinCollection{};
     eaten_fruits_ = domain::PickupCollection{};
+    collected_orbs_ = domain::PickupCollection{};
     traps_ = domain::StalactiteTraps{};
     enemies_ = domain::EnemyPatrols{};
     last_checkpoint_.reset();
+    gate_room_.clear();
     won_ = false;
+}
+
+bool GameSession::hasTakenOrb(domain::OrbColour colour) const {
+    for (const domain::RoomId& id : world_.ids()) {
+        const auto& orbs = world_.room(id).orbs();
+        for (std::size_t index = 0; index < orbs.size(); ++index) {
+            if (orbs[index].colour == colour && collected_orbs_.isCollected(id, index)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void GameSession::respawnAtCheckpoint() {
@@ -177,6 +191,12 @@ std::vector<GameEvent> GameSession::update(const domain::InputState& input) {
         events.push_back(FruitEaten{here.id(), index, player_.health, gained});
     }
 
+    for (const std::size_t index : domain::orbsTouchedBy(player_, here, collected_orbs_)) {
+        collected_orbs_.collect(here.id(), index);
+        events.push_back(OrbCollected{here.id(), index, here.orbs()[index].colour, collected_orbs_.count(),
+                                      world_.totalOrbs()});
+    }
+
     // Checkpoints: touching one that is not the active one makes it the new respawn point.
     for (std::size_t index = 0; index < here.checkpoints().size(); ++index) {
         const std::pair<domain::RoomId, std::size_t> id{here.id(), index};
@@ -186,9 +206,17 @@ std::vector<GameEvent> GameSession::update(const domain::InputState& input) {
         }
     }
 
-    // The exit: touching it wins the game, and the session stops there.
+    // Walking into the room of the open exit raises its portcullis (again on every visit).
+    if (!exitOpen() || here.exits().empty()) {
+        gate_room_.clear();
+    } else if (gate_room_ != here.id()) {
+        gate_room_ = here.id();
+        events.push_back(GateOpened{here.id()});
+    }
+
+    // The exit: once every orb is taken, touching it wins the game, and the session stops there.
     for (const domain::Exit& exit : here.exits()) {
-        if (player_.bounds().overlaps(exit.bounds())) {
+        if (exitOpen() && player_.bounds().overlaps(exit.bounds())) {
             won_ = true;
             events.push_back(GameWon{collected_coins_.count(), world_.totalCoins()});
             return events;

@@ -49,6 +49,18 @@ int anchorRow(float y, float height, int tile_size) {
     return static_cast<int>(std::floor((y + height - 0.5F) / static_cast<float>(tile_size)));
 }
 
+const char* orbColourName(domain::OrbColour colour) {
+    switch (colour) {
+        case domain::OrbColour::Red:
+            return "red";
+        case domain::OrbColour::Green:
+            return "green";
+        case domain::OrbColour::Yellow:
+            return "yellow";
+    }
+    return "red";
+}
+
 }  // namespace
 
 TextLevel parseTextLevel(const std::string& text) {
@@ -157,10 +169,10 @@ TextLevel parseTextLevel(const std::string& text) {
                     break;
                 case '^': {
                     const float size = static_cast<float>(level.tile_size);
-                    const float inset = size * kSpikeInsetFraction;
+                    const float height = size * kSpikeHeightTiles;
                     level.hazards.push_back(domain::Hazard{domain::AABB{
-                        static_cast<float>(column) * size, static_cast<float>(row) * size + inset,
-                        size, size - inset}});
+                        static_cast<float>(column) * size, static_cast<float>(row + 1) * size - height,
+                        size, height}});
                     break;
                 }
                 case 'V': {
@@ -186,6 +198,17 @@ TextLevel parseTextLevel(const std::string& text) {
                     level.enemies.push_back(domain::Enemy{box});
                     break;
                 }
+                case 'R':
+                case 'G':
+                case 'Y': {
+                    const char symbol = cells[static_cast<std::size_t>(column)];
+                    const domain::AABB box = largeItemAt(column, row, level.tile_size);
+                    const auto colour = symbol == 'R'   ? domain::OrbColour::Red
+                                        : symbol == 'G' ? domain::OrbColour::Green
+                                                        : domain::OrbColour::Yellow;
+                    level.orbs.push_back(domain::Orb{box.x, box.y, box.width, colour});
+                    break;
+                }
                 case 'F': {
                     const float size = static_cast<float>(level.tile_size);
                     level.fruits.push_back(domain::Fruit{static_cast<float>(column) * size,
@@ -201,7 +224,7 @@ TextLevel parseTextLevel(const std::string& text) {
                 default:
                     failAt(line_number, std::string("unknown character '") +
                                             cells[static_cast<std::size_t>(column)] +
-                                            "' (use . # B 3 4 / \\ ^ V C F E K X)");
+                                            "' (use . # B 3 4 / \\ ^ V C F E K X R G Y)");
             }
             level.tiles[static_cast<std::size_t>(row * level.width + column)] = tile;
         }
@@ -213,7 +236,7 @@ domain::Room toRoom(const domain::RoomId& id, const TextLevel& level) {
     return domain::Room(id, domain::TileMap(level.width, level.height, level.tile_size, level.tiles),
                         level.neighbors, level.coins, level.hazards, level.stalactites,
                         level.fruits, level.enemies, level.checkpoints,
-                        level.exits);
+                        level.exits, level.orbs);
 }
 
 std::string toTiledJson(const TextLevel& level) {
@@ -238,6 +261,20 @@ std::string toTiledJson(const TextLevel& level) {
                            {"height", exit.size},
                            {"rotation", 0},
                            {"visible", true}});
+    }
+    for (const domain::Orb& orb : level.orbs) {
+        objects.push_back({{"id", object_id++},
+                           {"name", "orb"},
+                           {"type", ""},
+                           {"class", "orb"},
+                           {"x", orb.x},
+                           {"y", orb.y},
+                           {"width", orb.size},
+                           {"height", orb.size},
+                           {"rotation", 0},
+                           {"visible", true},
+                           {"properties",
+                            json::array({{{"name", "colour"}, {"type", "string"}, {"value", orbColourName(orb.colour)}}})}});
     }
     for (const domain::Checkpoint& checkpoint : level.checkpoints) {
         objects.push_back({{"id", object_id++},
@@ -405,16 +442,16 @@ std::string toText(const domain::Room& room) {
 
     for (const domain::Hazard& hazard : room.hazards()) {
         const float size = static_cast<float>(map.tileSize());
-        const float inset = size * kSpikeInsetFraction;
+        const float height = size * kSpikeHeightTiles;
         const int column = static_cast<int>(std::lround(hazard.bounds.x / size));
-        const int row = static_cast<int>(std::lround((hazard.bounds.y - inset) / size));
+        const int row = static_cast<int>(std::lround(hazard.bounds.bottom() / size)) - 1;
         const int cells = static_cast<int>(std::lround(hazard.bounds.width / size));  // a wide patch = several spikes
         const bool is_tile_spike = cells >= 1 && column >= 0 && column + cells <= map.width() && row >= 0 &&
                                    row < map.height() &&
                                    hazard.bounds.x == static_cast<float>(column) * size &&
-                                   hazard.bounds.y == static_cast<float>(row) * size + inset &&
+                                   hazard.bounds.y == static_cast<float>(row + 1) * size - height &&
                                    hazard.bounds.width == static_cast<float>(cells) * size &&
-                                   hazard.bounds.height == size - inset;
+                                   hazard.bounds.height == height;
         if (!is_tile_spike) {
             throw std::runtime_error("a hazard at (" + std::to_string(hazard.bounds.x) + ", " +
                                      std::to_string(hazard.bounds.y) +
@@ -449,6 +486,24 @@ std::string toText(const domain::Room& room) {
                                      std::to_string(row) + " sits on a solid tile or a spike");
         }
         cell = 'V';
+    }
+
+    for (const domain::Orb& orb : room.orbs()) {
+        const int column = anchorColumn(orb.x, orb.size, map.tileSize());
+        const int row = anchorRow(orb.y, orb.size, map.tileSize());
+        const domain::AABB exact = largeItemAt(column, row, map.tileSize());
+        const bool is_symbol = column >= 0 && column < map.width() && row >= 0 && row < map.height() &&
+                               orb.x == exact.x && orb.y == exact.y && orb.size == exact.width;
+        if (!is_symbol) {
+            throw std::runtime_error("an orb at (" + std::to_string(orb.x) + ", " + std::to_string(orb.y) +
+                                     ") does not match the two-tile box of its text symbol");
+        }
+        char& cell = grid[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)];
+        if (cell != '.') {
+            throw std::runtime_error("an orb at column " + std::to_string(column) + ", row " + std::to_string(row) +
+                                     " sits on a solid tile or another item");
+        }
+        cell = orb.colour == domain::OrbColour::Red ? 'R' : (orb.colour == domain::OrbColour::Green ? 'G' : 'Y');
     }
 
     for (const domain::Enemy& enemy : room.enemies()) {

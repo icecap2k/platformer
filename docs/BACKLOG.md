@@ -75,6 +75,18 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 41 | **Nuevo protagonista** (capucha azul que ondea, `make_hero_sprites.py`, misma hitbox), **escarabajos de 16×16** (dibujo y hitbox, 4 pasos), checkpoint y salida más grandes, frutas flotando un tile sobre el suelo; ADR-0019 y post 23 |
 
+## Hecho (E18 · Pinchos y decoración)
+
+| # | Tarea |
+|---|---|
+| 42 | **Pinchos de 8×16 hundidos** en zanjas (hitbox de 12 px), **16 adornos grandes** en suelo, techo y paredes, atenuados para distinguirse, y paredes de roca en los lados cerrados de las salas 03, 06, 07 y 09; ADR-0020 y post 24 |
+
+## Hecho (E19 · Orbes)
+
+| # | Tarea |
+|---|---|
+| 43 | **Tres orbes** animados que abren la salida (silueta a trazos al cogerlos, marcador, sonidos `orb` y `gate`, reja que sube); `level_check` exige tocarlos; ADR-0021 y post 25 |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
@@ -105,5 +117,5 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 - Generalizar los coleccionables (tarea 8) **antes** de duplicar código para las frutas.
 - Los enemigos tampoco están en `level_check`: un nivel podría exigir pisarlos o esquivarlos sin que el comprobador lo sepa.
 - `level_check` explora ~16 M de estados (límite 20 M): otra sala o mecánica puede pasarse; ver tarea 13.
-- Con los escarabajos de 16×16 (ADR-0019) falta jugar las salas 03-09 de principio a fin y ajustar la dificultad.
+- `level_check` comprueba cada orbe por separado, no el orden: al añadir salas, lanzarlo también desde la salida (ADR-0021).
 - Las estalactitas no están en el análisis de alcanzabilidad: un nivel podría ser "ganable" según `level_check` y exigir esquivarlas.

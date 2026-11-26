@@ -4,8 +4,11 @@
     python3 game/tools/art/make_exit.py
     python3 game/tools/art/make_exit.py --preview preview.png   # 10x enlarged, does not write the sheet
 
-Two 22x32 frames: a rough stone archway with daylight pouring in; the light brightens and dims
-between the frames. The renderer centres it on the exit's hitbox and sits it on the floor.
+A row of 22x32 frames of a rough stone archway. Frames 0 and 1: open, with daylight pouring in;
+the light brightens and dims between them. Frame 2: closed (the orbs are still missing), a
+portcullis with three small sockets, one per orb colour. Frames 3 onwards: the portcullis rising
+into the arch, shown once when the exit opens (see presentation::exitSpriteFrame).
+The renderer centres it on the exit's hitbox and sits it on the floor.
 """
 
 import sys
@@ -56,10 +59,66 @@ def frame(bright):
     return rows
 
 
+GATE_STEPS = 12                  # frames of the portcullis rising (presentation::kGateFrames)
+GATE_DARK = (22, 18, 40, 255)
+BAR, BAR_LIGHT, BAR_DARK = (92, 88, 118, 255), (150, 144, 176, 255), (48, 44, 70, 255)
+
+
+def doorway():
+    """The pixels of the opening: everything the arch art marks as light."""
+    return {(x, y) for y, art_row in enumerate(ARCH) for x, char in enumerate(art_row) if char == "L"}
+
+
+def portcullis():
+    """The grate as it hangs when closed: three bars, two crossbars, points at the bottom and the
+    three orb sockets. Returned as {(x, y): colour}; the gaps are not included."""
+    opening = doorway()
+    bottom = max(y for _, y in opening)
+    grate = {}
+    for x in (5, 10, 15):                                # bars, ending in a point
+        for y in range(bottom + 1):
+            grate[(x, y)] = BAR_LIGHT
+            if y < bottom - 1:
+                grate[(x + 1, y)] = BAR
+    for y in (8, bottom - 5):                            # crossbars
+        for x in range(WIDTH):
+            grate[(x, y)] = BAR_LIGHT
+            grate[(x, y + 1)] = BAR_DARK
+    sockets = [(5, (236, 82, 32, 255)), (10, (48, 188, 84, 255)), (15, (242, 190, 24, 255))]
+    for x, colour in sockets:                            # a stone plate with a gem on each bar
+        for dy in range(-2, 3):
+            for dx in range(-1, 3):
+                edge = abs(dy) == 2 or dx in (-1, 2)
+                grate[(x + dx, 16 + dy)] = OUTLINE if edge else colour
+    return grate
+
+
+def gate_frame(lift):
+    """The arch with the portcullis raised `lift` pixels: dark when closed, daylight once it moves."""
+    opening = doorway()
+    behind = frame(False)
+    rows = [row[:] for row in behind]
+    if lift == 0:
+        for x, y in opening:
+            rows[y][x] = GATE_DARK
+    grate = portcullis()
+    for x, y in opening:                                 # what rises past the arch is hidden by it
+        if (x, y + lift) in grate:
+            rows[y][x] = grate[(x, y + lift)]
+    return rows
+
+
+def lifts():
+    """How far the grate is up in each rising frame: it starts slowly and speeds up."""
+    top = max(y for _, y in doorway())
+    return [max(1, round((top + 1) * (step / (GATE_STEPS + 0.6)) ** 1.5)) for step in range(1, GATE_STEPS + 1)]
+
+
 def render():
-    sheet = [[(0, 0, 0, 0)] * (2 * WIDTH) for _ in range(HEIGHT)]
-    for index, bright in enumerate([False, True]):
-        for y, row in enumerate(frame(bright)):
+    frames = [frame(False), frame(True), gate_frame(0)] + [gate_frame(lift) for lift in lifts()]
+    sheet = [[(0, 0, 0, 0)] * (len(frames) * WIDTH) for _ in range(HEIGHT)]
+    for index, art in enumerate(frames):
+        for y, row in enumerate(art):
             for x, colour in enumerate(row):
                 sheet[y][index * WIDTH + x] = colour
     return sheet

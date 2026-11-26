@@ -1092,9 +1092,9 @@
     1,
     1,
     1,
-    1,
-    1,
-    1,
+    0,
+    0,
+    0,
     1,
     1,
     1,
@@ -1222,9 +1222,28 @@
    "name": "objects",
    "objects": [
     {
+     "class": "orb",
+     "height": 16.0,
+     "id": 1,
+     "name": "orb",
+     "properties": [
+      {
+       "name": "colour",
+       "type": "string",
+       "value": "yellow"
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16.0,
+     "x": 132.0,
+     "y": 144.0
+    },
+    {
      "class": "checkpoint",
      "height": 8.0,
-     "id": 1,
+     "id": 2,
      "name": "checkpoint",
      "rotation": 0,
      "type": "",
@@ -1236,7 +1255,7 @@
     {
      "class": "walker",
      "height": 16.0,
-     "id": 2,
+     "id": 3,
      "name": "walker",
      "rotation": 0,
      "type": "",
@@ -1248,7 +1267,7 @@
     {
      "class": "fruit",
      "height": 8.0,
-     "id": 3,
+     "id": 4,
      "name": "fruit",
      "rotation": 0,
      "type": "",
@@ -1260,7 +1279,7 @@
     {
      "class": "coin",
      "height": 8.0,
-     "id": 4,
+     "id": 5,
      "name": "coin",
      "rotation": 0,
      "type": "",
@@ -1272,7 +1291,7 @@
     {
      "class": "coin",
      "height": 8.0,
-     "id": 5,
+     "id": 6,
      "name": "coin",
      "rotation": 0,
      "type": "",
@@ -1283,39 +1302,39 @@
     },
     {
      "class": "spikes",
-     "height": 5.0,
-     "id": 6,
-     "name": "spikes",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 8.0,
-     "x": 56.0,
-     "y": 211.0
-    },
-    {
-     "class": "spikes",
-     "height": 5.0,
+     "height": 12.0,
      "id": 7,
      "name": "spikes",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 8.0,
-     "x": 64.0,
-     "y": 211.0
+     "x": 56.0,
+     "y": 212.0
     },
     {
      "class": "spikes",
-     "height": 5.0,
+     "height": 12.0,
      "id": 8,
      "name": "spikes",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 8.0,
+     "x": 64.0,
+     "y": 212.0
+    },
+    {
+     "class": "spikes",
+     "height": 12.0,
+     "id": 9,
+     "name": "spikes",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 8.0,
      "x": 72.0,
-     "y": 211.0
+     "y": 212.0
     }
    ],
    "opacity": 1,
@@ -1326,7 +1345,7 @@
   }
  ],
  "nextlayerid": 3,
- "nextobjectid": 9,
+ "nextobjectid": 10,
  "orientation": "orthogonal",
  "properties": [
   {

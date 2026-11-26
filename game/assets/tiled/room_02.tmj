@@ -1139,9 +1139,9 @@
     1,
     1,
     1,
-    1,
-    1,
-    1,
+    0,
+    0,
+    0,
     1,
     1,
     1,
@@ -1254,7 +1254,7 @@
    "visible": true,
    "objects": [
 {"id":2,"name":"fruit","type":"","class":"fruit","x":216,"y":200,"width":8,"height":8,"rotation":0,"visible":true},
-{"id":1,"name":"spikes","type":"","class":"spikes","x":144,"y":211,"width":24,"height":5,"rotation":0,"visible":true},
+{"id":1,"name":"spikes","type":"","class":"spikes","x":144,"y":212,"width":24,"height":12,"rotation":0,"visible":true},
 {"id":3,"name":"checkpoint","type":"","class":"checkpoint","x":184,"y":208,"width":8,"height":8,"rotation":0,"visible":true}
    ]
   }

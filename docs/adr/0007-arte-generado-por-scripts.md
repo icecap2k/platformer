@@ -1,6 +1,6 @@
 # ADR-0007: Arte generado por scripts, y estilo visual
 
-- Estado: Aceptada (el diseño del jugador y `make_player_sprites.py`, sustituidos por ADR-0019)
+- Estado: Aceptada (el diseño del jugador y `make_player_sprites.py`, sustituidos por ADR-0019; los adornos de 8×8, por ADR-0020)
 - Fecha: 2026-11-17 a 2026-11-19
 
 ## Contexto

@@ -33,6 +33,8 @@ std::optional<Sound> soundFor(const application::GameEvent& event) {
             [](const EnemyStomped&) -> std::optional<Sound> { return Sound::Stomp; },
             [](const CheckpointReached&) -> std::optional<Sound> { return Sound::Checkpoint; },
             [](const PlayerRespawned&) -> std::optional<Sound> { return Sound::Restart; },
+            [](const OrbCollected&) -> std::optional<Sound> { return Sound::Orb; },
+            [](const GateOpened&) -> std::optional<Sound> { return Sound::Gate; },
             [](const GameWon&) -> std::optional<Sound> { return Sound::Win; },
             [](const GameRestarted&) -> std::optional<Sound> { return Sound::Restart; },
         },
@@ -63,6 +65,10 @@ std::string soundName(Sound sound) {
             return "checkpoint";
         case Sound::Stomp:
             return "stomp";
+        case Sound::Orb:
+            return "orb";
+        case Sound::Gate:
+            return "gate";
         case Sound::Win:
             return "win";
         case Sound::Restart:
@@ -76,7 +82,7 @@ std::vector<Sound> allSounds() {
             Sound::Fruit,          Sound::Hurt,           Sound::Slide,
             Sound::StalactiteWarning, Sound::StalactiteCrack, Sound::StalactiteCrash,
             Sound::Stomp,      Sound::Checkpoint, Sound::Win,
-            Sound::Restart};
+            Sound::Orb,        Sound::Gate,       Sound::Restart};
 }
 
 }  // namespace presentation
