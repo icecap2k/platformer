@@ -19,11 +19,10 @@ En `game/tools/art/make_orbs.py`, cambia los tonos de `COLOURS`, ejecuta el scri
 
 ## 3. Mover una moneda
 
-Edita `game/tools/make_rooms_05_09.py` (por ejemplo una línea `r.put(..., "C")`) y regenera:
+Abre `room_05.tmj` en Tiled, selecciona una moneda en la capa `objects`, arrástrala, guarda y ejecuta:
 
 ```bash
-python3 game/tools/make_rooms_05_09.py
-./build/level_from_text game/levels/room_05.txt game/assets/tiled/room_05.tmj
+cmake --build build
 ./build/level_check game/assets/tiled room_01
 ```
 

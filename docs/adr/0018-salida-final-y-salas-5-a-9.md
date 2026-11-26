@@ -1,6 +1,6 @@
 # ADR-0018: Salida final y salas 05 a 09
 
-- Estado: Aceptada (el tamaño del dibujo de la salida, sustituido por ADR-0019; la condición de victoria, por ADR-0021)
+- Estado: Aceptada (el tamaño del dibujo de la salida, sustituido por ADR-0019; la condición de victoria, por ADR-0021; el script de salas, por ADR-0027)
 - Fecha: 2026-11-23
 
 ## Contexto

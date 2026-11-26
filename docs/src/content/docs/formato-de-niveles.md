@@ -2,11 +2,25 @@
 title: Formato de los niveles
 section: niveles
 order: 1
-summary: Las dos formas de dibujar una sala, Tiled y texto, y qué puede contener.
+summary: Las salas se editan en Tiled; qué puede contener cada una.
 ---
 
-El juego carga mapas de **Tiled** (`game/assets/tiled/room_NN.tmj`). Para dibujar rápido existe además un
-**formato de texto** que se convierte a Tiled.
+Las salas son mapas de [Tiled](https://www.mapeditor.org/), `game/assets/tiled/room_NN.tmj`. **Ese fichero es
+el original**: se edita en Tiled y es lo que carga el juego.
+
+## Editar una sala
+
+1. Abre `game/assets/tiled/platformer.tiled-project` (trae las clases de objeto) y después la sala.
+2. Los bloques y rampas se pintan en la capa `ground`.
+3. Los objetos se crean en la capa `objects`: **Insertar rectángulo** (`R`), poner la **clase** y el tamaño.
+4. Activa *Ver → Ajuste → Ajustar a la cuadrícula*.
+5. Guarda, y desde la raíz del proyecto:
+
+```bash
+cmake --build build                              # copia los mapas junto al juego
+./build/level_check game/assets/tiled room_01    # ¿se puede completar?
+./build/platformer
+```
 
 ## Qué contiene una sala
 
@@ -25,9 +39,17 @@ El juego carga mapas de **Tiled** (`game/assets/tiled/room_NN.tmj`). Para dibuja
 
 Las salas vecinas son propiedades del mapa: `north`, `south`, `east`, `west`.
 
-## Un nivel en texto
+Dos objetos necesitan cuidado:
 
-Cabecera, `---` y una letra por casilla (40×30):
+- **Escarabajos:** su base debe estar **exactamente** sobre el borde superior de un bloque. Si flota o se hunde un
+  píxel, se queda dando la vuelta sin moverse (una prueba lo detecta).
+- **Orbes:** necesitan la propiedad `colour` (`red`, `green` o `yellow`). `red` es el valor por defecto de la
+  clase y Tiled puede no guardarlo: si el juego no arranca, añádela a mano en ese objeto.
+
+## Bocetos en texto
+
+Para empezar una sala nueva rápido se puede dibujar como texto (cabecera, `---` y una letra por casilla) y
+convertirla **una vez** a Tiled:
 
 <!-- src: game/levels/example.txt -->
 ```text
@@ -35,23 +57,18 @@ Cabecera, `---` y una letra por casilla (40×30):
 ............................BBBBBB......
 ```
 
-Los elementos de **dos tiles** (`E` y orbes) se escriben en una casilla: quedan centrados en ella y apoyados en
-su borde inferior. Los pinchos (`^`) van en una **zanja** de un tile en el suelo.
-
-## Salas generadas
-
-Las salas 05 a 09 se construyen con un script, que se lee casi como una descripción:
-
-<!-- src: game/tools/make_rooms_05_09.py -->
-```python
-    r = Room()
-    r.floor(gaps=[(13, 17)])
-    r.fill(13, 17, 29, 29, "^")           # spikes at the bottom of the pit
-    r.platform(12, 17, 22)               # a platform over the pit...
-    r.put(14, 21, "C")                   # ...with a coin on it
+```bash
+./build/level_from_text boceto.txt game/assets/tiled/room_10.tmj
 ```
 
-Las salas 01 a 04 se editan a mano en Tiled (abre `platformer.tiled-project` para tener las clases).
+Los símbolos son los de la columna «Texto». Los elementos de dos casillas (`E` y orbes) se escriben en una: quedan
+centrados en ella y apoyados en su borde inferior. El texto solo puede expresar objetos ajustados a la
+cuadrícula.
+
+## Una sala nueva
+
+Crea `room_10.tmj`, enlázala con las propiedades `north`, `south`, `east` o `west` (en las dos salas) y añade
+`"room_10"` a la lista de `loadWorld` en `main.cpp`.
 
 ## Consejos de diseño
 

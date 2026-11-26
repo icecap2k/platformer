@@ -28,8 +28,9 @@ void applyDamage(Player& player, int amount, int direction) {
 
 ## Pinchos
 
-Un `Hazard` es solo un rectángulo: **la zona que hace daño**. En las salas mide 12 px de alto y está en una
-zanja, así que sobresale 4 px del suelo. El dibujo es más alto que la zona: rozar las puntas se perdona.
+Un `Hazard` es solo un rectángulo: **la zona que hace daño**. Suele medir 12 px de alto y colocarse en una
+zanja de una casilla, de modo que sobresale 4 px del suelo. El dibujo es más alto que la zona: rozar las puntas se
+perdona.
 
 ## Estalactitas trampa: una máquina de estados
 

@@ -42,7 +42,7 @@ platformer/
 │   │   ├── presentation/    qué se dibuja y qué suena
 │   │   └── main.cpp         conecta todo
 │   ├── assets/              imágenes, sonidos y mapas
-│   ├── levels/              salas dibujadas como texto
+│   ├── levels/              un nivel de ejemplo dibujado como texto
 │   ├── tools/               comprobador de niveles y generadores de arte y sonido
 │   └── tests/               pruebas
 └── docs/                    esta documentación
