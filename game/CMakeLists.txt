@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Optimised unless something else is asked for (-DCMAKE_BUILD_TYPE=Debug): without it the level
+# checker, which simulates millions of steps, is about ten times slower.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Release or Debug" FORCE)
+endif()
+
 option(PLATFORMER_BUILD_TESTS "Build the unit tests" ON)
 
 set(WARNINGS -Wall -Wextra -Wpedantic)
@@ -149,7 +155,8 @@ if(PLATFORMER_BUILD_TESTS)
         tests/jump_buffer_test.cpp
         tests/game_session_test.cpp
         tests/tiled_map_loader_test.cpp
-        tests/level_tools_test.cpp)
+        tests/level_tools_test.cpp
+        tests/state_set_test.cpp)
     target_link_libraries(tests PRIVATE application infrastructure_assets presentation_animation
                           level_tools domain doctest::doctest)
     target_compile_definitions(tests PRIVATE

@@ -5,13 +5,13 @@
 #include <cstdint>
 #include <deque>
 #include <stdexcept>
-#include <unordered_set>
 
 #include "domain/entities/player.h"
 #include "domain/input/input_state.h"
 #include "domain/physics/player_physics.h"
 #include "domain/rules/damage.h"
 #include "domain/rules/room_transition.h"
+#include "level_tools/state_set.h"
 
 namespace level_tools {
 
@@ -66,6 +66,40 @@ std::vector<domain::InputState> allInputs() {
     return inputs;
 }
 
+// What the search needs of a room, looked up once instead of on every step.
+struct RoomInfo {
+    const domain::Room* room = nullptr;
+    domain::OpenEdges open;
+    std::size_t neighbor[4] = {0, 0, 0, 0};  // index of the room behind each Side, if any
+    std::vector<std::size_t> coins;          // entries of the report still to be touched
+    std::vector<std::size_t> fruits;
+    std::vector<std::size_t> checkpoints;
+    std::vector<std::size_t> orbs;
+    std::vector<std::size_t> exits;
+    bool reached = false;
+    bool stood = false;
+};
+
+// Marks as touched the pending items the player overlaps and forgets about them.
+// Returns how many there were.
+template <class Status, class Bounds>
+std::size_t touch(std::vector<std::size_t>& pending, std::vector<Status>& statuses, const domain::AABB& body,
+                  Bounds bounds) {
+    std::size_t touched = 0;
+    for (std::size_t i = 0; i < pending.size();) {
+        Status& status = statuses[pending[i]];
+        if (body.overlaps(bounds(status))) {
+            status.touchable = true;
+            pending[i] = pending.back();
+            pending.pop_back();
+            ++touched;
+        } else {
+            ++i;
+        }
+    }
+    return touched;
+}
+
 }  // namespace
 
 bool ReachabilityReport::allOk() const {
@@ -92,35 +126,38 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
         throw std::invalid_argument("Unknown start room: " + options.start_room);
     }
 
-    ReachabilityReport report;
-    for (const domain::RoomId& id : ids) {
-        report.room_reachable[id] = false;
-        report.room_standable[id] = false;
-        const auto& coins = world.room(id).coins();
-        for (std::size_t index = 0; index < coins.size(); ++index) {
-            report.coins.push_back(CoinStatus{id, index, coins[index], false});
-        }
-        const auto& fruits = world.room(id).fruits();
-        for (std::size_t index = 0; index < fruits.size(); ++index) {
-            report.fruits.push_back(FruitStatus{id, index, fruits[index], false});
-        }
-        const auto& checkpoints = world.room(id).checkpoints();
-        for (std::size_t index = 0; index < checkpoints.size(); ++index) {
-            report.checkpoints.push_back(CheckpointStatus{id, index, checkpoints[index], false});
-        }
-        const auto& orbs = world.room(id).orbs();
-        for (std::size_t index = 0; index < orbs.size(); ++index) {
-            report.orbs.push_back(OrbStatus{id, index, orbs[index], false});
-        }
-        const auto& exits = world.room(id).exits();
-        for (std::size_t index = 0; index < exits.size(); ++index) {
-            report.exits.push_back(ExitStatus{id, index, exits[index], false});
-        }
-    }
-
     auto indexOf = [&ids](const domain::RoomId& id) {
         return static_cast<std::size_t>(std::find(ids.begin(), ids.end(), id) - ids.begin());
     };
+
+    ReachabilityReport report;
+    std::vector<RoomInfo> rooms(ids.size());
+    std::size_t remaining = 2 * ids.size();  // enter and stand in every room, and touch everything
+    for (std::size_t r = 0; r < ids.size(); ++r) {
+        const domain::RoomId& id = ids[r];
+        const domain::Room& room = world.room(id);
+        RoomInfo& info = rooms[r];
+        info.room = &room;
+        info.open = domain::openEdgesOf(room);
+        for (const auto& [side, neighbor] : room.neighbors()) {
+            info.neighbor[static_cast<std::size_t>(side)] = indexOf(neighbor);
+        }
+        report.room_reachable[id] = false;
+        report.room_standable[id] = false;
+        // One report entry per item, and the same entry in the room's list of pending ones.
+        const auto add = [&](const auto& items, auto& statuses, std::vector<std::size_t>& pending) {
+            for (std::size_t index = 0; index < items.size(); ++index) {
+                pending.push_back(statuses.size());
+                statuses.push_back({id, index, items[index], false});
+                ++remaining;
+            }
+        };
+        add(room.coins(), report.coins, info.coins);
+        add(room.fruits(), report.fruits, info.fruits);
+        add(room.checkpoints(), report.checkpoints, info.checkpoints);
+        add(room.orbs(), report.orbs, info.orbs);
+        add(room.exits(), report.exits, info.exits);
+    }
 
     State start;
     start.room = static_cast<std::size_t>(start_it - ids.begin());
@@ -128,10 +165,15 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
     start.player.y = options.spawn_y;
 
     const std::vector<domain::InputState> inputs = allInputs();
-    std::unordered_set<std::uint64_t> seen{keyOf(start)};
+    StateSet seen;
+    seen.insert(keyOf(start));
     std::deque<State> queue{start};
 
     while (!queue.empty()) {
+        if (options.stop_when_all_found && remaining == 0) {
+            report.stopped_early = true;
+            break;
+        }
         if (seen.size() >= options.max_states) {
             report.truncated = true;
             break;
@@ -140,39 +182,25 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
         const State current = queue.front();
         queue.pop_front();
 
-        const domain::Room& room = world.room(ids[current.room]);
-        report.room_reachable[room.id()] = true;
-        if (current.player.on_ground) {
+        RoomInfo& info = rooms[current.room];
+        const domain::Room& room = *info.room;
+        if (!info.reached) {
+            info.reached = true;
+            report.room_reachable[room.id()] = true;
+            --remaining;
+        }
+        if (current.player.on_ground && !info.stood) {
+            info.stood = true;
             report.room_standable[room.id()] = true;
+            --remaining;
         }
-        for (FruitStatus& fruit : report.fruits) {
-            if (fruit.room == room.id() && !fruit.touchable &&
-                current.player.bounds().overlaps(fruit.fruit.bounds())) {
-                fruit.touchable = true;
-            }
-        }
-        for (CheckpointStatus& checkpoint : report.checkpoints) {
-            if (checkpoint.room == room.id() && !checkpoint.touchable &&
-                current.player.bounds().overlaps(checkpoint.checkpoint.bounds())) {
-                checkpoint.touchable = true;
-            }
-        }
-        for (OrbStatus& orb : report.orbs) {
-            if (orb.room == room.id() && !orb.touchable && current.player.bounds().overlaps(orb.orb.bounds())) {
-                orb.touchable = true;
-            }
-        }
-        for (ExitStatus& exit : report.exits) {
-            if (exit.room == room.id() && !exit.touchable && current.player.bounds().overlaps(exit.exit.bounds())) {
-                exit.touchable = true;
-            }
-        }
-        for (CoinStatus& coin : report.coins) {
-            if (coin.room == room.id() && !coin.touchable &&
-                current.player.bounds().overlaps(coin.coin.bounds())) {
-                coin.touchable = true;
-            }
-        }
+        const domain::AABB body = current.player.bounds();
+        remaining -= touch(info.coins, report.coins, body, [](const CoinStatus& s) { return s.coin.bounds(); });
+        remaining -= touch(info.fruits, report.fruits, body, [](const FruitStatus& s) { return s.fruit.bounds(); });
+        remaining -= touch(info.checkpoints, report.checkpoints, body,
+                           [](const CheckpointStatus& s) { return s.checkpoint.bounds(); });
+        remaining -= touch(info.orbs, report.orbs, body, [](const OrbStatus& s) { return s.orb.bounds(); });
+        remaining -= touch(info.exits, report.exits, body, [](const ExitStatus& s) { return s.exit.bounds(); });
 
         for (const domain::InputState& input : inputs) {
             State next = current;
@@ -181,18 +209,17 @@ ReachabilityReport analyzeReachability(const domain::RoomGraph& world,
             // again on the landing step, which the search already tries. Forgetting it keeps the
             // state space as small as before (remembering it multiplied it past the search limit).
             next.player.jump_buffer_steps = 0;
-            domain::confineToMap(next.player, room.map(), domain::openEdgesOf(room));
+            domain::confineToMap(next.player, room.map(), info.open);
             if (const auto side = domain::exitedThrough(next.player, room.map())) {
-                const domain::RoomId target = *room.neighbor(*side);  // a copy: neighbor() returns by value
-                next.room = indexOf(target);
-                domain::enterRoom(next.player, *side, world.room(target).map());
+                next.room = info.neighbor[static_cast<std::size_t>(*side)];
+                domain::enterRoom(next.player, *side, rooms[next.room].room->map());
             }
             // Touching a hazard hurts: a route that goes through spikes is not a
             // route. (Falling stalactites are dynamic and are not modelled.)
-            if (domain::hazardTouching(next.player, world.room(ids[next.room])).has_value()) {
+            if (domain::hazardTouching(next.player, *rooms[next.room].room).has_value()) {
                 continue;
             }
-            if (seen.insert(keyOf(next)).second) {
+            if (seen.insert(keyOf(next))) {
                 queue.push_back(next);
             }
         }
