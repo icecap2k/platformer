@@ -1,6 +1,6 @@
 # ADR-0009: Convenciones de trabajo, pruebas y git
 
-- Estado: Aceptada
+- Estado: Aceptada (el post de blog por épica, sustituido por ADR-0022)
 - Fecha: 2026-11-19
 
 ## Contexto

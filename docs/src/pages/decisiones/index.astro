@@ -1,0 +1,20 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { base } from '../../nav';
+
+const records = (await getCollection('adr')).sort((a, b) => a.id.localeCompare(b.id));
+const titleOf = (body = '') => body.match(/^# (.+)$/m)?.[1] ?? '';
+const statusOf = (body = '') => body.match(/^- Estado: (.+)$/m)?.[1].replaceAll('`', '') ?? '';
+---
+<Base title="Decisiones" current="decisiones">
+  <h1>Decisiones de arquitectura (ADR)</h1>
+  <p class="lead">Por qué las cosas son como son: cada registro recoge una decisión, sus alternativas y sus consecuencias.</p>
+  <p>El resto de la documentación explica <strong>cómo funciona</strong> el proyecto hoy. Estos registros no se reescriben: si algo cambia, se añade uno nuevo.</p>
+  <table>
+    <tr><th>Decisión</th><th>Estado</th></tr>
+    {records.map((r) => (
+      <tr><td><a href={`${base}decisiones/${r.id}/`}>{titleOf(r.body)}</a></td><td>{statusOf(r.body)}</td></tr>
+    ))}
+  </table>
+</Base>

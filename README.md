@@ -5,8 +5,9 @@ structure a game with clear layers (in the spirit of DDD). Levels are screens
 connected through their four edges and are authored with
 [Tiled](https://www.mapeditor.org/).
 
-The development diary is a Spanish blog in [`docs/`](docs/): one post per epic. Design decisions are recorded as
-ADRs in [`docs/adr/`](docs/adr/) (start there for context) and the pending work is in [`docs/BACKLOG.md`](docs/BACKLOG.md).
+The documentation is a Spanish site in [`docs/`](docs/), written to be read and learnt from: architecture, domain,
+graphics, animations, levels and recipes. Design decisions are recorded as ADRs in [`docs/adr/`](docs/adr/) and the
+pending work is in [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 ## Controls
 
@@ -34,7 +35,7 @@ ctest --test-dir build --output-on-failure
 The first configure downloads [doctest](https://github.com/doctest/doctest).
 The build copies `game/assets/` next to the executable.
 
-## Blog
+## Documentation
 
 Requirements: Node and pnpm.
 
@@ -42,6 +43,7 @@ Requirements: Node and pnpm.
 cd docs
 pnpm install
 pnpm dev      # http://localhost:4321
+pnpm check    # the quoted code still exists and no link is broken
 ```
 
 ## Architecture
