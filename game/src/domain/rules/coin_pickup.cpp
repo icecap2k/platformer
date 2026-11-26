@@ -12,4 +12,9 @@ std::vector<std::size_t> fruitsTouchedBy(const Player& player, const Room& room,
     return pickupsTouchedBy(player, room.id(), room.fruits(), collection);
 }
 
+std::vector<std::size_t> orbsTouchedBy(const Player& player, const Room& room,
+                                       const PickupCollection& collection) {
+    return pickupsTouchedBy(player, room.id(), room.orbs(), collection);
+}
+
 }  // namespace domain

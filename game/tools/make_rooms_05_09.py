@@ -31,6 +31,18 @@ class Room:
         for a, b in gaps:
             self.fill(a, b, 27, 29, ".")
 
+    def sunk_spikes(self, c0, c1):
+        """Spikes in a one-tile trench dug into the floor."""
+        self.fill(c0, c1, 27, 27, "^")
+
+    def wall(self, side, bulges):
+        """A rock wall along a closed side ("west" or "east"): one column from the ceiling to the
+        floor, two where it bulges (pairs of first and last row)."""
+        outer, inner = (0, 1) if side == "west" else (W - 1, W - 2)
+        self.fill(outer, outer, 0, 26, "#")
+        for first, last in bulges:
+            self.fill(inner, inner, first, last, "#")
+
     def platform(self, c0, c1, row, ch="B"):
         self.fill(c0, c1, row, row, ch)
 
@@ -58,13 +70,15 @@ def room_06():
     r = Room()
     r.floor()
     r.put(3, 26, "K")
-    r.fill(22, 27, 26, 26, "^")          # spikes under the first jumps
+    r.sunk_spikes(22, 27)                # spikes under the first jumps
     r.platform(6, 11, 23); r.put(8, 22, "C")
     r.platform(16, 21, 19); r.put(18, 18, "E")
     r.platform(6, 11, 15); r.put(8, 14, "C")
     r.platform(16, 21, 11); r.put(18, 9, "F")
     r.platform(26, 31, 7); r.put(28, 6, "C")
     r.platform(33, 38, 3)                # the top step: jump north from it
+    r.put(9, 12, "G")                    # the green orb, above the third platform
+    r.wall("east", [(9, 12), (17, 20)])
     return r.text("west: room_05\nnorth: room_07\n")
 
 
@@ -74,7 +88,7 @@ def room_07():
     r.floor(gaps=[(32, 37)])            # you come up through this opening (like room_03)
     r.put(13, 16, "C")
     r.platform(1, 6, 22)                 # a step up to the hanging platform
-    r.fill(24, 26, 26, 26, "^")
+    r.sunk_spikes(24, 26)
     r.platform(8, 18, 17, "B")           # hanging platform with a stalactite trap under it
     r.put(12, 18, "V")
     r.put(15, 18, "V")
@@ -82,6 +96,7 @@ def room_07():
     r.fill(20, 20, 25, 26, "B")
     r.put(28, 25, "F")
     r.put(4, 26, "C")
+    r.wall("east", [(0, 3), (9, 12), (18, 20)])
     return r.text("south: room_06\nwest: room_08\n")
 
 
@@ -97,7 +112,8 @@ def room_08():
     r.fill(12, 18, 22, 22, "4")
     r.put(14, 21, "K")
     r.put(16, 21, "C")
-    r.fill(7, 9, 26, 26, "^")
+    r.put(17, 19, "Y")                   # the yellow orb, floating over the plateau
+    r.sunk_spikes(7, 9)
     r.put(4, 26, "E")
     r.put(1, 26, "C")
     r.put(33, 25, "F")
@@ -116,6 +132,7 @@ def room_09():
     r.put(31, 26, "C")
     r.put(6, 26, "K")
     r.put(2, 26, "X")
+    r.wall("west", [(0, 4), (10, 13), (18, 19)])
     return r.text("east: room_08\n")
 
 

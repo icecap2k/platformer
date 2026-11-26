@@ -371,26 +371,27 @@ TEST_CASE("text <-> Tiled round trips") {
         CHECK(again.coins[0].y == level.coins[0].y);
     }
 
-    SUBCASE("spikes (^) become a hitbox that leaves the tips forgiving") {
-        const TextLevel spiked = parseTextLevel("---\n..^.\n####\n");
+    SUBCASE("spikes (^) stand on the bottom of their tile and reach half way into the one above") {
+        const TextLevel spiked = parseTextLevel("---\n....\n..^.\n####\n");
         REQUIRE(spiked.hazards.size() == 1);
         CHECK(spiked.hazards[0].bounds.x == 16.0F);
-        CHECK(spiked.hazards[0].bounds.y == 3.0F);       // top 3 px of the tile are free
+        CHECK(spiked.hazards[0].bounds.y == 4.0F);
         CHECK(spiked.hazards[0].bounds.width == 8.0F);
-        CHECK(spiked.hazards[0].bounds.height == 5.0F);
+        CHECK(spiked.hazards[0].bounds.height == 12.0F);
+        CHECK(spiked.hazards[0].bounds.bottom() == 16.0F);
     }
 
     SUBCASE("spikes survive text -> tmj -> game and tmj -> text") {
-        const TextLevel spiked = parseTextLevel("---\n..^.\n####\n");
+        const TextLevel spiked = parseTextLevel("---\n....\n..^.\n####\n");
         const Room room = infrastructure::parseTiledRoom("r", toTiledJson(spiked));
         REQUIRE(room.hazards().size() == 1);
         CHECK(room.hazards()[0].bounds.x == 16.0F);
-        CHECK(room.hazards()[0].bounds.y == 3.0F);
+        CHECK(room.hazards()[0].bounds.y == 4.0F);
 
         const TextLevel again = parseTextLevel(toText(room));
         REQUIRE(again.hazards.size() == 1);
         CHECK(again.hazards[0].bounds.x == 16.0F);
-        CHECK(again.hazards[0].bounds.y == 3.0F);
+        CHECK(again.hazards[0].bounds.y == 4.0F);
     }
 
     SUBCASE("fruits (F) survive text -> tmj -> game and tmj -> text") {

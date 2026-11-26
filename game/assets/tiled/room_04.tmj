@@ -1138,9 +1138,9 @@
     1,
     1,
     1,
-    1,
-    1,
-    1,
+    0,
+    0,
+    0,
     1,
     1,
     1,
@@ -1249,7 +1249,7 @@
    "visible": true,
    "objects": [
 {"id":4,"name":"fruit","type":"","class":"fruit","x":88,"y":160,"width":8,"height":8,"rotation":0,"visible":true},
-{"id":2,"name":"spikes","type":"","class":"spikes","x":176,"y":211,"width":24,"height":5,"rotation":0,"visible":true},
+{"id":2,"name":"spikes","type":"","class":"spikes","x":176,"y":212,"width":24,"height":12,"rotation":0,"visible":true},
 {"id":3,"name":"stalactite","type":"","class":"falling_stalactite","x":168,"y":144,"width":8,"height":8,"rotation":0,"visible":true},
     {
      "id": 1,

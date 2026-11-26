@@ -131,6 +131,7 @@ if(PLATFORMER_BUILD_TESTS)
         tests/enemy_test.cpp
         tests/checkpoint_test.cpp
         tests/exit_test.cpp
+        tests/orb_test.cpp
         tests/game_flow_test.cpp
         tests/sound_cues_test.cpp
         tests/sound_assets_test.cpp

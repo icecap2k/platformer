@@ -36,6 +36,12 @@ public:
     const domain::CoinCollection& collectedCoins() const { return collected_coins_; }
     const domain::PickupCollection& eatenFruits() const { return eaten_fruits_; }
     int totalCoins() const { return world_.totalCoins(); }
+    const domain::PickupCollection& collectedOrbs() const { return collected_orbs_; }
+    int totalOrbs() const { return world_.totalOrbs(); }
+    // The exit only works once every orb has been taken (at once in a world without orbs).
+    bool exitOpen() const { return collected_orbs_.count() >= world_.totalOrbs(); }
+    // Has an orb of this colour been taken? (for the HUD)
+    bool hasTakenOrb(domain::OrbColour colour) const;
     const domain::StalactiteTraps& stalactiteTraps() const { return traps_; }
     const domain::EnemyPatrols& enemyPatrols() const { return enemies_; }
     bool won() const { return won_; }
@@ -55,7 +61,7 @@ private:
     // enemy, any other touch hurts the player. Returns true if the game restarted.
     bool updateEnemies(std::vector<GameEvent>& events);
 
-    // Back at the last checkpoint with full health; coins and fruits already taken stay taken.
+    // Back at the last checkpoint with full health; coins, fruits and orbs already taken stay taken.
     void respawnAtCheckpoint();
 
     // Back to the start: first room, full health, no coins collected.
@@ -69,9 +75,12 @@ private:
     domain::Player player_;
     domain::CoinCollection collected_coins_;
     domain::PickupCollection eaten_fruits_;
+    domain::PickupCollection collected_orbs_;
     domain::StalactiteTraps traps_;
     domain::EnemyPatrols enemies_;
     std::optional<std::pair<domain::RoomId, std::size_t>> last_checkpoint_;
+    // The room whose open exit has already been announced; empty once the player leaves it.
+    domain::RoomId gate_room_;
     bool won_ = false;
 };
 

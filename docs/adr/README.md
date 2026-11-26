@@ -15,8 +15,8 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0003](0003-comprobador-de-alcanzabilidad.md) | Comprobador de niveles que reutiliza la física real | Aceptada |
 | [0004](0004-sensacion-del-salto.md) | Sensación del salto: altura variable, coyote time, pulsación nueva | Aceptada |
 | [0005](0005-salud-dano-y-reinicio.md) | Salud, daño con retroceso y reinicio total | Aceptada |
-| [0006](0006-peligros-pinchos-y-estalactita-trampa.md) | Peligros: pinchos y estalactita trampa | Aceptada |
-| [0007](0007-arte-generado-por-scripts.md) | Arte generado por scripts, y estilo visual | Aceptada (el jugador, sustituido por 0019) |
+| [0006](0006-peligros-pinchos-y-estalactita-trampa.md) | Peligros: pinchos y estalactita trampa | Aceptada (dibujo y tamaño de los pinchos, sustituidos por 0020) |
+| [0007](0007-arte-generado-por-scripts.md) | Arte generado por scripts, y estilo visual | Aceptada (el jugador, sustituido por 0019; los adornos, por 0020) |
 | [0008](0008-efectos-visuales-puros.md) | Efectos visuales como funciones puras; paralaje descartado | Aceptada |
 | [0009](0009-convenciones-de-trabajo-y-pruebas.md) | Convenciones de trabajo, pruebas y git | Aceptada |
 | [0010](0010-rampas-de-45-y-deslizamiento.md) | Rampas de 45° y deslizamiento | Aceptada (el disparador, sustituido por 0011) |
@@ -27,8 +27,10 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0015](0015-checkpoints.md) | Checkpoints y reaparición | Aceptada |
 | [0016](0016-pantalla-de-titulo-y-pausa.md) | Pantalla de título y pausa por encima de la partida | Aceptada |
 | [0017](0017-jump-buffering-y-sacudida-de-pantalla.md) | Jump buffering y sacudida de pantalla | Aceptada |
-| [0018](0018-salida-final-y-salas-5-a-9.md) | Salida final y salas 05 a 09 | Aceptada (tamaño de la salida, sustituido por 0019) |
+| [0018](0018-salida-final-y-salas-5-a-9.md) | Salida final y salas 05 a 09 | Aceptada (tamaño de la salida, sustituido por 0019; la condición de victoria, por 0021) |
 | [0019](0019-graficos-mas-grandes-y-nuevo-protagonista.md) | Nuevo protagonista y gráficos más grandes que su hitbox | Aceptada |
+| [0020](0020-pinchos-altos-y-decoracion-grande.md) | Pinchos altos hundidos y decoración grande de fondo | Aceptada |
+| [0021](0021-orbes-que-abren-la-salida.md) | Tres orbes que abren la salida | Aceptada |
 
 ## Plantilla
 

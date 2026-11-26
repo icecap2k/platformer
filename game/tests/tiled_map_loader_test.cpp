@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <stdexcept>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -385,6 +386,61 @@ TEST_CASE("the shipped rooms form a consistent world") {
                 CHECK(standsOnGround(room.map(), resting));        // ...exactly one tile up
             }
         }
+    }
+
+    SUBCASE("spikes are tall and sunk: rock under them and at both ends of the patch") {
+        for (const std::string& name : kShippedRooms) {
+            const auto& room = graph.room(name);
+            const int ts = room.map().tileSize();
+            const auto spikedAt = [&](int column, float bottom) {
+                for (const auto& other : room.hazards()) {
+                    const float x = static_cast<float>(column * ts);
+                    if (other.bounds.bottom() == bottom && x >= other.bounds.x && x < other.bounds.right()) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+            for (const auto& spikes : room.hazards()) {
+                INFO(name << " spikes at " << spikes.bounds.x << "," << spikes.bounds.y);
+                CHECK(spikes.bounds.height == 12.0F);
+                const int row = static_cast<int>(spikes.bounds.bottom()) / ts - 1;
+                const int first = static_cast<int>(spikes.bounds.x) / ts;
+                const int last = static_cast<int>(spikes.bounds.right()) / ts - 1;
+                for (int column = first; column <= last && row + 1 < room.map().height(); ++column) {
+                    CHECK(room.map().isSolid(column, row + 1));
+                }
+                for (const int side : {first - 1, last + 1}) {
+                    const bool walled = room.map().isSolid(side, row) || spikedAt(side, spikes.bounds.bottom());
+                    CHECK(walled);
+                }
+            }
+        }
+    }
+
+    SUBCASE("three orbs, one of each colour, floating in three different rooms") {
+        std::set<domain::OrbColour> colours;
+        int orbs = 0;
+        int rooms_with_orbs = 0;
+        for (const std::string& name : kShippedRooms) {
+            const auto& room = graph.room(name);
+            rooms_with_orbs += room.orbs().empty() ? 0 : 1;
+            const float size = static_cast<float>(room.map().tileSize());
+            for (const auto& orb : room.orbs()) {
+                INFO(name << " orb at " << orb.x << "," << orb.y);
+                ++orbs;
+                colours.insert(orb.colour);
+                // Floating: not even the tile row right under it is ground.
+                const int row = static_cast<int>((orb.y + orb.size) / size);
+                for (float x = orb.x; x < orb.x + orb.size; x += size * 0.5F) {
+                    CHECK_FALSE(room.map().isGround(static_cast<int>(x / size), row));
+                }
+            }
+        }
+        CHECK(orbs == 3);
+        CHECK(colours.size() == 3);
+        CHECK(rooms_with_orbs == 3);
+        CHECK(graph.totalOrbs() == 3);
     }
 
     SUBCASE("walkers are two tiles big") {

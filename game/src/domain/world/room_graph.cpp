@@ -48,4 +48,12 @@ int RoomGraph::totalCoins() const {
     return total;
 }
 
+int RoomGraph::totalOrbs() const {
+    int total = 0;
+    for (const auto& [id, room] : rooms_) {
+        total += static_cast<int>(room.orbs().size());
+    }
+    return total;
+}
+
 }  // namespace domain

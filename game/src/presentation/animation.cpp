@@ -11,6 +11,8 @@ constexpr std::uint64_t kLandMs = 100;
 constexpr std::uint64_t kCoinFrameMs = 140;
 constexpr std::uint64_t kFruitFrameMs = 160;  // a quick breath: a full pulse every 0.64 s
 constexpr std::uint64_t kEnemyFrameMs = 110;
+constexpr std::uint64_t kOrbFrameMs = 110;     // a heartbeat every 1.3 s
+constexpr std::uint64_t kOrbBobMs = 260;
 constexpr std::uint64_t kFruitBobMs = 300;    // the bob moves one pixel every 0.3 s
 // Vertical speed (pixels per step) below which the player is at the top of a jump.
 constexpr float kApexSpeed = 1.0F;
@@ -71,6 +73,17 @@ int fruitBob(std::uint64_t time_ms) {
     return kBob[(time_ms / kFruitBobMs) % 4];
 }
 
+int orbFrame(domain::OrbColour colour, std::uint64_t time_ms) {
+    const int offset = static_cast<int>(colour) * (kOrbFrames / 3);
+    return static_cast<int>((time_ms / kOrbFrameMs + static_cast<std::uint64_t>(offset)) % kOrbFrames);
+}
+
+int orbBob(domain::OrbColour colour, std::uint64_t time_ms) {
+    constexpr int kBob[8] = {0, -1, -2, -1, 0, 1, 2, 1};
+    const std::uint64_t step = time_ms / kOrbBobMs + static_cast<std::uint64_t>(colour) * 3U;
+    return kBob[step % 8];
+}
+
 int hoodFlutter(PlayerPose pose, std::uint64_t time_ms) {
     std::uint64_t frame_ms = 90;  // running, sliding, rising
     switch (pose) {
@@ -111,6 +124,17 @@ int checkpointFrame(std::uint64_t time_ms) {
 
 int exitFrame(std::uint64_t time_ms) {
     return static_cast<int>((time_ms / 600) % 2);
+}
+
+int exitSpriteFrame(bool open, std::uint64_t ms_open, std::uint64_t time_ms) {
+    if (!open || ms_open < kGateDelayMs) {
+        return kExitClosedFrame;
+    }
+    const std::uint64_t step = (ms_open - kGateDelayMs) / kGateFrameMs;
+    if (step < static_cast<std::uint64_t>(kGateFrames)) {
+        return kGateFirstFrame + static_cast<int>(step);
+    }
+    return exitFrame(time_ms);
 }
 
 int enemyFrame(std::uint64_t time_ms) {

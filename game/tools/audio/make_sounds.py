@@ -154,6 +154,66 @@ def checkpoint():
     return mix(*tracks)
 
 
+def orb():
+    """A bubbly, magical rise: quick upward blips ending in a shimmering note."""
+    tracks = []
+    for index, hz in enumerate([392, 523, 659, 880]):
+        phase = [0.0]
+
+        def voice(t, d, hz=hz, phase=phase):
+            phase[0] += sweep(hz, hz * 1.35, t, d) / RATE
+            return 0.4 * sine(phase[0]) * envelope(t, d, 0.004, 1.4)
+        tracks.append(delayed(render(0.1, voice), 0.06 * index))
+    for hz in (1175, 1760):
+        phase = [0.0]
+
+        def shimmer(t, d, hz=hz, phase=phase):
+            phase[0] += hz * (1.0 + 0.008 * math.sin(2 * math.pi * 9 * t)) / RATE
+            return 0.25 * triangle(phase[0]) * envelope(t, d, 0.01, 1.5)
+        tracks.append(delayed(render(0.45, shimmer), 0.24))
+    return mix(*tracks)
+
+
+def resonate(samples, hz, ring):
+    """A two-pole resonator: what makes bursts of noise ring like struck iron (ring close to 1)."""
+    a1, a2 = 2.0 * ring * math.cos(2.0 * math.pi * hz / RATE), -ring * ring
+    y1 = y2 = 0.0
+    out = []
+    for x in samples:
+        y = x * (1.0 - ring) + a1 * y1 + a2 * y2
+        out.append(y)
+        y1, y2 = y, y1
+    return out
+
+
+def gate():
+    """Only the noise of an iron grate being hauled up, in step with its animation (it starts
+    moving 0.35 s after the sound begins): a quick run of metallic rattles over a rough scrape."""
+    moving, length = 0.35, 1.48
+    rng = random.Random(73)
+    strikes = [0.0] * int(length * RATE)
+    at = moving
+    while at < length - 0.12:                        # one short burst per rattle of the bars
+        loud = rng.uniform(0.55, 1.0)
+        for i in range(int(0.012 * RATE)):
+            strikes[int(at * RATE) + i] += loud * rng.uniform(-1.0, 1.0) * (1.0 - i / (0.012 * RATE))
+        at += rng.uniform(0.055, 0.085)
+    scrape = Noise(79)
+
+    def friction(t, d):
+        if t < moving:
+            return 0.0
+        swell = min(1.0, (t - moving) / 0.1) * min(1.0, (d - t) / 0.12)
+        chatter = 0.65 + 0.35 * math.sin(2 * math.pi * 23 * t)
+        return scrape.next(0.55) * swell * chatter
+
+    rubbing = render(length, friction)
+    parts = [(resonate(strikes, 1130, 0.992), 5.0), (resonate(strikes, 1870, 0.990), 4.0),
+             (resonate(strikes, 3050, 0.985), 2.5), (strikes, 0.25),
+             (resonate(rubbing, 820, 0.93), 1.1), (resonate(rubbing, 2300, 0.90), 0.6)]
+    return [sum(track[i] * gain for track, gain in parts) for i in range(len(strikes))]
+
+
 def win():
     """A short fanfare: a rising arpeggio ending on a held chord note."""
     notes = [392, 494, 587, 784]  # G4 B4 D5 G5
@@ -252,6 +312,8 @@ SOUNDS = {
     "fruit": fruit,
     "stomp": stomp,
     "checkpoint": checkpoint,
+    "orb": orb,
+    "gate": gate,
     "win": win,
     "hurt": hurt,
     "slide": slide,
