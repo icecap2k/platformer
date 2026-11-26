@@ -10,7 +10,7 @@ constexpr std::uint64_t kRunFrameMs = 80;
 constexpr std::uint64_t kLandMs = 100;
 constexpr std::uint64_t kCoinFrameMs = 140;
 constexpr std::uint64_t kFruitFrameMs = 160;  // a quick breath: a full pulse every 0.64 s
-constexpr std::uint64_t kEnemyFrameMs = 180;
+constexpr std::uint64_t kEnemyFrameMs = 110;
 constexpr std::uint64_t kFruitBobMs = 300;    // the bob moves one pixel every 0.3 s
 // Vertical speed (pixels per step) below which the player is at the top of a jump.
 constexpr float kApexSpeed = 1.0F;
@@ -71,6 +71,29 @@ int fruitBob(std::uint64_t time_ms) {
     return kBob[(time_ms / kFruitBobMs) % 4];
 }
 
+int hoodFlutter(PlayerPose pose, std::uint64_t time_ms) {
+    std::uint64_t frame_ms = 90;  // running, sliding, rising
+    switch (pose) {
+        case PlayerPose::Idle0:
+        case PlayerPose::Idle1:
+        case PlayerPose::Idle2:
+        case PlayerPose::Idle3:
+        case PlayerPose::Land:
+            frame_ms = 230;
+            break;
+        case PlayerPose::Crouch:
+            frame_ms = 300;
+            break;
+        case PlayerPose::Fall:
+        case PlayerPose::Hurt:
+            frame_ms = 70;
+            break;
+        default:
+            break;
+    }
+    return static_cast<int>((time_ms / frame_ms) % kHoodFlutterFrames);
+}
+
 int coinFrame(std::uint64_t time_ms) {
     return static_cast<int>((time_ms / kCoinFrameMs) % 4);
 }
@@ -91,7 +114,7 @@ int exitFrame(std::uint64_t time_ms) {
 }
 
 int enemyFrame(std::uint64_t time_ms) {
-    return static_cast<int>((time_ms / kEnemyFrameMs) % 2);
+    return static_cast<int>((time_ms / kEnemyFrameMs) % kEnemyWalkFrames);
 }
 
 }  // namespace presentation

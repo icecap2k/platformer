@@ -1248,7 +1248,7 @@
    "opacity": 1,
    "visible": true,
    "objects": [
-{"id":4,"name":"fruit","type":"","class":"fruit","x":88,"y":168,"width":8,"height":8,"rotation":0,"visible":true},
+{"id":4,"name":"fruit","type":"","class":"fruit","x":88,"y":160,"width":8,"height":8,"rotation":0,"visible":true},
 {"id":2,"name":"spikes","type":"","class":"spikes","x":176,"y":211,"width":24,"height":5,"rotation":0,"visible":true},
 {"id":3,"name":"stalactite","type":"","class":"falling_stalactite","x":168,"y":144,"width":8,"height":8,"rotation":0,"visible":true},
     {
@@ -1268,10 +1268,10 @@
      "name": "walker",
      "type": "",
      "class": "walker",
-     "x": 240,
-     "y": 208,
-     "width": 8,
-     "height": 8,
+     "x": 236,
+     "y": 200,
+     "width": 16,
+     "height": 16,
      "rotation": 0,
      "visible": true
     }

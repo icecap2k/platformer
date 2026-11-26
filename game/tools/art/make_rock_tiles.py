@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from make_player_sprites import write_png  # noqa: E402
+from make_sprites import write_png  # noqa: E402
 
 SIZE = 8
 NORTH, SOUTH, EAST, WEST = 1, 2, 4, 8  # keep in sync with presentation/autotile.h

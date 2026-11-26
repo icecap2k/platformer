@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from make_player_sprites import write_png  # noqa: E402
+from make_sprites import write_png  # noqa: E402
 
 VIEW_W, VIEW_H = 320, 240
 VERTICAL_SHARE = 0.5

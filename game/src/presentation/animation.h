@@ -7,8 +7,8 @@
 namespace presentation {
 
 // Which drawing of the player to show. The value is the column of the frame in
-// assets/sprites/sprites.png (left to right); the sheet is drawn by
-// tools/art/make_player_sprites.py.
+// assets/sprites/hero.png (left to right); the sheet is drawn by
+// tools/art/make_hero_sprites.py.
 enum class PlayerPose {
     Idle0 = 0, Idle1, Idle2, Idle3,                  // breathing, hood tip swaying
     Run0 = 4, Run1, Run2, Run3, Run4, Run5,          // run cycle
@@ -29,6 +29,13 @@ inline constexpr std::uint64_t kNotLanding = ~std::uint64_t{0};
 // touching the ground. Pure logic: no SDL, so it is unit tested.
 PlayerPose playerPose(const domain::Player& player, std::uint64_t time_ms,
                       std::uint64_t ms_since_landing = kNotLanding);
+
+// Row (0 .. kHoodFlutterFrames - 1) of assets/sprites/hero.png to draw for a pose at
+// `time_ms`: each row is the same pose with the tip of the hood at another moment of its wave.
+// It waves lazily when standing and faster when moving fast.
+inline constexpr int kHoodFlutterFrames = 4;
+
+int hoodFlutter(PlayerPose pose, std::uint64_t time_ms);
 
 // While invulnerable after a hit the player blinks: this says whether the sprite
 // is shown on a given step. Always visible when not invulnerable.
@@ -59,7 +66,9 @@ int checkpointFrame(std::uint64_t time_ms);
 // Frame (0..1) of the cave exit: its light brightens and dims.
 int exitFrame(std::uint64_t time_ms);
 
-// Frame (0..1) of the walking enemy: its legs swap phase.
+// Frame (0..kEnemyWalkFrames - 1) of the walking enemy: the cycle of its legs. The frame
+// after those in the sheet is the squashed one.
+inline constexpr int kEnemyWalkFrames = 4;
 int enemyFrame(std::uint64_t time_ms);
 
 }  // namespace presentation

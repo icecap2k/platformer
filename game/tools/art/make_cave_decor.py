@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from make_player_sprites import write_png  # noqa: E402
+from make_sprites import write_png  # noqa: E402
 
 OUT = Path(__file__).resolve().parents[2] / "assets" / "sprites" / "decor.png"
 OUTLINE = (28, 20, 32, 255)

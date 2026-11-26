@@ -15,15 +15,13 @@ namespace presentation {
 
 namespace {
 
-// Sprite sheet (sprites/sprites.png). The player drawing is bigger than its
-// 8x16 collision box because the thick outline sticks out of it.
-constexpr float kPlayerSpriteWidth = 12.0F;
-constexpr float kPlayerSpriteHeight = 18.0F;
-constexpr float kPlayerOffsetX = -2.0F;  // sprite origin relative to the collision box
+// The hero (hero.png) is drawn bigger than its 8x16 collision box, centred on it.
+constexpr float kPlayerSpriteWidth = 32.0F;
+constexpr float kPlayerSpriteHeight = 28.0F;
 // The sprite is aligned by its feet (a crouching player has a box half as tall): its
 // last row, the outline under the soles, is this many pixels below the box's bottom.
 constexpr float kPlayerSoleOverhang = 1.0F;
-constexpr float kCoinSheetY = 18.0F;  // coin frames sit below the player frames
+constexpr float kCoinSheetY = 18.0F;  // rows of sprites.png: coins here
 constexpr float kCoinSize = 8.0F;
 constexpr float kHeartSheetY = 26.0F;  // heart icons (full, then empty) sit below the coins
 constexpr float kHeartSize = 8.0F;
@@ -69,6 +67,7 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
     : renderer_(renderer),
       rocks_(renderer, assets_dir + "sprites/rocks.png"),
       sprites_(renderer, assets_dir + "sprites/sprites.png"),
+      hero_(renderer, assets_dir + "sprites/hero.png"),
       decor_(renderer, assets_dir + "sprites/decor.png"),
       hazards_(renderer, assets_dir + "sprites/hazards.png"),
       enemies_(renderer, assets_dir + "sprites/enemies.png"),
@@ -257,25 +256,27 @@ void GameRenderer::drawDrip(const domain::TileMap& map, int column, int row,
 
 // The cave exit: a glowing archway standing on the floor, centred on its hitbox.
 void GameRenderer::drawExits(const application::GameSession& session, std::uint64_t time_ms) const {
-    constexpr float kSprite = 16.0F;
+    constexpr float kWidth = 22.0F;
+    constexpr float kHeight = 32.0F;
     for (const domain::Exit& exit : session.currentRoom().exits()) {
         const domain::AABB box = exit.bounds();
-        exit_.draw(renderer_, SDL_FRect{static_cast<float>(exitFrame(time_ms)) * kSprite, 0.0F, kSprite, kSprite},
-                   SDL_FRect{box.x + box.width * 0.5F - kSprite * 0.5F, box.bottom() - kSprite, kSprite, kSprite});
+        exit_.draw(renderer_, SDL_FRect{static_cast<float>(exitFrame(time_ms)) * kWidth, 0.0F, kWidth, kHeight},
+                   SDL_FRect{box.x + (box.width - kWidth) * 0.5F, box.bottom() - kHeight, kWidth, kHeight});
     }
 }
 
 // Checkpoints: a dark crystal lantern until touched; the active one glows (two frames that pulse).
 void GameRenderer::drawCheckpoints(const application::GameSession& session, std::uint64_t time_ms) const {
-    constexpr float kSprite = 8.0F;
+    constexpr float kWidth = 12.0F;  // taller than the hitbox: it stands on the floor, centred
+    constexpr float kHeight = 20.0F;
     const domain::Room& room = session.currentRoom();
     for (std::size_t index = 0; index < room.checkpoints().size(); ++index) {
         const domain::AABB box = room.checkpoints()[index].bounds();
         const bool active = session.lastCheckpoint() &&
                             *session.lastCheckpoint() == std::make_pair(room.id(), index);
         const int frame = active ? checkpointFrame(time_ms) : 0;
-        checkpoints_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kSprite, 0.0F, kSprite, kSprite},
-                          SDL_FRect{box.x, box.bottom() - kSprite, kSprite, kSprite});
+        checkpoints_.draw(renderer_, SDL_FRect{static_cast<float>(frame) * kWidth, 0.0F, kWidth, kHeight},
+                          SDL_FRect{box.x + (box.width - kWidth) * 0.5F, box.bottom() - kHeight, kWidth, kHeight});
     }
 }
 
@@ -328,18 +329,18 @@ void GameRenderer::drawHazards(const application::GameSession& session) const {
 
 // The enemies still alive: the beetle faces the way it walks (the sheet draws it facing right).
 void GameRenderer::drawEnemies(const application::GameSession& session, std::uint64_t time_ms) const {
-    constexpr float kSprite = 8.0F;
+    constexpr float kSprite = 16.0F;
     const domain::Room& room = session.currentRoom();
     for (std::size_t index = 0; index < room.enemies().size(); ++index) {
         const domain::EnemyState& state = session.enemyPatrols().state(room.id(), index);
         const domain::AABB box = domain::currentBounds(room.enemies()[index], state);
-        // The sprite is 8x8: sit it on the bottom of the hitbox.
+        // The sprite is 16x16: sit it on the bottom of the hitbox.
         const SDL_FRect destination{box.x, box.bottom() - kSprite, kSprite, kSprite};
         if (!state.alive) {
-            // Frame 2: squashed flat. It blinks for its last third of a second, then it is gone.
+            // The last frame: squashed flat. It blinks for its last third of a second, then it is gone.
             if (domain::isSquashedBody(state) && isVisibleWhileFading(domain::kSquashSteps - state.dead_steps)) {
-                enemies_.draw(renderer_, SDL_FRect{2.0F * kSprite, 0.0F, kSprite, kSprite}, destination,
-                              state.direction < 0);
+                const SDL_FRect squashed{static_cast<float>(kEnemyWalkFrames) * kSprite, 0.0F, kSprite, kSprite};
+                enemies_.draw(renderer_, squashed, destination, state.direction < 0);
             }
             continue;
         }
@@ -390,15 +391,18 @@ void GameRenderer::drawPlayer(const domain::Player& player, std::uint64_t time_m
     const std::uint64_t since_landing = has_landed_ ? time_ms - landed_at_ms_ : kNotLanding;
     const PlayerPose pose = playerPose(player, time_ms, since_landing);
 
-    const SDL_FRect source{static_cast<float>(static_cast<int>(pose)) * kPlayerSpriteWidth, 0.0F,
+    // One column per pose, one row per moment of the hood's wave.
+    const SDL_FRect source{static_cast<float>(static_cast<int>(pose)) * kPlayerSpriteWidth,
+                           static_cast<float>(hoodFlutter(pose, time_ms)) * kPlayerSpriteHeight,
                            kPlayerSpriteWidth, kPlayerSpriteHeight};
     const domain::AABB box = player.bounds();
-    const SDL_FRect destination{box.x + kPlayerOffsetX, box.bottom() - kPlayerSpriteHeight + kPlayerSoleOverhang,
+    const SDL_FRect destination{box.x + (box.width - kPlayerSpriteWidth) * 0.5F,
+                                box.bottom() - kPlayerSpriteHeight + kPlayerSoleOverhang,
                                 kPlayerSpriteWidth, kPlayerSpriteHeight};
     if (!isVisibleWhileInvulnerable(player.invulnerable_steps)) {
         return;  // blinking after a hit
     }
-    sprites_.draw(renderer_, source, destination, facing_left_);
+    hero_.draw(renderer_, source, destination, facing_left_);
 }
 
 void GameRenderer::drawHud(const application::GameSession& session, std::uint64_t time_ms) const {

@@ -18,7 +18,7 @@ namespace presentation {
 class GameRenderer {
 public:
     // `assets_dir` must end with a path separator and contain sprites/rocks.png,
-    // sprites/sprites.png, sprites/decor.png, sprites/hazards.png, sprites/enemies.png, sprites/fireflies.png, sprites/checkpoints.png, sprites/exit.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
+    // sprites/sprites.png, sprites/hero.png, sprites/decor.png, sprites/hazards.png, sprites/enemies.png, sprites/fireflies.png, sprites/checkpoints.png, sprites/exit.png and background/cave.png. Throws std::runtime_error if they cannot be loaded.
     GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir);
 
     // Draws the current screen: the title menu, or the game (frozen behind the pause menu
@@ -47,6 +47,7 @@ private:
     SDL_Renderer* renderer_;
     infrastructure::Texture rocks_;
     infrastructure::Texture sprites_;
+    infrastructure::Texture hero_;
     infrastructure::Texture decor_;
     infrastructure::Texture hazards_;
     infrastructure::Texture enemies_;

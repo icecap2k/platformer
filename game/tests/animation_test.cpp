@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include <set>
+
 #include "presentation/animation.h"
 
 using presentation::PlayerPose;
@@ -227,4 +229,40 @@ TEST_CASE("a squashed enemy is solid for most of its time and blinks at the end"
     }
     CHECK(shown);
     CHECK(hidden);
+}
+
+TEST_CASE("the tip of the hood keeps waving through all its frames in every pose") {
+    using namespace presentation;
+    for (int value = 0; value < kPlayerFrameCount; ++value) {
+        const auto pose = static_cast<PlayerPose>(value);
+        std::set<int> rows;
+        for (std::uint64_t t = 0; t < 2000; t += 10) {
+            const int row = hoodFlutter(pose, t);
+            CHECK(row >= 0);
+            CHECK(row < kHoodFlutterFrames);
+            rows.insert(row);
+        }
+        CHECK(rows.size() == kHoodFlutterFrames);
+    }
+}
+
+TEST_CASE("the hood waves faster when falling than when standing") {
+    using namespace presentation;
+    const auto changes = [](PlayerPose pose) {
+        int count = 0;
+        for (std::uint64_t t = 10; t < 3000; t += 10) {
+            count += hoodFlutter(pose, t) != hoodFlutter(pose, t - 10) ? 1 : 0;
+        }
+        return count;
+    };
+    CHECK(changes(PlayerPose::Fall) > changes(PlayerPose::Run0));
+    CHECK(changes(PlayerPose::Run0) > changes(PlayerPose::Idle0));
+}
+
+TEST_CASE("the walking enemy goes through all the frames of its step cycle") {
+    std::set<int> frames;
+    for (std::uint64_t time = 0; time < 2000; time += 10) {
+        frames.insert(presentation::enemyFrame(time));
+    }
+    CHECK(frames == std::set<int>{0, 1, 2, 3});
 }
