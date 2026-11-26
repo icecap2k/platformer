@@ -37,15 +37,29 @@ Aquí además importa **qué está haciendo**. Se pregunta por orden de priorida
 Después: agachado, en el aire (subiendo, cima o cayendo según la velocidad vertical), aterrizando, quieto o
 corriendo.
 
-## La onda de la capucha
+## Que la carrera se vea natural
 
-La pose elige la **columna** y `hoodFlutter` la **fila**: son independientes, y la onda va más rápida cuanto
+La carrera son **8 fotogramas**: apoyo, hundimiento, paso y empuje, y los mismos cuatro con la otra pierna. En el
+script se dibuja solo media zancada; la otra mitad sale **intercambiando los colores** de las dos piernas:
+
+<!-- src: game/tools/art/make_hero_sprites.py -->
+```python
+SWAP = str.maketrans("PqBb", "qPbB")
+RUN_LEGS = RUN_HALF + [[row.translate(SWAP) for row in frame] for frame in RUN_HALF]
+```
+
+Tres detalles dan naturalidad: las piernas **doblan la rodilla** en vez de girar como palos, el cuerpo **baja un
+píxel** al apoyar, y cada brazo se mueve **al contrario** que la pierna de su lado, sin separarse del cuerpo.
+
+## La melena al viento
+
+La pose elige la **columna** y `hairFlutter` la **fila**: son independientes, y la onda va más rápida cuanto
 más rápido te mueves.
 
 <!-- src: game/src/presentation/game_renderer.cpp -->
 ```cpp
     const SDL_FRect source{static_cast<float>(static_cast<int>(pose)) * kPlayerSpriteWidth,
-                           static_cast<float>(hoodFlutter(pose, time_ms)) * kPlayerSpriteHeight,
+                           static_cast<float>(hairFlutter(pose, time_ms)) * kPlayerSpriteHeight,
                            kPlayerSpriteWidth, kPlayerSpriteHeight};
 ```
 

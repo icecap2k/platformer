@@ -6,7 +6,7 @@ namespace presentation {
 
 namespace {
 constexpr std::uint64_t kIdleFrameMs = 220;
-constexpr std::uint64_t kRunFrameMs = 80;
+constexpr std::uint64_t kRunFrameMs = 65;  // a full stride (two steps) every 0.52 s
 constexpr std::uint64_t kLandMs = 100;
 constexpr std::uint64_t kCoinFrameMs = 140;
 constexpr std::uint64_t kFruitFrameMs = 160;  // a quick breath: a full pulse every 0.64 s
@@ -43,7 +43,7 @@ PlayerPose playerPose(const domain::Player& player, std::uint64_t time_ms,
                                        static_cast<int>((time_ms / kIdleFrameMs) % 4));
     }
     return static_cast<PlayerPose>(static_cast<int>(PlayerPose::Run0) +
-                                   static_cast<int>((time_ms / kRunFrameMs) % 6));
+                                   static_cast<int>((time_ms / kRunFrameMs) % kRunFrames));
 }
 
 bool isVisibleWhileInvulnerable(int invulnerable_steps) {
@@ -84,27 +84,27 @@ int orbBob(domain::OrbColour colour, std::uint64_t time_ms) {
     return kBob[step % 8];
 }
 
-int hoodFlutter(PlayerPose pose, std::uint64_t time_ms) {
-    std::uint64_t frame_ms = 90;  // running, sliding, rising
+int hairFlutter(PlayerPose pose, std::uint64_t time_ms) {
+    std::uint64_t frame_ms = 140;  // running, sliding, rising
     switch (pose) {
         case PlayerPose::Idle0:
         case PlayerPose::Idle1:
         case PlayerPose::Idle2:
         case PlayerPose::Idle3:
         case PlayerPose::Land:
-            frame_ms = 230;
+            frame_ms = 340;
             break;
         case PlayerPose::Crouch:
-            frame_ms = 300;
+            frame_ms = 420;
             break;
         case PlayerPose::Fall:
         case PlayerPose::Hurt:
-            frame_ms = 70;
+            frame_ms = 110;
             break;
         default:
             break;
     }
-    return static_cast<int>((time_ms / frame_ms) % kHoodFlutterFrames);
+    return static_cast<int>((time_ms / frame_ms) % kHairFlutterFrames);
 }
 
 int coinFrame(std::uint64_t time_ms) {

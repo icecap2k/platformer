@@ -50,6 +50,7 @@ find_package(SDL3 REQUIRED)
 add_library(infrastructure STATIC
     src/infrastructure/audio/audio_player.cpp
     src/infrastructure/sdl/window.cpp
+    src/infrastructure/sdl/render_target.cpp
     src/infrastructure/sdl/texture.cpp
     src/infrastructure/input/keyboard_input_mapper.cpp)
 target_include_directories(infrastructure SYSTEM PRIVATE third_party)
@@ -62,10 +63,12 @@ add_library(presentation_animation STATIC
     src/presentation/animation.cpp
     src/presentation/decoration.cpp
     src/presentation/autotile.cpp
+    src/presentation/backdrop.cpp
     src/presentation/drip.cpp
     src/presentation/firefly.cpp
     src/presentation/screen_shake.cpp
-    src/presentation/sound_cues.cpp)
+    src/presentation/sound_cues.cpp
+    src/presentation/transition.cpp)
 target_link_libraries(presentation_animation PUBLIC domain application)
 target_compile_options(presentation_animation PRIVATE ${WARNINGS})
 
@@ -138,9 +141,11 @@ if(PLATFORMER_BUILD_TESTS)
         tests/animation_test.cpp
         tests/decoration_test.cpp
         tests/autotile_test.cpp
+        tests/backdrop_test.cpp
         tests/drip_test.cpp
         tests/firefly_test.cpp
         tests/screen_shake_test.cpp
+        tests/transition_test.cpp
         tests/jump_buffer_test.cpp
         tests/game_session_test.cpp
         tests/tiled_map_loader_test.cpp

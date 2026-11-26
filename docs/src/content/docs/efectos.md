@@ -19,6 +19,34 @@ Un *hash* convierte datos en un número que parece aleatorio pero es **siempre e
     h ^= h >> 13;
 ```
 
+## El fondo
+
+La cueva es una imagen fija (`cave.png`): un **degradado** casi negro arriba que se vuelve azul verdoso cerca
+del suelo, con rocas lejanas muy oscuras. Un degradado oscuro tiende a verse en franjas; se evita con un
+**tramado** (*dithering*): cada píxel redondea hacia arriba o abajo según una matriz de 4×4.
+
+<!-- src: game/tools/art/make_cave_background.py -->
+```python
+            threshold = (BAYER[y % 4][x % 4] + 0.5) / 16
+```
+
+## Setas luminosas
+
+![Setas luminosas del fondo](/img/sheets/glow_mushrooms.png)
+
+Delante de esa imagen y **detrás de la roca** crecen setas grandes animadas: la luz sube y baja, el sombrero
+respira un píxel y flotan esporas. `backdropFor(sala)` reparte como mucho una por cada quinto de la pantalla,
+siempre apoyada en el suelo (sobre un foso no sale ninguna). Cada una empieza el ciclo en un momento distinto:
+
+<!-- src: game/src/presentation/backdrop.cpp -->
+```cpp
+int mushroomFrame(const BackdropMushroom& mushroom, std::uint64_t time_ms) {
+    return static_cast<int>(((time_ms + mushroom.offset_ms) / kFrameMs) % kMushroomFrames);
+}
+```
+
+No tienen contorno y sus colores son apagados para que se lean como lejanas.
+
 ## La decoración
 
 ![Los 16 adornos](/img/sheets/decor.png)

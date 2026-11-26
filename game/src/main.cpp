@@ -117,16 +117,22 @@ int main() {
             previous_ns = now_ns;
 
             // While paused (or on the title) the clock still runs, but no step is taken.
-            const int game_steps = flow.screen() == application::Screen::Playing && session ? steps : 0;
+            // Nor while the picture is moving to another room or screen.
+            const bool playing = flow.screen() == application::Screen::Playing && session && !renderer.inTransition();
+            const int game_steps = playing ? steps : 0;
             for (int i = 0; i < game_steps; ++i) {
                 for (const application::GameEvent& event : session->update(input)) {
                     report(event);
+                    renderer.onEvent(event);
                     if (std::holds_alternative<application::GameWon>(event)) {
                         flow.win();
                     }
                     if (const auto sound = presentation::soundFor(event)) {
                         audio.play(presentation::soundName(*sound));
                     }
+                }
+                if (renderer.inTransition()) {
+                    break;  // the rest of this frame's steps would happen off screen
                 }
             }
 

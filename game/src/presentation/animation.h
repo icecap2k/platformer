@@ -11,16 +11,17 @@ namespace presentation {
 // assets/sprites/hero.png (left to right); the sheet is drawn by
 // tools/art/make_hero_sprites.py.
 enum class PlayerPose {
-    Idle0 = 0, Idle1, Idle2, Idle3,                  // breathing, hood tip swaying
-    Run0 = 4, Run1, Run2, Run3, Run4, Run5,          // run cycle
-    Rise = 10, Apex = 11, Fall = 12,                 // in the air
-    Land = 13,                                       // squashed, just after landing
-    Hurt = 14,                                       // thrown back by a hit
-    Slide = 15,                                      // sliding down a ramp (and coasting after it)
-    Crouch = 16,                                     // crouching on the ground (the box is half as tall)
+    Idle0 = 0, Idle1, Idle2, Idle3,                  // breathing, hair swaying
+    Run0 = 4, Run1, Run2, Run3, Run4, Run5, Run6, Run7,  // run cycle
+    Rise = 12, Apex = 13, Fall = 14,                 // in the air
+    Land = 15,                                       // squashed, just after landing
+    Hurt = 16,                                       // thrown back by a hit
+    Slide = 17,                                      // sliding down a ramp (and coasting after it)
+    Crouch = 18,                                     // crouching on the ground (the box is half as tall)
 };
 
-inline constexpr int kPlayerFrameCount = 17;
+inline constexpr int kPlayerFrameCount = 19;
+inline constexpr int kRunFrames = 8;
 
 // `ms_since_landing` value meaning "has not just landed".
 inline constexpr std::uint64_t kNotLanding = ~std::uint64_t{0};
@@ -31,12 +32,12 @@ inline constexpr std::uint64_t kNotLanding = ~std::uint64_t{0};
 PlayerPose playerPose(const domain::Player& player, std::uint64_t time_ms,
                       std::uint64_t ms_since_landing = kNotLanding);
 
-// Row (0 .. kHoodFlutterFrames - 1) of assets/sprites/hero.png to draw for a pose at
-// `time_ms`: each row is the same pose with the tip of the hood at another moment of its wave.
+// Row (0 .. kHairFlutterFrames - 1) of assets/sprites/hero.png to draw for a pose at
+// `time_ms`: each row is the same pose with the long hair at another moment of its wave.
 // It waves lazily when standing and faster when moving fast.
-inline constexpr int kHoodFlutterFrames = 4;
+inline constexpr int kHairFlutterFrames = 4;
 
-int hoodFlutter(PlayerPose pose, std::uint64_t time_ms);
+int hairFlutter(PlayerPose pose, std::uint64_t time_ms);
 
 // While invulnerable after a hit the player blinks: this says whether the sprite
 // is shown on a given step. Always visible when not invulnerable.

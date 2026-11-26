@@ -68,12 +68,23 @@ class Layer:
             self.put(x + dx + 1, y - 1, color)
 
 
-def fill_gradient(layer, top, bottom):
+# A 4x4 ordered-dither matrix: it breaks the steps of a dark gradient into a fine grain.
+BAYER = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
+
+
+def fill_gradient(layer, stops):
+    """A vertical gradient through `stops`, pairs of (height 0..1, colour), from top to bottom."""
     for y in range(layer.h):
         t = y / (layer.h - 1)
-        color = tuple(round(top[i] + (bottom[i] - top[i]) * t) for i in range(3)) + (255,)
+        for (t0, c0), (t1, c1) in zip(stops, stops[1:]):
+            if t0 <= t <= t1:
+                break
+        k = (t - t0) / (t1 - t0)
+        k = k * k * (3 - 2 * k)                      # eases in and out of every stop
+        exact = [c0[i] + (c1[i] - c0[i]) * k for i in range(3)]
         for x in range(layer.w):
-            layer.px[y][x] = color
+            threshold = (BAYER[y % 4][x % 4] + 0.5) / 16
+            layer.px[y][x] = tuple(int(v) + (1 if v - int(v) > threshold else 0) for v in exact) + (255,)
 
 
 def spread(rng, count, width, margin=6, jitter=0.35):
@@ -85,21 +96,22 @@ def spread(rng, count, width, margin=6, jitter=0.35):
 def make_far():
     rng = random.Random(11)
     layer = Layer("far")
-    fill_gradient(layer, (14, 12, 34), (30, 26, 62))
+    # Almost black under the roof, a cold violet half way and a teal haze near the floor.
+    fill_gradient(layer, ((0.0, (2, 2, 8)), (0.45, (8, 7, 22)), (0.78, (16, 15, 40)), (1.0, (18, 34, 52))))
     # Distant rock teeth, lit from behind: very low contrast so they read as far away.
-    dark, rim = (12, 10, 28, 255), (22, 19, 48, 255)
+    dark, rim = (4, 3, 12, 255), (11, 9, 27, 255)
     for cx in spread(rng, 11, layer.w):
         layer.spike(cx, rng.randint(28, 70), rng.randint(14, 26), True, dark, rim, rng)
-    teeth, tooth_rim = (36, 32, 70, 255), (46, 42, 86, 255)
+    teeth, tooth_rim = (17, 18, 42, 255), (25, 28, 56, 255)
     for cx in spread(rng, 9, layer.w):
         layer.spike(cx, rng.randint(24, 56), rng.randint(16, 28), False, teeth, tooth_rim, rng)
     # Glow worms / distant crystals: single pixels with a faint halo.
     for _ in range(46):
         x, y = rng.randint(4, layer.w - 5), rng.randint(20, layer.h - 40)
-        bright = rng.choice(((78, 150, 190, 255), (150, 96, 190, 255), (96, 120, 180, 255)))
+        bright = rng.choice(((56, 110, 142, 255), (106, 68, 140, 255), (68, 86, 132, 255)))
         layer.put(x, y, bright)
         if rng.random() < 0.35:
-            halo = (bright[0] // 2 + 16, bright[1] // 2 + 14, bright[2] // 2 + 30, 255)
+            halo = (bright[0] // 3 + 6, bright[1] // 3 + 5, bright[2] // 3 + 16, 255)
             for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                 layer.put(x + dx, y + dy, halo)
     return layer
@@ -108,21 +120,21 @@ def make_far():
 def make_mid():
     rng = random.Random(23)
     layer = Layer("mid")
-    color, rim = (36, 32, 74, 255), (58, 52, 108, 255)
+    color, rim = (15, 13, 36, 255), (30, 27, 62, 255)
     for cx in spread(rng, 8, layer.w, jitter=0.4):
         layer.spike(cx, rng.randint(34, 86), rng.randint(14, 24), True, color, rim, rng)
     for cx in spread(rng, 7, layer.w, jitter=0.4):
         layer.spike(cx, rng.randint(26, 60), rng.randint(14, 22), False, color, rim, rng)
     for _ in range(3):
         layer.crystals(rng.randint(30, layer.w - 30), layer.h - rng.randint(70, 150),
-                       (46, 140, 160, 255), (140, 230, 240, 255), rng)
+                       (30, 94, 112, 255), (98, 176, 190, 255), rng)
     return layer
 
 
 def make_near():
     rng = random.Random(37)
     layer = Layer("near")
-    color, rim = (22, 19, 46, 255), (52, 46, 96, 255)
+    color, rim = (8, 7, 20, 255), (26, 23, 54, 255)
     for cx in spread(rng, 5, layer.w, jitter=0.45):
         layer.spike(cx, rng.randint(40, 100), rng.randint(18, 30), True, color, rim, rng)
     for cx in spread(rng, 4, layer.w, jitter=0.45):
