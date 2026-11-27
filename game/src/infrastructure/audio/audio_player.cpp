@@ -22,26 +22,62 @@ AudioPlayer::AudioPlayer(const std::string& directory, const std::vector<std::st
     }
 
     for (const std::string& name : names) {
-        const std::string path = directory + name + ".wav";
         Clip clip;
-        SDL_AudioSpec wav_spec;
-        if (!SDL_LoadWAV(path.c_str(), &wav_spec, &clip.data, &clip.length)) {
-            std::cerr << "[audio] cannot load " << path << ": " << SDL_GetError() << '\n';
-            continue;
+        if (load(directory + name + ".wav", device_spec, clip)) {
+            clips_.emplace(name, clip);
         }
-        clip.stream = SDL_CreateAudioStream(&wav_spec, &device_spec);
-        if (clip.stream == nullptr || !SDL_BindAudioStream(device_, clip.stream)) {
-            std::cerr << "[audio] cannot play " << path << ": " << SDL_GetError() << '\n';
-            if (clip.stream != nullptr) {
-                SDL_DestroyAudioStream(clip.stream);
-            }
-            SDL_free(clip.data);
-            continue;
-        }
-        clips_.emplace(name, clip);
     }
     applyVolume();
     SDL_ResumeAudioDevice(device_);  // make sure it is playing
+}
+
+bool AudioPlayer::load(const std::string& path, const SDL_AudioSpec& device_spec, Clip& clip) {
+    SDL_AudioSpec wav_spec;
+    if (!SDL_LoadWAV(path.c_str(), &wav_spec, &clip.data, &clip.length)) {
+        std::cerr << "[audio] cannot load " << path << ": " << SDL_GetError() << '\n';
+        return false;
+    }
+    clip.stream = SDL_CreateAudioStream(&wav_spec, &device_spec);
+    if (clip.stream == nullptr || !SDL_BindAudioStream(device_, clip.stream)) {
+        std::cerr << "[audio] cannot play " << path << ": " << SDL_GetError() << '\n';
+        if (clip.stream != nullptr) {
+            SDL_DestroyAudioStream(clip.stream);
+        }
+        SDL_free(clip.data);
+        clip = Clip{};
+        return false;
+    }
+    return true;
+}
+
+bool AudioPlayer::startMusic(const std::string& path) {
+    SDL_AudioSpec device_spec;
+    if (device_ == 0 || music_.data != nullptr || !SDL_GetAudioDeviceFormat(device_, &device_spec, nullptr) ||
+        !load(path, device_spec, music_)) {
+        return false;
+    }
+    update();
+    return true;
+}
+
+void AudioPlayer::setMusicGain(float gain) {
+    if (music_.stream != nullptr) {
+        SDL_SetAudioStreamGain(music_.stream, gain);
+    }
+}
+
+void AudioPlayer::update() {
+    // Keep at least one whole round waiting behind the one that is sounding.
+    if (music_.stream != nullptr && SDL_GetAudioStreamQueued(music_.stream) < static_cast<int>(music_.length)) {
+        SDL_PutAudioStreamData(music_.stream, music_.data, static_cast<int>(music_.length));
+    }
+}
+
+void AudioPlayer::setGain(const std::string& name, float gain) {
+    const auto found = clips_.find(name);
+    if (found != clips_.end()) {
+        SDL_SetAudioStreamGain(found->second.stream, gain);
+    }
 }
 
 AudioPlayer::~AudioPlayer() {
@@ -50,6 +86,10 @@ AudioPlayer::~AudioPlayer() {
         SDL_free(clip.data);
     }
     clips_.clear();
+    if (music_.data != nullptr) {
+        SDL_DestroyAudioStream(music_.stream);
+        SDL_free(music_.data);
+    }
     if (device_ != 0) {
         SDL_CloseAudioDevice(device_);
         SDL_QuitSubSystem(SDL_INIT_AUDIO);

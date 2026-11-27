@@ -101,6 +101,18 @@ void GameRenderer::onEvent(const application::GameEvent& event) {
     }
 }
 
+void GameRenderer::showNotice(const std::string& text) {
+    constexpr std::uint64_t kNoticeMs = 1500;
+    notice_ = text;
+    notice_until_ms_ = SDL_GetTicks() + kNoticeMs;
+}
+
+bool GameRenderer::takeDripSplash() {
+    const bool splashed = drip_splashed_;
+    drip_splashed_ = false;
+    return splashed;
+}
+
 bool GameRenderer::inTransition() const {
     return pending_.kind != TransitionKind::None || transition_.active(SDL_GetTicks());
 }
@@ -138,6 +150,7 @@ void GameRenderer::draw(const application::GameSession* session, const applicati
     }
     last_screen_ = flow.screen();
     startPendingTransition(session, time_ms);
+    playing_ = flow.screen() == Screen::Playing && !transition_.active(time_ms);
 
     scene_->begin();
     drawScene(session, flow, time_ms);
@@ -159,6 +172,11 @@ void GameRenderer::draw(const application::GameSession* session, const applicati
         drawMenu(flow, "PAUSED", 3.0F, 70.0F);
         drawText("P OR ESC: RESUME", 160.0F, 226.0F, 1.0F, SDL_Color{130, 130, 170, 255});
     }
+    if (time_ms < notice_until_ms_) {
+        drawText(notice_, 160.0F + 1.0F, 212.0F + 1.0F, 1.0F, SDL_Color{10, 8, 24, 255});
+        drawText(notice_, 160.0F, 212.0F, 1.0F, SDL_Color{236, 240, 255, 255});
+    }
+    drips_checked_ms_ = playing_ ? time_ms : 0;
     SDL_RenderPresent(renderer_);
 }
 
@@ -274,7 +292,7 @@ void GameRenderer::drawTitle(const application::GameFlow& flow) const {
     SDL_RenderFillRect(renderer_, &footer);
 
     drawMenu(flow, "", 1.0F, 156.0F - 8.0F - 24.0F, kMenuCentre);
-    drawText("ARROWS + ENTER      M: MUTE", 160.0F, 227.0F, 1.0F, SDL_Color{190, 190, 220, 255});
+    drawText("ENTER: PICK  M: MUTE  -/+: MUSIC", 160.0F, 227.0F, 1.0F, SDL_Color{190, 190, 220, 255});
 }
 
 // The cave behind the level: one still picture of the whole screen.
@@ -348,7 +366,7 @@ void GameRenderer::drawScenery(const domain::Room& room, std::uint64_t time_ms) 
 // until it meets the first solid tile below (or the bottom of the screen) and splashes there. Only
 // decoration: nothing in the game reacts to it.
 void GameRenderer::drawDrip(const domain::TileMap& map, const Prop& prop, float top,
-                            std::uint64_t time_ms) const {
+                            std::uint64_t time_ms) {
     constexpr float kDrop = 8.0F;             // the drop frames are 8x8
     constexpr float kDropTopInFrame = 5.0F;   // where the drop starts inside its frame
     constexpr float kDropCentreInFrame = 4.0F;
@@ -366,6 +384,11 @@ void GameRenderer::drawDrip(const domain::TileMap& map, const Prop& prop, float 
     const float fall_distance = ground_y - (forming_y + kDropTopInFrame + kDropHeight);
 
     const Drip drip = dripAt(prop.column, prop.row, fall_distance, time_ms);
+    // It is heard on the frame it starts splashing.
+    if (playing_ && drips_checked_ms_ != 0 && drip.phase == DripPhase::Splash &&
+        dripAt(prop.column, prop.row, fall_distance, drips_checked_ms_).phase != DripPhase::Splash) {
+        drip_splashed_ = true;
+    }
     if (drip.phase == DripPhase::None) {
         return;
     }

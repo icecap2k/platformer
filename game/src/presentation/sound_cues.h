@@ -26,6 +26,7 @@ enum class Sound {
     Stomp,              // the player lands on an enemy
     Orb,                // one of the orbs is taken
     Gate,               // the portcullis of the exit rises
+    Drip,               // a drop of water splashes (scenery: no game event goes with it)
     Win,                // the exit is reached
     Restart,            // all hearts lost: the game starts over
 };

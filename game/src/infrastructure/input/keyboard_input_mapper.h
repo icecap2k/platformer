@@ -27,6 +27,10 @@ public:
     // concern, like quitting, so it is not part of InputState.
     bool takeMuteToggle();
 
+    // How many steps the music was turned up (positive) or down (negative) since the last call,
+    // with the + and - keys.
+    int takeMusicSteps();
+
     // The menu keys pressed since the last call, in order (Up/W, Down/S, Enter or Space,
     // Esc, P). Each press counts once; holding a key does not repeat it.
     std::vector<domain::MenuCommand> takeMenuCommands();
@@ -34,6 +38,7 @@ public:
 private:
     bool quit_requested_ = false;
     bool mute_toggled_ = false;
+    int music_steps_ = 0;
     std::vector<domain::MenuCommand> menu_commands_;
 };
 

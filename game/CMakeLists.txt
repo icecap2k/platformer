@@ -72,6 +72,7 @@ add_library(presentation_animation STATIC
     src/presentation/backdrop.cpp
     src/presentation/drip.cpp
     src/presentation/firefly.cpp
+    src/presentation/music_volume.cpp
     src/presentation/screen_shake.cpp
     src/presentation/sound_cues.cpp
     src/presentation/transition.cpp)
@@ -150,6 +151,7 @@ if(PLATFORMER_BUILD_TESTS)
         tests/backdrop_test.cpp
         tests/drip_test.cpp
         tests/firefly_test.cpp
+        tests/music_test.cpp
         tests/screen_shake_test.cpp
         tests/transition_test.cpp
         tests/jump_buffer_test.cpp

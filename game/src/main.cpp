@@ -17,6 +17,7 @@
 #include "infrastructure/input/keyboard_input_mapper.h"
 #include "infrastructure/sdl/window.h"
 #include "presentation/game_renderer.h"
+#include "presentation/music_volume.h"
 #include "presentation/sound_cues.h"
 
 namespace {
@@ -25,6 +26,10 @@ constexpr int kLogicalWidth = 320;
 constexpr int kLogicalHeight = 240;
 constexpr int kWindowScale = 3;
 constexpr std::uint64_t kStepNs = 1'000'000'000ULL / 60;  // 60 simulation steps per second
+
+// How loud things sound next to the music (1.0 = as synthesised).
+constexpr float kEffectsGain = 0.6F;
+constexpr float kDripGain = 0.28F;  // the drops are scenery: quieter than what the player does
 
 constexpr float kSpawnX = 40.0F;
 constexpr float kSpawnY = 60.0F;  // in mid-air, so the first thing you see is the fall
@@ -95,7 +100,14 @@ int main() {
         // Sound: after the window so it is closed first; it stays silent if there is no audio.
         infrastructure::AudioPlayer audio(assetPath("sounds/"), soundNames());
         std::cout << "[audio] " << audio.loadedCount() << " sounds loaded"
-                  << (audio.available() ? ", press M to mute" : " (no audio device)") << std::endl;
+                  << (audio.available() ? ", press M to mute, - and + for the music" : " (no audio device)")
+                  << std::endl;
+        presentation::MusicVolume music;
+        for (const presentation::Sound sound : presentation::allSounds()) {
+            const float gain = sound == presentation::Sound::Drip ? kDripGain : kEffectsGain;
+            audio.setGain(presentation::soundName(sound), gain);
+        }
+        audio.startMusic(assetPath("music/cave.wav"));
 
         std::uint64_t previous_ns = SDL_GetTicksNS();
 
@@ -104,6 +116,11 @@ int main() {
             if (input_mapper.takeMuteToggle()) {
                 audio.toggleMute();
                 std::cout << "[audio] " << (audio.muted() ? "muted" : "sound on") << std::endl;
+                renderer.showNotice(audio.muted() ? "SOUND OFF" : "SOUND ON");
+            }
+            if (const int change = input_mapper.takeMusicSteps(); change != 0) {
+                music.change(change);
+                renderer.showNotice(music.label());
             }
             for (const domain::MenuCommand command : input_mapper.takeMenuCommands()) {
                 if (flow.handle(command)) {
@@ -137,6 +154,11 @@ int main() {
             }
 
             renderer.draw(session ? &*session : nullptr, flow);
+            if (renderer.takeDripSplash()) {
+                audio.play(presentation::soundName(presentation::Sound::Drip));
+            }
+            audio.setMusicGain(music.gain(flow.screen() == application::Screen::Paused));
+            audio.update();
         }
     } catch (const std::exception& error) {
         std::cerr << "Fatal error: " << error.what() << '\n';

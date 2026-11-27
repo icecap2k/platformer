@@ -18,6 +18,7 @@ pending work is in [`docs/BACKLOG.md`](docs/BACKLOG.md).
 | Crouch | `Down` or `S` on firm ground (half height, slow, no jumping; it only stands up when there is room) |
 | Slide | `Down` or `S` while on a ramp (you slide down it; walking on a ramp does not slide) |
 | Mute / unmute | `M` |
+| Music volume | `-` and `+` |
 | Pause / resume | `P` or `Esc` |
 | Menus | `Up`/`Down` (or `W`/`S`), `Enter` or `Space` to pick; `Esc` on the title quits |
 
@@ -170,7 +171,12 @@ game restart): `presentation::soundFor` maps each `GameEvent` to a sound and
 `game/tools/audio/make_sounds.py` (edit it and rerun to change them). If there is no audio device the game
 runs silently. Press `M` to mute. To hear one without the game: `afplay game/assets/sounds/coin.wav`.
 
+A calm 32 second loop plays as cave music (`game/assets/music/cave.wav`, composed by
+`game/tools/audio/make_music.py`); `-` and `+` change its volume and it is quieter while paused. The decorative
+stalactites can be heard dripping.
+
 ```bash
+python3 game/tools/audio/make_music.py             # writes the music
 python3 game/tools/audio/make_sounds.py            # writes the WAV files
 python3 game/tools/audio/make_sounds.py --report   # lengths and loudness, writes nothing
 ```

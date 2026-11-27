@@ -67,6 +67,8 @@ std::string soundName(Sound sound) {
             return "stomp";
         case Sound::Orb:
             return "orb";
+        case Sound::Drip:
+            return "drip";
         case Sound::Gate:
             return "gate";
         case Sound::Win:
@@ -82,7 +84,8 @@ std::vector<Sound> allSounds() {
             Sound::Fruit,          Sound::Hurt,           Sound::Slide,
             Sound::StalactiteWarning, Sound::StalactiteCrack, Sound::StalactiteCrash,
             Sound::Stomp,      Sound::Checkpoint, Sound::Win,
-            Sound::Orb,        Sound::Gate,       Sound::Restart};
+            Sound::Orb,        Sound::Gate,       Sound::Drip,
+            Sound::Restart};
 }
 
 }  // namespace presentation
