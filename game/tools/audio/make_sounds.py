@@ -214,6 +214,18 @@ def gate():
     return [sum(track[i] * gain for track, gain in parts) for i in range(len(strikes))]
 
 
+def drip():
+    """A water drop in the cave: a short "plip" that bends upwards, and its faint echo."""
+    def plip(gain):
+        phase = [0.0]
+
+        def voice(t, d):
+            phase[0] += sweep(620, 1500, t, d) / RATE
+            return gain * sine(phase[0]) * envelope(t, d, 0.003, 2.2)
+        return render(0.11, voice)
+    return mix(plip(1.0), delayed(plip(0.35), 0.16), delayed(plip(0.14), 0.33))
+
+
 def win():
     """A short fanfare: a rising arpeggio ending on a held chord note."""
     notes = [392, 494, 587, 784]  # G4 B4 D5 G5
@@ -315,6 +327,7 @@ SOUNDS = {
     "orb": orb,
     "gate": gate,
     "win": win,
+    "drip": drip,
     "hurt": hurt,
     "slide": slide,
     "stalactite_warning": stalactite_warning,

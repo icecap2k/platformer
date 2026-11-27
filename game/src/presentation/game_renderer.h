@@ -35,6 +35,12 @@ public:
     // Tell it what happens in the game, so it knows how to go from one room to the next.
     void onEvent(const application::GameEvent& event);
 
+    // Shows a short message at the bottom of the screen for a moment.
+    void showNotice(const std::string& text);
+
+    // True if a drop of water splashed in the room since the last call (so it can be heard).
+    bool takeDripSplash();
+
     // True while a transition is on its way: the game should not advance meanwhile.
     bool inTransition() const;
 
@@ -58,7 +64,7 @@ private:
     void drawBackdrop(const domain::Room& room, std::uint64_t time_ms);
     void drawTiles(const domain::TileMap& map) const;
     void drawScenery(const domain::Room& room, std::uint64_t time_ms);
-    void drawDrip(const domain::TileMap& map, const Prop& prop, float top, std::uint64_t time_ms) const;
+    void drawDrip(const domain::TileMap& map, const Prop& prop, float top, std::uint64_t time_ms);
     void drawOrbs(const application::GameSession& session, std::uint64_t time_ms) const;
     void drawExits(const application::GameSession& session, std::uint64_t time_ms);
     void drawCheckpoints(const application::GameSession& session, std::uint64_t time_ms) const;
@@ -88,6 +94,12 @@ private:
     std::unique_ptr<infrastructure::RenderTarget> scene_;
     std::unique_ptr<infrastructure::RenderTarget> previous_scene_;
     Transition transition_;
+    std::string notice_;
+    std::uint64_t notice_until_ms_ = 0;
+    // Listening for splashes: when drops were last looked at (0 = not listening).
+    std::uint64_t drips_checked_ms_ = 0;
+    bool drip_splashed_ = false;
+    bool playing_ = false;
     Change pending_;
     std::optional<application::Screen> last_screen_;
     // The fireflies' routes depend only on the room, so they are worked out once per room.

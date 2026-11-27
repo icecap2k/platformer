@@ -29,6 +29,7 @@ ctest --test-dir build --output-on-failure          # pasa las pruebas
 | Agacharse / deslizarse por una rampa | `↓` o `S` |
 | Pausa | `P` o `Esc` |
 | Silenciar | `M` |
+| Volumen de la música | `-` y `+` |
 
 ## El mapa del repositorio
 

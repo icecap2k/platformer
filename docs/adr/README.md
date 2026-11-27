@@ -38,6 +38,7 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0026](0026-transiciones-con-easing.md) | Transiciones con easing entre salas y pantallas | Aceptada |
 | [0027](0027-las-salas-se-editan-en-tiled.md) | Las salas se editan en Tiled | Aceptada |
 | [0028](0028-comprobador-mas-rapido.md) | Un comprobador más rápido y compilación optimizada por defecto | Aceptada |
+| [0029](0029-musica-de-cueva.md) | Música de cueva y gotas con sonido | Aceptada |
 
 ## Plantilla
 

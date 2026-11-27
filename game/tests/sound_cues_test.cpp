@@ -46,7 +46,7 @@ TEST_CASE("every sound has a distinct file name") {
 }
 
 TEST_CASE("allSounds lists every sound once") {
-    CHECK(allSounds().size() == 15);
+    CHECK(allSounds().size() == 16);
     // Every sound an event can produce is in the list (so the player has loaded it).
     const std::vector<GameEvent> events = {PlayerJumped{},        PlayerLanded{2.0F},       CoinCollected{"r", 0, 1},
                                            FruitEaten{"r", 0, 3, 1}, PlayerHurt{"r", 1},     SlideStarted{},

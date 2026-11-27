@@ -36,6 +36,12 @@ void KeyboardInputMapper::poll() {
                 default:
                     break;
             }
+            // By the character on the key, not its position, so it works on any keyboard layout.
+            if (event.key.key == SDLK_PLUS || event.key.key == SDLK_EQUALS || event.key.key == SDLK_KP_PLUS) {
+                ++music_steps_;
+            } else if (event.key.key == SDLK_MINUS || event.key.key == SDLK_KP_MINUS) {
+                --music_steps_;
+            }
         }
     }
 }
@@ -50,6 +56,12 @@ bool KeyboardInputMapper::takeMuteToggle() {
     const bool pressed = mute_toggled_;
     mute_toggled_ = false;
     return pressed;
+}
+
+int KeyboardInputMapper::takeMusicSteps() {
+    const int steps = music_steps_;
+    music_steps_ = 0;
+    return steps;
 }
 
 domain::InputState KeyboardInputMapper::state() const {

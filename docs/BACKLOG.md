@@ -129,6 +129,19 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 |---|---|
 | 13 | **Rendimiento de `level_check`**: de 15 s y 1,2 GB a 7 s y 550 MB, para cuando todo está encontrado (`--full`), límite de 60 M y Release por defecto; ADR-0028 |
 
+## Hecho (E26 · Música)
+
+| # | Tarea |
+|---|---|
+| 36 | **Música de cueva** en bucle sintetizada, volumen con `-`/`+` y **gotas** con sonido; ADR-0029 |
+| 14, 23 | Ya estaban hechas: el CI protege `main` y los enemigos tienen su carpeta en `domain/` |
+
+## Descartado
+
+| # | Tarea |
+|---|---|
+| 17 | Partículas: se implementaron y **al autor no le gustaron** (2026-11-26). No volver a proponerlas |
+
 ## Siguiente
 
 | # | Tarea | Pri | Tam | Depende de |
@@ -136,16 +149,12 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 45 | Ejecutar `pnpm check` de la documentación en el CI | P3 | S | — |
 | 8 | ~~Frutas que curan~~ — hecho en E10 (ver arriba). Pendiente: un `Collectible` genérico con tipo cuando haya un tercer tipo de recogible | P3 | S | — |
 | 9 | ~~Enemigos básicos~~ — hecho en E12 (ver arriba). Pendiente: gravedad y rampas para enemigos, más tipos (voladores, perseguidores), otros comportamientos | P2 | M | — |
-| 36 | Música de fondo (bucle ambiente de cueva; volumen ajustable) y sonidos ambientales (la gota de las estalactitas de adorno) | P2 | M | 10 |
 | 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |
 | 40 | Menús: sonidos al moverse/elegir, opciones (volumen), mando y fuente propia con acentos | P3 | M | 18 |
-| 14 | ~~CI en GitHub Actions~~ — hecho (`.github/workflows/ci.yml`: macOS, SDL3 con Homebrew, build Release y `ctest`; pasó en el PR #7). Pendiente: activar la protección de `main` exigiéndolo | P2 | S | — |
-| 17 | Partículas: polvo al aterrizar, destello de moneda, **fragmentos al romperse la estalactita** | P2 | S | — |
 | 18 | **Mando** (`GamepadInputMapper`; decidir cómo combinar con el teclado) | P2 | M | — |
 | 19 | **Guardado de partida** (usar el `id` del objeto de Tiled, no el índice) | P2 | M | 8, 11 |
 | 21 | Pinchos en techo y en paredes (orientación), plataformas de un solo sentido, puertas con llave, tiles nuevos | P2 | M | — |
 | 22 | Que `level_check` también tenga en cuenta las estalactitas (hoy se ignoran) o que se marque en el informe | P2 | M | 13 |
-| 23 | Reorganizar `domain/` por funcionalidad cuando lleguen los enemigos (`domain/enemies/`, …) | P2 | S | 9 |
 | 24 | Pulido de ventana: pantalla completa, escala configurable, pausa al perder el foco | P3 | S | — |
 | 25 | Remapeo de teclas y accesibilidad (daltonismo, reducir parpadeo) | P3 | S | 18 |
 | 33 | **Enseñar a `level_check` a agacharse y deslizarse** (hoy no pulsa abajo: un nivel que exija agacharse se daría por inalcanzable) | P2 | M | — |

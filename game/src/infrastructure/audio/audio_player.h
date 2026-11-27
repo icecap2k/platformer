@@ -8,7 +8,7 @@
 
 namespace infrastructure {
 
-// Plays short sound effects (WAV files) through SDL. It knows nothing about the game: it
+// Plays short sound effects and one looping piece of music (WAV files) through SDL. It knows nothing about the game: it
 // is told a sound NAME and plays <directory><name>.wav. Which sound goes with which
 // event is decided by presentation::soundFor, and main wires them together.
 //
@@ -31,6 +31,16 @@ public:
     // Plays the sound from the start. Unknown names and a muted player do nothing.
     void play(const std::string& name);
 
+    // How loud one sound is compared with the others (1.0 = as recorded).
+    void setGain(const std::string& name, float gain);
+
+    // Starts a piece of music that repeats for ever. Returns false (and stays silent) if there
+    // is no audio device or the file cannot be loaded.
+    bool startMusic(const std::string& path);
+    void setMusicGain(float gain);
+    // Call it every frame: it queues the next round of the music before the current one ends.
+    void update();
+
     void toggleMute();
     bool muted() const { return muted_; }
 
@@ -41,10 +51,13 @@ private:
         SDL_AudioStream* stream = nullptr;
     };
 
+    // Loads a WAV file into a clip with its stream bound to the device.
+    bool load(const std::string& path, const SDL_AudioSpec& device_spec, Clip& clip);
     void applyVolume();
 
     SDL_AudioDeviceID device_ = 0;
     std::map<std::string, Clip> clips_;
+    Clip music_;  // data == nullptr while there is no music
     bool muted_ = false;
     float volume_ = 0.5F;
 };
