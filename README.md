@@ -11,16 +11,19 @@ pending work is in [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 ## Controls
 
-| Action | Keys |
-|---|---|
-| Move | Arrow keys or `A` / `D` |
-| Jump | `Space`, `Up` or `W` (hold for a full jump, tap for a hop; press again to re-jump) |
-| Crouch | `Down` or `S` on firm ground (half height, slow, no jumping; it only stands up when there is room) |
-| Slide | `Down` or `S` while on a ramp (you slide down it; walking on a ramp does not slide) |
-| Mute / unmute | `M` |
-| Music volume | `-` and `+` |
-| Pause / resume | `P` or `Esc` |
-| Menus | `Up`/`Down` (or `W`/`S`), `Enter` or `Space` to pick; `Esc` on the title quits |
+| Action | Keys | Gamepad (Xbox names; PlayStation in brackets) |
+|---|---|---|
+| Move | Arrow keys or `A` / `D` | D-pad or left stick |
+| Jump | `Space`, `Up` or `W` (hold for a full jump, tap for a hop; press again to re-jump) | `A` (Cross) |
+| Crouch | `Down` or `S` on firm ground (half height, slow, no jumping; it only stands up when there is room) | D-pad or stick down |
+| Slide | `Down` or `S` while on a ramp (you slide down it; walking on a ramp does not slide) | D-pad or stick down |
+| Mute / unmute | `M` | `View` / `Back` (Share) |
+| Music volume | `-` and `+` | `LB` and `RB` |
+| Pause / resume | `P` or `Esc` | `Menu` / `Start` (Options) |
+| Menus | `Up`/`Down` (or `W`/`S`), `Enter` or `Space` to pick; `Esc` on the title quits | D-pad or stick, `A` to pick, `B` (Circle) to go back |
+
+Keyboard and gamepad work at the same time, and pads can be plugged in at any moment; unplugging the last one
+pauses the game.
 
 ## Build and run
 

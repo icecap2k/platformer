@@ -136,6 +136,12 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 36 | **Música de cueva** en bucle sintetizada, volumen con `-`/`+` y **gotas** con sonido; ADR-0029 |
 | 14, 23 | Ya estaban hechas: el CI protege `main` y los enemigos tienen su carpeta en `domain/` |
 
+## Hecho (E27 · Mando)
+
+| # | Tarea |
+|---|---|
+| 18 | **Jugar con mando** a la vez que con teclado, conexión en caliente, menús y ayudas en pantalla; ADR-0030. Pendiente: vibración y remapeo (25) |
+
 ## Descartado
 
 | # | Tarea |
@@ -150,13 +156,12 @@ Tamaño: **S** ≈ medio día, **M** ≈ 1-2 días, **L** ≈ varios días. Prio
 | 8 | ~~Frutas que curan~~ — hecho en E10 (ver arriba). Pendiente: un `Collectible` genérico con tipo cuando haya un tercer tipo de recogible | P3 | S | — |
 | 9 | ~~Enemigos básicos~~ — hecho en E12 (ver arriba). Pendiente: gravedad y rampas para enemigos, más tipos (voladores, perseguidores), otros comportamientos | P2 | M | — |
 | 37 | Variar el sonido según el caso: fruta desperdiciada, golpe que mata, pasos sobre roca | P3 | S | 10 |
-| 40 | Menús: sonidos al moverse/elegir, opciones (volumen), mando y fuente propia con acentos | P3 | M | 18 |
-| 18 | **Mando** (`GamepadInputMapper`; decidir cómo combinar con el teclado) | P2 | M | — |
+| 40 | Menús: sonidos al moverse/elegir, opciones (volumen) y fuente propia con acentos | P3 | M | — |
 | 19 | **Guardado de partida** (usar el `id` del objeto de Tiled, no el índice) | P2 | M | 8, 11 |
 | 21 | Pinchos en techo y en paredes (orientación), plataformas de un solo sentido, puertas con llave, tiles nuevos | P2 | M | — |
 | 22 | Que `level_check` también tenga en cuenta las estalactitas (hoy se ignoran) o que se marque en el informe | P2 | M | 13 |
 | 24 | Pulido de ventana: pantalla completa, escala configurable, pausa al perder el foco | P3 | S | — |
-| 25 | Remapeo de teclas y accesibilidad (daltonismo, reducir parpadeo) | P3 | S | 18 |
+| 25 | Remapeo de teclas y botones, y accesibilidad (daltonismo, reducir parpadeo) | P3 | S | — |
 | 33 | **Enseñar a `level_check` a agacharse y deslizarse** (hoy no pulsa abajo: un nivel que exija agacharse se daría por inalcanzable) | P2 | M | — |
 | 31 | Rampas: pinchos y enemigos sobre una rampa, rampas de techo y de otros ángulos, y el hundimiento de 4 px del pie delantero | P3 | M | 9 |
 

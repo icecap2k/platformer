@@ -39,6 +39,7 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0027](0027-las-salas-se-editan-en-tiled.md) | Las salas se editan en Tiled | Aceptada |
 | [0028](0028-comprobador-mas-rapido.md) | Un comprobador más rápido y compilación optimizada por defecto | Aceptada |
 | [0029](0029-musica-de-cueva.md) | Música de cueva y gotas con sonido | Aceptada |
+| [0030](0030-jugar-con-mando.md) | Jugar con mando, a la vez que con teclado | Aceptada |
 
 ## Plantilla
 

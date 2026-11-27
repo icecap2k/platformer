@@ -50,6 +50,12 @@ target_include_directories(infrastructure_assets SYSTEM PRIVATE third_party)
 target_link_libraries(infrastructure_assets PUBLIC domain)
 target_compile_options(infrastructure_assets PRIVATE ${WARNINGS})
 
+# What a gamepad's buttons mean: no SDL, so it is testable.
+add_library(infrastructure_input STATIC
+    src/infrastructure/input/gamepad_mapping.cpp)
+target_link_libraries(infrastructure_input PUBLIC domain)
+target_compile_options(infrastructure_input PRIVATE ${WARNINGS})
+
 # --- Infrastructure and presentation: the layers allowed to depend on SDL3. ---
 find_package(SDL3 REQUIRED)
 
@@ -58,9 +64,10 @@ add_library(infrastructure STATIC
     src/infrastructure/sdl/window.cpp
     src/infrastructure/sdl/render_target.cpp
     src/infrastructure/sdl/texture.cpp
+    src/infrastructure/input/gamepad_input_mapper.cpp
     src/infrastructure/input/keyboard_input_mapper.cpp)
 target_include_directories(infrastructure SYSTEM PRIVATE third_party)
-target_link_libraries(infrastructure PUBLIC domain infrastructure_assets SDL3::SDL3)
+target_link_libraries(infrastructure PUBLIC domain infrastructure_assets infrastructure_input SDL3::SDL3)
 target_compile_options(infrastructure PRIVATE ${WARNINGS})
 
 # Animation rules are pure logic (no SDL), so they get their own library and
@@ -151,6 +158,7 @@ if(PLATFORMER_BUILD_TESTS)
         tests/backdrop_test.cpp
         tests/drip_test.cpp
         tests/firefly_test.cpp
+        tests/gamepad_mapping_test.cpp
         tests/music_test.cpp
         tests/screen_shake_test.cpp
         tests/transition_test.cpp
@@ -159,7 +167,7 @@ if(PLATFORMER_BUILD_TESTS)
         tests/tiled_map_loader_test.cpp
         tests/level_tools_test.cpp
         tests/state_set_test.cpp)
-    target_link_libraries(tests PRIVATE application infrastructure_assets presentation_animation
+    target_link_libraries(tests PRIVATE application infrastructure_assets infrastructure_input presentation_animation
                           level_tools domain doctest::doctest)
     target_compile_definitions(tests PRIVATE
         PLATFORMER_ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets"

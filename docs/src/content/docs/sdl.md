@@ -1,8 +1,8 @@
 ---
-title: Ventana, texturas y teclado
+title: Ventana, texturas, teclado y mando
 section: infraestructura
 order: 1
-summary: Los adaptadores que hablan con SDL3.
+summary: Los adaptadores que hablan con SDL3, y cómo teclado y mando dicen lo mismo.
 ---
 
 La infraestructura es el único sitio (junto al renderer) que conoce **SDL3**, la librería que abre ventanas,
@@ -65,3 +65,51 @@ espejo. Con eso se dibuja el juego entero ([Cómo se dibuja](../renderizado/)).
 ```
 
 `!event.key.repeat` descarta la autorrepetición del sistema.
+
+## Mando: el mismo idioma
+
+Aquí se ve para qué sirven las [capas](../capas/). El mando es **otro adaptador** que produce el mismo
+`InputState` y los mismos `MenuCommand`: ni el dominio ni la partida han cambiado para soportarlo.
+
+Está partido en dos para poder probarlo sin un mando:
+
+| Pieza | Qué hace | ¿SDL? |
+|---|---|---|
+| `GamepadInputMapper` | abre los mandos que se conectan y copia sus botones en una foto (`GamepadSnapshot`) | Sí |
+| `gamepad_mapping` | decide qué **significa** esa foto | No (con pruebas) |
+
+### La zona muerta
+
+Un stick nunca descansa exactamente en el centro. Solo cuenta si se empuja lo suficiente, y para agacharse más que
+para correr, así correr con el stick un poco bajo no te agacha:
+
+<!-- src: game/src/infrastructure/input/gamepad_mapping.h -->
+```cpp
+inline constexpr float kStickRunThreshold = 0.35F;
+// Further to crouch (and to move in a menu), so running with the stick slightly low does not.
+inline constexpr float kStickDownThreshold = 0.65F;
+```
+
+### Dos dispositivos a la vez
+
+<!-- src: game/src/infrastructure/input/gamepad_mapping.cpp -->
+```cpp
+    input.left = first.left || second.left;
+    input.right = first.right || second.right;
+    input.jump = first.jump || second.jump;
+    input.down = first.down || second.down;
+```
+
+Una acción está activa si **cualquiera** de los dos la pide. No hay que elegir dispositivo.
+
+### Pulsar frente a mantener
+
+En los menús importa el instante en que se pulsa. Como el mando se lee una vez por fotograma, basta comparar la
+foto anterior con la actual:
+
+<!-- src: game/src/infrastructure/input/gamepad_mapping.cpp -->
+```cpp
+    const auto pressed = [](bool was, bool is) { return is && !was; };
+```
+
+Si se desenchufa el último mando jugando, `main` pone la pausa.
