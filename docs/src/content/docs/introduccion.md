@@ -22,14 +22,15 @@ ctest --test-dir build --output-on-failure          # pasa las pruebas
 ./build/platformer                                  # juega
 ```
 
-| Acción | Teclas |
-|---|---|
-| Moverse | Flechas o `A` / `D` |
-| Saltar | `Espacio`, `↑` o `W` (mantener = salto alto) |
-| Agacharse / deslizarse por una rampa | `↓` o `S` |
-| Pausa | `P` o `Esc` |
-| Silenciar | `M` |
-| Volumen de la música | `-` y `+` |
+| Acción | Teclado | Mando (nombres de Xbox) |
+|---|---|---|
+| Moverse | Flechas o `A` / `D` | cruceta o stick izquierdo |
+| Saltar | `Espacio`, `↑` o `W` (mantener = salto alto) | `A` |
+| Agacharse / deslizarse por una rampa | `↓` o `S` | cruceta o stick abajo |
+| Pausa | `P` o `Esc` | `Start` |
+| Silenciar | `M` | `Back` / `Select` |
+| Volumen de la música | `-` y `+` | `LB` y `RB` |
+| Menús | flechas y `Intro` | cruceta, `A` elegir, `B` volver |
 
 ## El mapa del repositorio
 

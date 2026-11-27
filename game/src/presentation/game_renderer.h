@@ -38,6 +38,9 @@ public:
     // Shows a short message at the bottom of the screen for a moment.
     void showNotice(const std::string& text);
 
+    // Whether a gamepad is connected: the on-screen hints name its buttons then.
+    void setGamepad(bool connected) { gamepad_ = connected; }
+
     // True if a drop of water splashed in the room since the last call (so it can be heard).
     bool takeDripSplash();
 
@@ -100,6 +103,7 @@ private:
     std::uint64_t drips_checked_ms_ = 0;
     bool drip_splashed_ = false;
     bool playing_ = false;
+    bool gamepad_ = false;
     Change pending_;
     std::optional<application::Screen> last_screen_;
     // The fireflies' routes depend only on the room, so they are worked out once per room.

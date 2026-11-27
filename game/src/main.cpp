@@ -14,6 +14,7 @@
 #include "domain/time/fixed_timestep.h"
 #include "infrastructure/assets/tiled_map_loader.h"
 #include "infrastructure/audio/audio_player.h"
+#include "infrastructure/input/gamepad_input_mapper.h"
 #include "infrastructure/input/keyboard_input_mapper.h"
 #include "infrastructure/sdl/window.h"
 #include "presentation/game_renderer.h"
@@ -93,6 +94,7 @@ int main() {
     try {
         infrastructure::Window window("platformer", kLogicalWidth, kLogicalHeight, kWindowScale);
         infrastructure::KeyboardInputMapper input_mapper;
+        infrastructure::GamepadInputMapper gamepad;  // after the window, so it is closed first
         presentation::GameRenderer renderer(window.renderer(), assetPath(""));
         domain::FixedTimestep timestep(kStepNs);
         application::GameFlow flow;
@@ -113,21 +115,34 @@ int main() {
 
         while (!input_mapper.quitRequested() && !flow.quitRequested()) {
             input_mapper.poll();
-            if (input_mapper.takeMuteToggle()) {
+            gamepad.update();  // the poll above pumped the events the pads are read from
+            if (const auto connected = gamepad.connectionChange()) {
+                renderer.setGamepad(*connected);
+                renderer.showNotice(*connected ? "GAMEPAD CONNECTED" : "GAMEPAD DISCONNECTED");
+                if (!*connected && flow.screen() == application::Screen::Playing) {
+                    flow.handle(domain::MenuCommand::Pause);  // nobody left holding the controls
+                }
+            }
+            // Both devices work at any time.
+            const auto pad = gamepad.actions(flow.screen() == application::Screen::Playing);
+            const bool keyboard_mute = input_mapper.takeMuteToggle();
+            if (keyboard_mute || pad.toggle_mute) {
                 audio.toggleMute();
                 std::cout << "[audio] " << (audio.muted() ? "muted" : "sound on") << std::endl;
                 renderer.showNotice(audio.muted() ? "SOUND OFF" : "SOUND ON");
             }
-            if (const int change = input_mapper.takeMusicSteps(); change != 0) {
+            if (const int change = input_mapper.takeMusicSteps() + pad.music_steps; change != 0) {
                 music.change(change);
                 renderer.showNotice(music.label());
             }
-            for (const domain::MenuCommand command : input_mapper.takeMenuCommands()) {
+            std::vector<domain::MenuCommand> commands = input_mapper.takeMenuCommands();
+            commands.insert(commands.end(), pad.menu.begin(), pad.menu.end());
+            for (const domain::MenuCommand command : commands) {
                 if (flow.handle(command)) {
                     session.emplace(loadWorld(), "room_01", kSpawnX, kSpawnY);  // a fresh game
                 }
             }
-            const domain::InputState input = input_mapper.state();
+            const domain::InputState input = infrastructure::combine(input_mapper.state(), gamepad.state());
 
             const std::uint64_t now_ns = SDL_GetTicksNS();
             const int steps = timestep.advance(now_ns - previous_ns);

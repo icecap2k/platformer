@@ -170,7 +170,7 @@ void GameRenderer::draw(const application::GameSession* session, const applicati
         SDL_FRect whole{0.0F, 0.0F, 320.0F, 240.0F};
         SDL_RenderFillRect(renderer_, &whole);
         drawMenu(flow, "PAUSED", 3.0F, 70.0F);
-        drawText("P OR ESC: RESUME", 160.0F, 226.0F, 1.0F, SDL_Color{130, 130, 170, 255});
+        drawText(gamepad_ ? "START: RESUME" : "P OR ESC: RESUME", 160.0F, 226.0F, 1.0F, SDL_Color{130, 130, 170, 255});
     }
     if (time_ms < notice_until_ms_) {
         drawText(notice_, 160.0F + 1.0F, 212.0F + 1.0F, 1.0F, SDL_Color{10, 8, 24, 255});
@@ -292,7 +292,7 @@ void GameRenderer::drawTitle(const application::GameFlow& flow) const {
     SDL_RenderFillRect(renderer_, &footer);
 
     drawMenu(flow, "", 1.0F, 156.0F - 8.0F - 24.0F, kMenuCentre);
-    drawText("ENTER: PICK  M: MUTE  -/+: MUSIC", 160.0F, 227.0F, 1.0F, SDL_Color{190, 190, 220, 255});
+    drawText(gamepad_ ? "A: PICK  SELECT: MUTE  LB/RB: MUSIC" : "ENTER: PICK  M: MUTE  -/+: MUSIC", 160.0F, 227.0F, 1.0F, SDL_Color{190, 190, 220, 255});
 }
 
 // The cave behind the level: one still picture of the whole screen.
