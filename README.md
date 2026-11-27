@@ -84,7 +84,8 @@ Rooms are Tiled maps (`game/assets/tiled/*.tmj`, JSON, CSV layer data):
 - **Objects** of class `exit` (rectangles): the way out; touching it wins the game once every orb has been taken.
 - **Objects** of class `orb` (rectangles, 16x16) with a string property `colour` (`red`, `green` or `yellow`): the orbs that open the exit.
 - **Objects** of class `checkpoint` (rectangles): where the player comes back after losing every heart.
-- **Objects** of class `walker` (rectangles): a patrolling enemy; the rectangle is where it starts and its hitbox. Put it standing on the floor.
+- **Objects** of class `walker` (rectangles): a patrolling enemy; the rectangle is where it starts and its hitbox.
+- **Objects** of class `bat` (rectangles, 16x12): a flying enemy, with an optional number property `detect_radius`.
 - **Objects** of class `spikes` (rectangles): the rectangle is the hitbox. A hit costs one of the 3 hearts.
 - **Objects** of class `falling_stalactite` (rectangles): a trap that shakes when the player walks under it,
   then falls. Hang it under a solid tile.
@@ -108,7 +109,7 @@ same `domain` library as the game, so they always use the real physics.
 ```
 
 The rooms are edited in Tiled (`game/assets/tiled/*.tmj` is the source). The text format is only a quick way to
-sketch a new one: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin, `F` healing fruit, `E` enemy (two tiles big, standing on the bottom of its tile), `R`/`G`/`Y` orbs (two tiles big), `K` checkpoint, `X` exit, `^` spikes (one and a half tiles tall, written in a trench in the floor), `V` stalactite trap, `/` and `\` ramps; header lines
+sketch a new one: `game/levels/example.txt` (`.` empty, `#` ground, `B` brick, `3`/`4` tileset tiles 3 and 4, `C` coin, `F` healing fruit, `E` enemy (two tiles big, standing on the bottom of its tile), `R`/`G`/`Y` orbs (two tiles big), `M` bat, `K` checkpoint, `X` exit, `^` spikes (one and a half tiles tall, written in a trench in the floor), `V` stalactite trap, `/` and `\` ramps; header lines
 `north/south/east/west: room_id`).
 
 ## Player art
@@ -157,10 +158,13 @@ changing rooms, also run it from the last one (`./build/level_check game/assets/
 
 ## Enemies
 
-A `walker` (a cave beetle) paces along the floor and turns around at walls, ramps and ledges. Land on it from above
-and it is defeated and you bounce (hold jump for a higher bounce); touch it any other way and it costs a heart like
-any other hit. It also turns around before spikes, and a defeated one lies squashed for 1 s. They are session state (`EnemyPatrols`), come back after a total restart, and `level_check` does not
-model them (it reports how many there are). The sprite comes from `game/tools/art/make_enemies.py`.
+A `walker` (a cave beetle) paces along the floor and up and down ramps; it falls if there is nothing under it and
+turns around at walls, ledges and spikes. A `bat` flies around its spot and goes for the player who comes within
+its radius (Tiled property `detect_radius`, 64 px by default); it attacks low, at the height of the player's feet,
+so it can be jumped on, and flies off after biting. Land on either from above and it is defeated and you bounce
+(hold jump for a higher bounce); touch it any other way and it costs a heart. They are session state
+(`EnemyPatrols`), come back after a total restart, and `level_check` does not model them (it reports how many there
+are). The sprites come from `game/tools/art/make_enemies.py` and `make_bats.py`.
 
 A few fireflies drift through every room (`presentation/firefly.h`): purely cosmetic, a pure function of the room
 and the clock, drawn from `game/tools/art/make_fireflies.py`.

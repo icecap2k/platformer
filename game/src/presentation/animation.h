@@ -94,4 +94,9 @@ int exitSpriteFrame(bool open, std::uint64_t ms_open, std::uint64_t time_ms);
 inline constexpr int kEnemyWalkFrames = 4;
 int enemyFrame(std::uint64_t time_ms);
 
+// Frame (0..kBatFlapFrames - 1) of a bat's wing beat; it flaps faster when attacking. The frame
+// after those in bats.png is the knocked out one.
+inline constexpr int kBatFlapFrames = 4;
+int batFrame(bool chasing, std::uint64_t time_ms);
+
 }  // namespace presentation

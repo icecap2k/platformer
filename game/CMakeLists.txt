@@ -146,6 +146,7 @@ if(PLATFORMER_BUILD_TESTS)
         tests/crouch_test.cpp
         tests/fruit_test.cpp
         tests/enemy_test.cpp
+        tests/bat_test.cpp
         tests/checkpoint_test.cpp
         tests/exit_test.cpp
         tests/orb_test.cpp

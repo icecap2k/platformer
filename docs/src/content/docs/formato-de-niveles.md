@@ -34,6 +34,7 @@ cmake --build build                              # copia los mapas junto al jueg
 | checkpoint | `K` | `checkpoint` | 8×8 |
 | salida | `X` | `exit` | 8×8 |
 | escarabajo | `E` | `walker` | 16×16 |
+| murciélago | `M` | `bat` + propiedad `detect_radius` | 16×12 |
 | pinchos | `^` | `spikes` | 8×12 |
 | estalactita trampa | `V` | `falling_stalactite` | 8×8 |
 
@@ -41,8 +42,10 @@ Las salas vecinas son propiedades del mapa: `north`, `south`, `east`, `west`.
 
 Dos objetos necesitan cuidado:
 
-- **Escarabajos:** su base debe estar **exactamente** sobre el borde superior de un bloque. Si flota o se hunde un
-  píxel, se queda dando la vuelta sin moverse (una prueba lo detecta).
+- **Escarabajos:** caen hasta el suelo que tengan debajo, así que basta ponerlos encima. En un hueco sin sitio
+  para andar se quedan dando la vuelta (una prueba lo detecta).
+- **Murciélagos:** en un espacio abierto. `detect_radius` es la distancia, en píxeles, a la que te ven (64 si no la
+  pones; 0 para que nunca ataquen).
 - **Orbes:** necesitan la propiedad `colour` (`red`, `green` o `yellow`). `red` es el valor por defecto de la
   clase y Tiled puede no guardarlo: si el juego no arranca, añádela a mano en ese objeto.
 

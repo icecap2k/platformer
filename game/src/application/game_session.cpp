@@ -122,7 +122,12 @@ bool GameSession::updateEnemies(std::vector<GameEvent>& events) {
     for (std::size_t index = 0; index < room.enemies().size(); ++index) {
         const domain::Enemy& enemy = room.enemies()[index];
         domain::EnemyState& state = enemies_.state(room.id(), index);
-        domain::stepEnemy(enemy, state, room.map(), room.hazards());
+        const bool flies = enemy.kind == domain::EnemyKind::Bat;
+        if (flies) {
+            domain::stepBat(enemy, state, room.map(), player_);
+        } else {
+            domain::stepEnemy(enemy, state, room.map(), room.hazards());
+        }
         if (!state.alive) {
             continue;  // it only counts the time it has been squashed
         }
@@ -136,6 +141,9 @@ bool GameSession::updateEnemies(std::vector<GameEvent>& events) {
             domain::bounceOffEnemy(player_);
             events.push_back(EnemyStomped{room.id(), index});
         } else if (domain::canBeHurt(player_)) {
+            if (flies) {
+                domain::batRetreats(state);
+            }
             if (hurtPlayer(events, box)) {
                 return true;  // restarted: this room is no longer the current one
             }

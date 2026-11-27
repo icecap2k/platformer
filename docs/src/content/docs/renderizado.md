@@ -55,6 +55,7 @@ Fondo y setas lejanas, escenario, adornos, objetos y jugador. El marcador y la p
 |---|---|---|
 | Jugador | 8×16 | 32×28 |
 | Escarabajo | 16×16 | 16×16 |
+| Murciélago | 16×12 | 22×16 |
 | Checkpoint | 8×8 | 12×20 |
 | Salida | 8×8 | 22×32 |
 | Orbe | 16×16 | 26×26 (con halo) |

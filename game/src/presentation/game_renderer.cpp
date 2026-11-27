@@ -76,6 +76,7 @@ GameRenderer::GameRenderer(SDL_Renderer* renderer, const std::string& assets_dir
       decor_(renderer, assets_dir + "sprites/decor.png"),
       hazards_(renderer, assets_dir + "sprites/hazards.png"),
       enemies_(renderer, assets_dir + "sprites/enemies.png"),
+      bats_(renderer, assets_dir + "sprites/bats.png"),
       fireflies_(renderer, assets_dir + "sprites/fireflies.png"),
       checkpoints_(renderer, assets_dir + "sprites/checkpoints.png"),
       exit_(renderer, assets_dir + "sprites/exit.png"),
@@ -510,6 +511,22 @@ void GameRenderer::drawEnemies(const application::GameSession& session, std::uin
     for (std::size_t index = 0; index < room.enemies().size(); ++index) {
         const domain::EnemyState& state = session.enemyPatrols().state(room.id(), index);
         const domain::AABB box = domain::currentBounds(room.enemies()[index], state);
+        if (room.enemies()[index].kind == domain::EnemyKind::Bat) {
+            constexpr float kBatWidth = 22.0F;  // wider than its hitbox: the wing tips stick out
+            constexpr float kBatHeight = 16.0F;
+            if (!state.alive &&
+                !(domain::isSquashedBody(state) && isVisibleWhileFading(domain::kSquashSteps - state.dead_steps))) {
+                continue;
+            }
+            const int column = state.alive ? batFrame(state.chasing, time_ms) : kBatFlapFrames;
+            const SDL_FRect source{static_cast<float>(column) * kBatWidth, state.chasing ? kBatHeight : 0.0F,
+                                   kBatWidth, kBatHeight};
+            bats_.draw(renderer_, source,
+                       SDL_FRect{box.x + (box.width - kBatWidth) * 0.5F, box.bottom() - kBatHeight + 1.0F, kBatWidth,
+                                 kBatHeight},
+                       state.direction < 0);
+            continue;
+        }
         // The sprite is 16x16: sit it on the bottom of the hitbox.
         const SDL_FRect destination{box.x, box.bottom() - kSprite, kSprite, kSprite};
         if (!state.alive) {

@@ -101,6 +101,23 @@
       "useAs": [
         "object"
       ]
+    },
+    {
+      "color": "#c050a0",
+      "drawFill": true,
+      "id": 9,
+      "members": [
+        {
+          "name": "detect_radius",
+          "type": "float",
+          "value": 64
+        }
+      ],
+      "name": "bat",
+      "type": "class",
+      "useAs": [
+        "object"
+      ]
     }
   ]
 }

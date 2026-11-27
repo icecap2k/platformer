@@ -377,11 +377,22 @@ TEST_CASE("the shipped rooms form a consistent world") {
         for (const std::string& name : kShippedRooms) {
             const auto& room = graph.room(name);
             for (const auto& enemy : room.enemies()) {
-                INFO(name << " enemy at " << enemy.bounds.x << "," << enemy.bounds.y
-                          << " (its bottom must be exactly on the top of a floor tile)");
+                if (enemy.kind == domain::EnemyKind::Bat) {
+                    INFO(name << " bat at " << enemy.bounds.x << "," << enemy.bounds.y << " (it must start in the open)");
+                    const float size = static_cast<float>(room.map().tileSize());
+                    for (const float fx : {0.05F, 0.5F, 0.95F}) {
+                        for (const float fy : {0.05F, 0.5F, 0.95F}) {
+                            CHECK_FALSE(room.map().isGround(
+                                static_cast<int>((enemy.bounds.x + enemy.bounds.width * fx) / size),
+                                static_cast<int>((enemy.bounds.y + enemy.bounds.height * fy) / size)));
+                        }
+                    }
+                    continue;
+                }
+                INFO(name << " walker at " << enemy.bounds.x << "," << enemy.bounds.y);
                 CHECK(enemy.bounds.width == 16.0F);
                 CHECK(enemy.bounds.height == 16.0F);
-                // A walker that floats, or is sunk into the floor, only turns around where it is.
+                // A walker in a hole or between two walls would only turn around where it is.
                 domain::EnemyState state;
                 float left = 0.0F;
                 float right = 0.0F;

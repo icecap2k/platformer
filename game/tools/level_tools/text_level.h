@@ -32,6 +32,7 @@ namespace level_tools {
 //   E  a patrolling enemy (a walker) standing on the floor: put it on an empty tile with ground
 //      under it
 //   R G Y  a floating orb (red-orange, green, yellow); all of them open the exit
+//   M  a bat (16 x 12), resting on the bottom edge of its tile; it flies from there
 //   V  a stalactite trap hanging in an empty tile (put it under a ceiling)
 //   /  a 45 degree ramp rising to the right (tile 5)    \  rising to the left (tile 6)
 //      A ramp must stand on solid tiles: filler under it and on its high side.
