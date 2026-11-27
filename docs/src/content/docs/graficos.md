@@ -35,6 +35,12 @@ Cuatro pasos y un fotograma aplastado.
 
 ![Hoja del escarabajo](/img/sheets/enemies.png)
 
+### Murciélago (`bats.png`)
+
+Arriba, tranquilo; abajo, atacando (ojos rojos). Cuatro fotogramas de aleteo y uno derrotado.
+
+![Hoja del murciélago](/img/sheets/bats.png)
+
 ### Orbes (`orbs.png`)
 
 Una fila por color: 12 fotogramas de latido y la silueta a trazos. Debajo, los iconos del marcador.
@@ -68,6 +74,7 @@ biblioteca estándar.
 | `make_hero_sprites.py` | `hero.png` |
 | `make_sprites.py` | `sprites.png` |
 | `make_enemies.py` | `enemies.png` |
+| `make_bats.py` | `bats.png` |
 | `make_orbs.py` | `orbs.png` |
 | `make_exit.py` | `exit.png` |
 | `make_checkpoints.py` | `checkpoints.png` |

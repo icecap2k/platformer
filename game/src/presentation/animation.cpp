@@ -137,6 +137,11 @@ int exitSpriteFrame(bool open, std::uint64_t ms_open, std::uint64_t time_ms) {
     return exitFrame(time_ms);
 }
 
+int batFrame(bool chasing, std::uint64_t time_ms) {
+    const std::uint64_t frame_ms = chasing ? 70 : 120;
+    return static_cast<int>((time_ms / frame_ms) % kBatFlapFrames);
+}
+
 int enemyFrame(std::uint64_t time_ms) {
     return static_cast<int>((time_ms / kEnemyFrameMs) % kEnemyWalkFrames);
 }

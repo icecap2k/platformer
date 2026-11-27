@@ -1,6 +1,6 @@
 # ADR-0014: Enemigos que patrullan y se pisan
 
-- Estado: Aceptada (el tamaño y el dibujo del escarabajo, sustituidos por ADR-0019)
+- Estado: Aceptada (el tamaño y el dibujo del escarabajo, sustituidos por ADR-0019; las rampas y la gravedad, por ADR-0031)
 - Fecha: 2026-11-19
 
 ## Contexto

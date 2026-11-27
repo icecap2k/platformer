@@ -23,7 +23,7 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0011](0011-agacharse-y-deslizar-con-la-flecha-abajo.md) | Agacharse y deslizar con la flecha abajo | Aceptada |
 | [0012](0012-frutas-que-curan-y-recogibles.md) | Frutas que curan y recogibles | Aceptada |
 | [0013](0013-sonido-por-eventos.md) | Sonido por eventos y efectos sintetizados | Aceptada |
-| [0014](0014-enemigos-que-patrullan-y-se-pisan.md) | Enemigos que patrullan y se pisan | Aceptada (tamaño y dibujo, sustituidos por 0019) |
+| [0014](0014-enemigos-que-patrullan-y-se-pisan.md) | Enemigos que patrullan y se pisan | Aceptada (tamaño y dibujo, sustituidos por 0019; rampas y gravedad, por 0031) |
 | [0015](0015-checkpoints.md) | Checkpoints y reaparición | Aceptada |
 | [0016](0016-pantalla-de-titulo-y-pausa.md) | Pantalla de título y pausa por encima de la partida | Aceptada |
 | [0017](0017-jump-buffering-y-sacudida-de-pantalla.md) | Jump buffering y sacudida de pantalla | Aceptada |
@@ -40,6 +40,7 @@ Idioma: español (como el resto de la documentación). El código, los comentari
 | [0028](0028-comprobador-mas-rapido.md) | Un comprobador más rápido y compilación optimizada por defecto | Aceptada |
 | [0029](0029-musica-de-cueva.md) | Música de cueva y gotas con sonido | Aceptada |
 | [0030](0030-jugar-con-mando.md) | Jugar con mando, a la vez que con teclado | Aceptada |
+| [0031](0031-murcielagos-y-escarabajos-con-gravedad.md) | Murciélagos, y escarabajos con gravedad y rampas | Aceptada |
 
 ## Plantilla
 

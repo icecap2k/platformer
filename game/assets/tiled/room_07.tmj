@@ -155,6 +155,18 @@
                  "width":8,
                  "x":120,
                  "y":144
+                },
+                {
+                 "height":12,
+                 "id":10,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"bat",
+                 "visible":true,
+                 "width":16,
+                 "x":128,
+                 "y":72
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -163,7 +175,7 @@
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":10,
+ "nextobjectid":11,
  "orientation":"orthogonal",
  "properties":[
         {

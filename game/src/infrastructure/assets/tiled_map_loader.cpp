@@ -128,8 +128,9 @@ std::vector<domain::Fruit> readFruits(const json& map) {
     return fruits;
 }
 
-// Patrolling enemies are rectangle objects of class "walker": the rectangle is where
-// it starts and the size of its hitbox. (Put it standing on the floor.)
+// Enemies are rectangle objects of class "walker" or "bat": the rectangle is where it starts and
+// the size of its hitbox. A bat may have a number property "detect_radius": how near (px) the
+// player must come for it to attack.
 std::vector<domain::Enemy> readEnemies(const json& map) {
     std::vector<domain::Enemy> enemies;
     for (const json& layer : map.at("layers")) {
@@ -138,16 +139,29 @@ std::vector<domain::Enemy> readEnemies(const json& map) {
         }
         for (const json& object : layer.at("objects")) {
             const std::string kind = object.value("class", object.value("type", std::string()));
-            if (kind != "walker") {
+            if (kind != "walker" && kind != "bat") {
                 continue;
             }
             const float width = object.value("width", 0.0F);
             const float height = object.value("height", 0.0F);
             if (width <= 0.0F || height <= 0.0F) {
-                throw std::invalid_argument("a 'walker' object must be a rectangle with a size");
+                throw std::invalid_argument("a '" + kind + "' object must be a rectangle with a size");
             }
-            enemies.push_back(domain::Enemy{domain::AABB{object.at("x").get<float>(),
-                                                         object.at("y").get<float>(), width, height}});
+            domain::Enemy enemy{domain::AABB{object.at("x").get<float>(), object.at("y").get<float>(), width, height}};
+            if (kind == "bat") {
+                enemy.kind = domain::EnemyKind::Bat;
+                if (object.contains("properties")) {
+                    for (const json& property : object.at("properties")) {
+                        if (property.at("name").get<std::string>() == "detect_radius") {
+                            enemy.detect_radius = property.at("value").get<float>();
+                        }
+                    }
+                }
+                if (enemy.detect_radius < 0.0F) {
+                    throw std::invalid_argument("a bat's 'detect_radius' cannot be negative");
+                }
+            }
+            enemies.push_back(enemy);
         }
     }
     return enemies;

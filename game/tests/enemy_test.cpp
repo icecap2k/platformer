@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include <cmath>
+
 #include "domain/enemies/enemy_contact.h"
 #include "domain/enemies/enemy_patrols.h"
 #include "domain/physics/player_physics.h"
@@ -83,22 +85,82 @@ TEST_CASE("an enemy turns around at the edge of the room") {
     CHECK(state.direction == 1);
 }
 
-TEST_CASE("an enemy turns around at a ramp") {
-    // Ramps are not solid but they are a surface: the enemy treats one in its way as a wall.
+TEST_CASE("a walker climbs a ramp to a plateau, and comes down again") {
+    // A 3 tile ramp rising to the right from column 20, on blocks, up to a plateau.
+    std::vector<std::pair<int, int>> blocks;
+    for (int column = 23; column < test_maps::kWidth; ++column) {
+        for (int row = 24; row <= 26; ++row) blocks.emplace_back(column, row);
+    }
+    blocks.emplace_back(21, 26);
+    blocks.emplace_back(22, 26);
+    blocks.emplace_back(22, 25);
     std::vector<int> tiles(static_cast<std::size_t>(test_maps::kWidth * test_maps::kHeight), 0);
     for (int row = test_maps::kFloorRow; row < test_maps::kHeight; ++row) {
         for (int column = 0; column < test_maps::kWidth; ++column) {
             tiles[static_cast<std::size_t>(row * test_maps::kWidth + column)] = 1;
         }
     }
-    tiles[static_cast<std::size_t>(26 * test_maps::kWidth + 20)] = kTileSlopeRight;
+    for (const auto& [column, row] : blocks) tiles[static_cast<std::size_t>(row * test_maps::kWidth + column)] = 1;
+    for (int i = 0; i < 3; ++i) {
+        tiles[static_cast<std::size_t>((26 - i) * test_maps::kWidth + 20 + i)] = kTileSlopeRight;
+    }
     const TileMap map(test_maps::kWidth, test_maps::kHeight, test_maps::kTileSize, tiles);
-    const Enemy enemy = walkerAt(140.0F);
+    const Enemy enemy{AABB{100.0F, kFloorTop - 16.0F, 16.0F, 16.0F}};
+    const float plateau = 24.0F * 8.0F;
     EnemyState state;
     state.direction = 1;
 
-    walk(enemy, state, map, 300);
-    CHECK(currentBounds(enemy, state).right() <= 160.0F);
+    bool reached_plateau = false;
+    float previous_bottom = kFloorTop;
+    for (int step = 0; step < 600 && !reached_plateau; ++step) {
+        stepEnemy(enemy, state, map, {});
+        const AABB box = currentBounds(enemy, state);
+        CHECK(std::abs(box.bottom() - previous_bottom) <= 1.0F);  // smoothly, no jumps or falls
+        previous_bottom = box.bottom();
+        reached_plateau = box.bottom() == plateau && box.left() > 190.0F;
+    }
+    CHECK(reached_plateau);
+
+    state.direction = -1;
+    walk(enemy, state, map, 600);
+    CHECK(currentBounds(enemy, state).bottom() == kFloorTop);  // back on the floor
+    CHECK(currentBounds(enemy, state).x < 150.0F);
+}
+
+TEST_CASE("a walker in the air falls to the ground and then walks") {
+    const TileMap map = makeMap();
+    const Enemy enemy{AABB{100.0F, 100.0F, 16.0F, 16.0F}};
+    EnemyState state;
+    state.direction = 1;
+
+    walk(enemy, state, map, 5);
+    CHECK(currentBounds(enemy, state).y > 100.0F);
+    CHECK(state.x_offset == 0.0F);  // it does not walk in mid air
+
+    walk(enemy, state, map, 200);
+    CHECK(currentBounds(enemy, state).bottom() == kFloorTop);
+    CHECK(state.x_offset > 10.0F);
+}
+
+TEST_CASE("a walker lands on a platform under it") {
+    const TileMap map = makeMap({{12, 18}, {13, 18}, {14, 18}, {15, 18}, {16, 18}});
+    const Enemy enemy{AABB{104.0F, 80.0F, 16.0F, 16.0F}};
+    EnemyState state;
+    walk(enemy, state, map, 200);
+    CHECK(currentBounds(enemy, state).bottom() == 18.0F * 8.0F);
+}
+
+TEST_CASE("a walker placed slightly off the floor, above or below, settles on it") {
+    const TileMap map = makeMap();
+    for (const float off : {-1.5F, -0.4F, 0.9F, 3.0F}) {
+        INFO("off by " << off);
+        const Enemy enemy{AABB{100.0F, kFloorTop - 16.0F + off, 16.0F, 16.0F}};
+        EnemyState state;
+        state.direction = 1;
+        walk(enemy, state, map, 60);
+        CHECK(currentBounds(enemy, state).bottom() == kFloorTop);
+        CHECK(state.x_offset > 10.0F);
+    }
 }
 
 TEST_CASE("a dead enemy does not move") {

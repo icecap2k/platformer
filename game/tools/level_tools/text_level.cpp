@@ -193,6 +193,13 @@ TextLevel parseTextLevel(const std::string& text) {
                                                                  static_cast<float>(row) * size, size});
                     break;
                 }
+                case 'M': {  // a bat: two tiles wide and one and a half tall
+                    domain::AABB box = largeItemAt(column, row, level.tile_size);
+                    box.y += static_cast<float>(level.tile_size) * 0.5F;
+                    box.height -= static_cast<float>(level.tile_size) * 0.5F;
+                    level.enemies.push_back(domain::Enemy{box, domain::EnemyKind::Bat});
+                    break;
+                }
                 case 'E': {
                     const domain::AABB box = largeItemAt(column, row, level.tile_size);
                     level.enemies.push_back(domain::Enemy{box});
@@ -224,7 +231,7 @@ TextLevel parseTextLevel(const std::string& text) {
                 default:
                     failAt(line_number, std::string("unknown character '") +
                                             cells[static_cast<std::size_t>(column)] +
-                                            "' (use . # B 3 4 / \\ ^ V C F E K X R G Y)");
+                                            "' (use . # B 3 4 / \\ ^ V C F E M K X R G Y)");
             }
             level.tiles[static_cast<std::size_t>(row * level.width + column)] = tile;
         }
@@ -289,10 +296,11 @@ std::string toTiledJson(const TextLevel& level) {
                            {"visible", true}});
     }
     for (const domain::Enemy& enemy : level.enemies) {
+        const char* kind = enemy.kind == domain::EnemyKind::Bat ? "bat" : "walker";
         objects.push_back({{"id", object_id++},
-                           {"name", "walker"},
+                           {"name", kind},
                            {"type", ""},
-                           {"class", "walker"},
+                           {"class", kind},
                            {"x", enemy.bounds.x},
                            {"y", enemy.bounds.y},
                            {"width", enemy.bounds.width},
@@ -509,21 +517,27 @@ std::string toText(const domain::Room& room) {
     for (const domain::Enemy& enemy : room.enemies()) {
         const int column = anchorColumn(enemy.bounds.x, enemy.bounds.width, map.tileSize());
         const int row = anchorRow(enemy.bounds.y, enemy.bounds.height, map.tileSize());
-        const domain::AABB exact = largeItemAt(column, row, map.tileSize());
+        const bool bat = enemy.kind == domain::EnemyKind::Bat;
+        domain::AABB exact = largeItemAt(column, row, map.tileSize());
+        if (bat) {
+            exact.y += static_cast<float>(map.tileSize()) * 0.5F;
+            exact.height -= static_cast<float>(map.tileSize()) * 0.5F;
+        }
         const bool is_symbol = column >= 0 && column < map.width() && row >= 0 && row < map.height() &&
                                enemy.bounds.x == exact.x && enemy.bounds.y == exact.y &&
-                               enemy.bounds.width == exact.width && enemy.bounds.height == exact.height;
+                               enemy.bounds.width == exact.width && enemy.bounds.height == exact.height &&
+                               (!bat || enemy.detect_radius == domain::kBatDetectRadius);
         if (!is_symbol) {
             throw std::runtime_error("an enemy at (" + std::to_string(enemy.bounds.x) + ", " +
                                      std::to_string(enemy.bounds.y) +
-                                     ") does not match the E symbol's two-tile box, so it has no text symbol");
+                                     ") does not match the box of its text symbol (E or M), so it has no text symbol");
         }
         char& cell = grid[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)];
         if (cell != '.') {
             throw std::runtime_error("an enemy at column " + std::to_string(column) + ", row " +
                                      std::to_string(row) + " sits on a solid tile or another item");
         }
-        cell = 'E';
+        cell = bat ? 'M' : 'E';
     }
 
     for (const domain::Exit& exit : room.exits()) {
